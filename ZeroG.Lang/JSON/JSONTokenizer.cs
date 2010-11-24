@@ -142,7 +142,7 @@ namespace ZeroG.Lang.JSON
             }
             if (!char.IsDigit((char)reader.Peek()))
             {
-                throw new ArgumentException("Expected numeric digit");
+                throw new JSONException("Expected numeric digit");
             }
 
             while (char.IsDigit((char)reader.Peek()))
@@ -156,7 +156,7 @@ namespace ZeroG.Lang.JSON
 
                 if (!char.IsDigit((char)reader.Peek()))
                 {
-                    throw new ArgumentException("Expected numeric digit for fractional");
+                    throw new JSONException("Expected numeric digit for fractional");
                 }
                 while (char.IsDigit((char)reader.Peek()))
                 {
@@ -179,7 +179,7 @@ namespace ZeroG.Lang.JSON
                 }
                 if (!char.IsDigit(c))
                 {
-                    throw new ArgumentException("Expected numeric digit for exponent");
+                    throw new JSONException("Expected numeric digit for exponent");
                 }
                 while (char.IsDigit((char)reader.Peek()))
                 {
