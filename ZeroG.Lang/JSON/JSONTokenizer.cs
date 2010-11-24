@@ -229,8 +229,14 @@ namespace ZeroG.Lang.JSON
                                 throw new JSONException("Expected hexadecimal digit, but got: " + c);
                             }
                         }
-                        _string.Append(char.ConvertFromUtf32(Convert.ToInt32(new string(hexNums), 16)));
-
+                        try
+                        {
+                            _string.Append(char.ConvertFromUtf32(Convert.ToInt32(new string(hexNums), 16)));
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new JSONException(ex.Message);
+                        }
                     }
                     else // get escaped value
                     {
