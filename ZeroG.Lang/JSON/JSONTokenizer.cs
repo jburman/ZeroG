@@ -226,7 +226,7 @@ namespace ZeroG.Lang.JSON
                             }
                             else
                             {
-                                throw new JSONException("Expected hexidecimal digit, but got: " + c);
+                                throw new JSONException("Expected hexadecimal digit, but got: " + c);
                             }
                         }
                         _string.Append(char.ConvertFromUtf32(Convert.ToInt32(new string(hexNums), 16)));
