@@ -33,16 +33,31 @@ namespace ZeroG.Lang.JSON
     public delegate void JSONEventHandler();
     public delegate void JSONEventHandler<T>(T value);
 
+    /// <summary>
+    /// Provides a set of Events that may be listened to as a JSON construct is being parsed.
+    /// </summary>
+    /// <seealso cref="ZeroG.Lang.JSON.JSONWalkingValidator"/>
     public sealed class JSONWalkingEvents
     {
         public event JSONEventHandler ArrayStart;
         public event JSONEventHandler ArrayEnd;
+        /// <summary>
+        /// Fired when a comma is encountered in an Array, signifying that a new element will be parsed.
+        /// </summary>
         public event JSONEventHandler ArrayNext;
 
         public event JSONEventHandler ObjectStart;
         public event JSONEventHandler ObjectEnd;
+        /// <summary>
+        /// Fired when a comma is encountered inside of an Object construct, signifying that another field will be parsed.
+        /// </summary>
         public event JSONEventHandler ObjectNext;
 
+        /// <summary>
+        /// Fired when a field name is parsed inside of an Object construct.
+        /// For example, given the JSON { "foo" : "bar" }, then ObjectKey will be 
+        /// fired when "foo" is parsed.
+        /// </summary>
         public event JSONEventHandler<string> ObjectKey;
 
         public event JSONEventHandler<string> String;
