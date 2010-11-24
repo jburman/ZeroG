@@ -67,9 +67,9 @@ namespace ZeroG.Lang.JSON
     {
         None                = 0,
         /// <summary>
-        /// Allow multiple values to be selected from within Arrays.  The default behavior is to ignore arrays.
+        /// Force arrays to be ignored in the selectors.
         /// </summary>
-        AllowMultiValue     = 2
+        IgnoreArrays        = 2
     }
 
     /// <summary>
@@ -77,9 +77,9 @@ namespace ZeroG.Lang.JSON
     /// </summary>
     public static class JSONSelectorOptionsExtensions
     {
-        public static bool AllowMultiValue(this JSONSelectorOptions options)
+        public static bool IgnoreArrays(this JSONSelectorOptions options)
         {
-            return options.IsOptionSet(JSONSelectorOptions.AllowMultiValue);
+            return options.IsOptionSet(JSONSelectorOptions.IgnoreArrays);
         }
 
         private static bool IsOptionSet(this JSONSelectorOptions options, JSONSelectorOptions flagToCheck)
@@ -100,7 +100,7 @@ namespace ZeroG.Lang.JSON
     {
         public const string ArraySpecifier = "[]";
 
-        public static readonly JSONSelectorOptions DefaultOptions = JSONSelectorOptions.AllowMultiValue;
+        public static readonly JSONSelectorOptions DefaultOptions = JSONSelectorOptions.None;
 
         private JSONWalkingEvents _events;
         private Dictionary<string, string> _paths;
@@ -129,7 +129,7 @@ namespace ZeroG.Lang.JSON
             _events                 = events;
             paths                   = paths ?? new string[0];
 
-            if (!options.AllowMultiValue())
+            if (options.IgnoreArrays())
             {
                 // Filter out paths containing array specifiers
                 _paths              = paths.Where(p => -1 == p.IndexOf(ArraySpecifier))
