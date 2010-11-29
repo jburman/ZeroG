@@ -89,13 +89,15 @@ namespace ZeroG.Lang.JSON
     }
 
     /// <summary>
-    /// Provides a simple selector implementation for retrieving values from JSON data. 
+    /// Provides a simple selector implementation for retrieving values from JSON data. For more advanced 
+    /// selector needs, please refer to the JSONPathSelector instead.
     /// </summary>
     /// <example>
     /// TextReader jsonTextReader = new StringReader("{\"foo\":{\"bar\":\"baz\"}}");
     /// string[] selections = new string[] { "foo.bar" };
     /// SelectedValue[] values = JSONSelector.SelectValues(jsonTextReader, selections);
     /// </example>
+    /// <seealso cref="ZeroG.Lang.Json.JSONPathSelector" />
     public sealed class JSONSelector
     {
         public const string ArraySpecifier = "[]";

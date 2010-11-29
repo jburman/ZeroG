@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="JSON\JSONException.cs" />
+    <Compile Include="JSON\JSONPathSelector.cs" />
     <Compile Include="JSON\JSONSelector.cs" />
     <Compile Include="JSON\JSONWalkingEvents.cs" />
     <Compile Include="JSON\JSONTokenizer.cs" />
