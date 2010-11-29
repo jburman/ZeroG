@@ -25,8 +25,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 /**
  * @fileOverview Contains the ZeroG global object and global String enhancements.
  * @name ZeroG.js
- * @author Jeremy Burman jeremy.burman@zerogsoftware.com
- */
+ * @author Jeremy Burman jeremy.burman@zerogsoftware.com (Except where additional 
+ * authors are noted.  Additional authors are not associated in any way with ZeroG.)
+*/
 
 /**
 * Makes a string safe for HTML.

@@ -26,7 +26,8 @@ OTHER DEALINGS IN THE SOFTWARE.
  * @fileOverview Contains the ZeroG.YUI global object and helper functions that 
  * utilize YUI v2.
  * @name ZeroG.YUI.js
- * @author Jeremy Burman jeremy.burman@zerogsoftware.com
+ * @author Jeremy Burman jeremy.burman@zerogsoftware.com (Except where additional 
+ * authors are noted.  Additional authors are not associated in any way with ZeroG.)
  */
  
 if('undefined' !== typeof (ZeroG) && ZeroG) {
