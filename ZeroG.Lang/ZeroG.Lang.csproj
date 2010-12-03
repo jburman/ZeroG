@@ -43,6 +43,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BSON\BSONTokenizer.cs" />
+    <Compile Include="BSON\BSONException.cs" />
     <Compile Include="JSON\JSONException.cs" />
     <Compile Include="JSON\JSONPathSelector.cs" />
     <Compile Include="JSON\JSONSelector.cs" />
@@ -51,6 +53,7 @@
     <Compile Include="JSON\JSONWalkingValidator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
