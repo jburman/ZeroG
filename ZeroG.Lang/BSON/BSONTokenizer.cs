@@ -72,9 +72,8 @@ namespace ZeroG.Lang.BSON
         CODE,
         SYMBOL,
         CODE_WITH_SCOPE,
-        KEYWORD_TRUE,
-        KEYWORD_FALSE,
-        KEYWORD_NULL,
+        BOOLEAN,
+        NULL,
         ARRAY_START,
         DOCUMENT_START,
         BINARY,
@@ -214,6 +213,13 @@ namespace ZeroG.Lang.BSON
             int docLength = _reader.ReadInt32();
             string name = null;
 
+            yield return new BSONDocumentToken()
+            {
+                Type = BSONTokenType.DOCUMENT_START,
+                Name = null,
+                Length = docLength
+            };
+
             while (-1 != _reader.PeekChar())
             {
                 BSONTypes type = _ScanType(_reader);
@@ -291,18 +297,25 @@ namespace ZeroG.Lang.BSON
                     case BSONTypes.BOOLEAN:
                         name = _ScanCStringToString(_reader);
                         byte boolByte = _reader.ReadByte();
+                        bool val;
                         if (0x00 == boolByte)
                         {
-                            yield return new BSONToken() { Type = BSONTokenType.KEYWORD_FALSE, Name = name };
+                            val = false;
                         }
                         else if (0x01 == boolByte)
                         {
-                            yield return new BSONToken() { Type = BSONTokenType.KEYWORD_TRUE, Name = name };
+                            val = true;
                         }
                         else
                         {
                             throw new BSONException("Unvalid boolean value found.  Must be \"0x00\" or \"0x01\".");
                         }
+                        yield return new BSONValueToken<bool>()
+                        {
+                            Type = BSONTokenType.BOOLEAN,
+                            Name = name,
+                            Value = val
+                        };
                         break;
                     case BSONTypes.DATETIME:
                         yield return new BSONValueToken<DateTime>
@@ -315,7 +328,7 @@ namespace ZeroG.Lang.BSON
                     case BSONTypes.NULL:
                         yield return new BSONToken()
                         {
-                            Type = BSONTokenType.KEYWORD_NULL,
+                            Type = BSONTokenType.NULL,
                             Name = _ScanCStringToString(_reader)
                         };
                         break;

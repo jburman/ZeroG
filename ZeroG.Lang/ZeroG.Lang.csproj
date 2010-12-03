@@ -45,6 +45,9 @@
   <ItemGroup>
     <Compile Include="BSON\BSONTokenizer.cs" />
     <Compile Include="BSON\BSONException.cs" />
+    <Compile Include="BSON\BSONWalkingValidator.cs" />
+    <Compile Include="BSON\BSONWalkingEvents.cs" />
+    <Compile Include="BSON\BSONSelector.cs" />
     <Compile Include="JSON\JSONException.cs" />
     <Compile Include="JSON\JSONPathSelector.cs" />
     <Compile Include="JSON\JSONSelector.cs" />

@@ -97,7 +97,7 @@ namespace ZeroG.Lang.JSON
     /// string[] selections = new string[] { "foo.bar" };
     /// SelectedValue[] values = JSONSelector.SelectValues(jsonTextReader, selections);
     /// </example>
-    /// <seealso cref="ZeroG.Lang.Json.JSONPathSelector" />
+    /// <seealso cref="ZeroG.Lang.JSON.JSONPathSelector" />
     public sealed class JSONSelector
     {
         public const string ArraySpecifier = "[]";
