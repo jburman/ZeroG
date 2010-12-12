@@ -47,6 +47,16 @@ namespace ZeroG.Data.Database
             return val;
         }
 
+        public static byte[] GetBytes(IDataRecord reader, string fieldName, byte[] defaultValue)
+        {
+            object val = reader[fieldName];
+            if (val is DBNull)
+            {
+                return defaultValue;
+            }
+            return (byte[])val;
+        }
+
         public static string GetString(IDataRecord reader, int index, string defaultValue)
         {
             if (!reader.IsDBNull(index))

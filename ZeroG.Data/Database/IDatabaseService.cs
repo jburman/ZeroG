@@ -32,6 +32,7 @@ namespace ZeroG.Data.Database
     public interface IDatabaseService : IDisposable
     {
         IDbConnection CurrentConnection { get; }
+        string DatabaseName { get; }
         bool IsClosed { get; }
         bool IsOpen { get; }
         IDbTransaction BeginTransaction();
@@ -57,11 +58,13 @@ namespace ZeroG.Data.Database
         Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(string commandText, params IDataParameter[] parameters);
         T[] GetValues<T>(string commandText, params IDataParameter[] parameters);
         T[] GetValues<T>(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
+        string MakeParamReference(string paramName);
         IDbDataParameter MakeParam(string name, object value);
         IDbDataParameter MakeLikeParam(string name, object value);
         string MakeLikeParamReference(string paramName);
         IDbDataParameter MakeReturnValueParam();
         IDbDataParameter MakeOutputParam(string paramName, DbType type);
+        string MakeQuotedName(string name);
         void Open();
     }
 }

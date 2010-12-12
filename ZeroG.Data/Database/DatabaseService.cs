@@ -212,6 +212,14 @@ namespace ZeroG.Data.Database
             }
         }
 
+        public string DatabaseName
+        {
+            get
+            {
+                return (null == _dbConn) ? null : _dbConn.Database;
+            }
+        }
+
         public bool IsClosed
         {
             get
@@ -273,10 +281,12 @@ namespace ZeroG.Data.Database
         public abstract T[] GetValues<T>(string commandText, params IDataParameter[] parameters);
         public abstract T[] GetValues<T>(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
         public abstract IDbDataParameter MakeParam(string name, object value);
+        public abstract string MakeParamReference(string paramName);
         public abstract IDbDataParameter MakeLikeParam(string name, object value);
         public abstract string MakeLikeParamReference(string paramName);
         public abstract IDbDataParameter MakeReturnValueParam();
         public abstract IDbDataParameter MakeOutputParam(string paramName, DbType type);
+        public abstract string MakeQuotedName(string name);
         public abstract void Open();
 
         #endregion // end Methods

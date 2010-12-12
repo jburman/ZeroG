@@ -283,6 +283,11 @@ namespace ZeroG.Data.Database.Drivers
             return new SqlParameter(name, value);
         }
 
+        public override string MakeParamReference(string paramName)
+        {
+            return "@" + paramName;
+        }
+
         public override IDbDataParameter MakeLikeParam(string name, object value)
         {
             if (null != value && value is string)
@@ -314,6 +319,11 @@ namespace ZeroG.Data.Database.Drivers
             parameter.Direction = ParameterDirection.Output;
             parameter.DbType = type;
             return parameter;
+        }
+
+        public override string MakeQuotedName(string name)
+        {
+            return "[" + name + "]";
         }
 
         public override void Open()
