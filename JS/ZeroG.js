@@ -306,6 +306,14 @@ if ('undefined' === typeof (ZeroG) || !ZeroG) {
             }
             return null;
         },
+        focusEl: function(el) {
+            if(typeof(el) === 'string') {
+                el = document.getElementById(el);
+            }
+            if(el && this.isUsable(el)) {
+                el.focus();
+            }
+        },
         handleKeyEvent: function(evt) {
             var key = null;
             if (evt) {
