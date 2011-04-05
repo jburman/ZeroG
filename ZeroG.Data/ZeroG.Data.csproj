@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Database\DatabaseAsyncResult.cs" />
     <Compile Include="Database\DatabaseServiceSection.cs" />
     <Compile Include="Database\DatabaseHelper.cs" />
     <Compile Include="Database\DatabaseService.cs" />

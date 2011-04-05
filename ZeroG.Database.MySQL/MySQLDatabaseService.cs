@@ -314,6 +314,27 @@ namespace ZeroG.Data.Database.Drivers
             _dbConn = new MySqlConnection(_connString);
             _dbConn.Open();
         }
+
+
+        #region Async methods
+        public override DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters)
+        {
+            MySqlCommand cmd = (MySqlCommand)_PrepareCommand(null, commandText, parameters);
+            return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
+        }
+        public override DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters)
+        {
+            MySqlCommand cmd = (MySqlCommand)_PrepareCommand(null, commandText, parameters);
+            return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
+            
+        }
+        public override IDataReader EndExecuteReader(DatabaseAsyncResult result)
+        {
+            var cmd = (MySqlCommand)result.Command;
+            return cmd.EndExecuteReader(result.Result);
+        }
+        #endregion
+
         #endregion // end Methods
 
         #endregion // end Public
