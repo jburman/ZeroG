@@ -76,6 +76,25 @@ namespace ZeroG.Data.Database
             return (string)val;
         }
 
+        public static decimal GetDecimal(IDataRecord reader, int index, decimal defaultValue)
+        {
+            if (!reader.IsDBNull(index))
+            {
+                return reader.GetDecimal(index);
+            }
+            return defaultValue;
+        }
+
+        public static decimal GetDecimal(IDataRecord reader, string fieldName, decimal defaultValue)
+        {
+            object val = reader[fieldName];
+            if (val is DBNull)
+            {
+                return defaultValue;
+            }
+            return (decimal)val;
+        }
+
         public static int GetInt(IDataRecord reader, int index, int defaultValue)
         {
             if (!reader.IsDBNull(index))

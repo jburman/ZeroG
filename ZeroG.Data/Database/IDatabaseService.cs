@@ -66,5 +66,10 @@ namespace ZeroG.Data.Database
         IDbDataParameter MakeOutputParam(string paramName, DbType type);
         string MakeQuotedName(string name);
         void Open();
+        #region Async versions
+        DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters);
+        DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
+        IDataReader EndExecuteReader(DatabaseAsyncResult result);
+        #endregion
     }
 }

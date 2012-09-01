@@ -176,7 +176,6 @@ namespace ZeroG.Data.Database
         protected IDbCommand _PrepareCommand(IDbTransaction trans, string commandText, IDataParameter[] parameters)
         {
             _IsConnAvailable();
-
             IDbCommand cmd = _dbConn.CreateCommand();
             if (null != trans)
             {
@@ -289,6 +288,11 @@ namespace ZeroG.Data.Database
         public abstract string MakeQuotedName(string name);
         public abstract void Open();
 
+        #region Async methods
+        public abstract DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters);
+        public abstract DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
+        public abstract IDataReader EndExecuteReader(DatabaseAsyncResult result);
+        #endregion
         #endregion // end Methods
 
         #endregion // end Public

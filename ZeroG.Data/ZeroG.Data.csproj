@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Database\DatabaseAsyncResult.cs" />
     <Compile Include="Database\DatabaseServiceSection.cs" />
     <Compile Include="Database\DatabaseHelper.cs" />
     <Compile Include="Database\DatabaseService.cs" />
@@ -85,6 +86,7 @@
       <Name>ZeroG.Lang</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
