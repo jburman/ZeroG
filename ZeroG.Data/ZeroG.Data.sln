@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data", "ZeroG.Data.csproj", "{DB190F97-AB50-4659-BC56-377457EFDFCE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Database.MySQL", "..\ZeroG.Database.MySQL\ZeroG.Database.MySQL.csproj", "{FF8B8052-6109-4CE7-8DE1-92FB0F752349}"
@@ -8,6 +8,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Database.SQLServer", "..\ZeroG.Database.SQLServer\ZeroG.Database.SQLServer.csproj", "{8F055E63-1417-4D8E-B7ED-B3B63D630784}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Lang", "..\ZeroG.Lang\ZeroG.Lang.csproj", "{71CEB166-19BE-45E2-9A38-8342DB8C85BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Tests", "..\ZeroG.Tests\ZeroG.Tests.csproj", "{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +33,10 @@ Global
 		{71CEB166-19BE-45E2-9A38-8342DB8C85BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71CEB166-19BE-45E2-9A38-8342DB8C85BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71CEB166-19BE-45E2-9A38-8342DB8C85BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

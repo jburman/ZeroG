@@ -38,30 +38,24 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 {
     internal class SQLStatements
     {
-        public static readonly string CreateTableIfNotExists = @"IF NOT EXISTS (select * from sysobjects where name='{0}' and xtype='U')
-    CREATE TABLE [{0}](
-	    {1}
-	CONSTRAINT [PK_{0}] PRIMARY KEY CLUSTERED 
-	    ([ID] ASC)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [{2}]
-	) ON [{2}]";
+        public static readonly string CreateTableIfNotExists = @"CREATE TABLE IF NOT EXISTS `{0}`(
+`ID` INT NOT NULL PRIMARY KEY
+	    {1})
+	) ENGINE = InnoDB CHARACTER SET utf8 COLLATE utf8_general_ci";
 
-        public static readonly string CreateIndex = @"IF EXISTS (select * from sysobjects where name='{0}' and xtype='U')
-	CREATE NONCLUSTERED INDEX [IDX_{0}] ON [{0}](
-		{1}
-	)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [{2}]";
+        public static readonly string CreateIndex = @"CREATE INDEX IF NOT EXISTS `IDX_{0}` USING HASH ({1})";
 
-        public static readonly string DropTableIfExists = @"IF EXISTS (select * from sysobjects where name='{0}' and xtype='U')
-    DROP TABLE [{0}]";
+        public static readonly string DropTableIfExists = @"DROP TABLE IF EXISTS `{0}`";
 
-        public static readonly string Find = @"SELECT [ID] FROM [{0}]
+        public static readonly string Find = @"SELECT `ID` FROM `{0}`
 WHERE {1}";
 
-        public static string RemoveIndex = @"DELETE FROM [{0}] WHERE [{1}] IN ({2})";
+        public static string RemoveIndex = @"DELETE FROM `{0}` WHERE `{1}` IN ({2})";
 
-        public static readonly string TruncateTable = "TRUNCATE TABLE [{0}]";
+        public static readonly string TruncateTable = "TRUNCATE TABLE `{0}`";
     }
 
-    public class SQLObjectIndexProvider : IObjectIndexProvider
+    public class MySQLObjectIndexProvider : IObjectIndexProvider
     {
 
         #region Config settings
@@ -98,7 +92,7 @@ WHERE {1}";
 
         #endregion
 
-        public SQLObjectIndexProvider()
+        public MySQLObjectIndexProvider()
         {
         }
 
