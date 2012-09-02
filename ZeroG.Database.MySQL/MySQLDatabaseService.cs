@@ -36,9 +36,12 @@ using MySql.Data.MySqlClient;
 
 namespace ZeroG.Data.Database.Drivers
 {
-
     public sealed class MySQLDatabaseService : DatabaseService
     {
+        #region Constants
+        public static readonly string ParameterQualifier = "?";
+        #endregion
+
         #region Constructors/Destructors
 
         public MySQLDatabaseService()
@@ -102,7 +105,7 @@ namespace ZeroG.Data.Database.Drivers
 
         public override string EscapeNameForLike(string name)
         {
-            return name + " ESCAPE '\\\\'";
+            return EscapeCommandText(name) + " ESCAPE '\\\\'";
         }
 
         public override string EscapeValueForLike(string value)
@@ -262,7 +265,7 @@ namespace ZeroG.Data.Database.Drivers
 
         public override string MakeParamReference(string paramName)
         {
-            return "?" + paramName;
+            return ParameterQualifier + EscapeCommandText(paramName);
         }
 
         public override IDbDataParameter MakeLikeParam(string name, object value)
@@ -280,12 +283,12 @@ namespace ZeroG.Data.Database.Drivers
 
         public override string MakeLikeParamReference(string paramName)
         {
-            return "like ?" + EscapeNameForLike(paramName);
+            return "LIKE " + ParameterQualifier + EscapeNameForLike(paramName);
         }
 
         public override IDbDataParameter MakeReturnValueParam()
         {
-            MySqlParameter parameter = new MySqlParameter("?RETURN_VALUE", null);
+            MySqlParameter parameter = new MySqlParameter(ParameterQualifier + "RETURN_VALUE", null);
             parameter.Direction = ParameterDirection.ReturnValue;
             return parameter;
         }
@@ -300,7 +303,7 @@ namespace ZeroG.Data.Database.Drivers
 
         public override string MakeQuotedName(string name)
         {
-            return "`" + name + "`";
+            return "`" + EscapeCommandText(name) + "`";
         }
 
         public override void Open()
