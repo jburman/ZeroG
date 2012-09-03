@@ -60,6 +60,7 @@
     <Compile Include="Database\DatabaseService.cs" />
     <Compile Include="Database\IDatabaseService.cs" />
     <Compile Include="Database\Lang\JSONtoSQLContraint.cs" />
+    <Compile Include="Database\ObjectIndexProvider.cs" />
     <Compile Include="Object\Config.cs" />
     <Compile Include="Object\Index\IObjectIndexProvider.cs" />
     <Compile Include="Object\Index\ObjectIndexer.cs" />

@@ -39,7 +39,6 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
     internal class SQLStatements
     {
         public static readonly string CreateTableIfNotExists = @"CREATE TABLE IF NOT EXISTS `{0}`(
-`ID` INT NOT NULL PRIMARY KEY
 	    {1})
 	) ENGINE = InnoDB CHARACTER SET utf8 COLLATE utf8_general_ci";
 
@@ -55,59 +54,19 @@ WHERE {1}";
         public static readonly string TruncateTable = "TRUNCATE TABLE `{0}`";
     }
 
-    public class MySQLObjectIndexProvider : IObjectIndexProvider
+    public class MySQLObjectIndexProvider : ObjectIndexProvider
     {
 
-        #region Config settings
-        // TODO: make config settings configurable from app.config
-
-        /// <summary>
-        /// Maximum number of IDs that will be passed to a single query.
-        /// For example, when deleting a large number of Objects. Queries will be batched if the 
-        /// the supplied number of IDs exceeds the constraint limit.
-        /// </summary>
-        private static int _MaxIDConstraint
-        {
-            get
-            {
-                return 100;
-            }
-        }
-
-        private static string _FileGroup
-        {
-            get
-            {
-                return "PRIMARY";
-            }
-        }
-
-        private static string _IDColumn
-        {
-            get
-            {
-                return "ID";
-            }
-        }
-
-        #endregion
-
         public MySQLObjectIndexProvider()
+            : base()
         {
+
         }
 
-        private IDatabaseService _OpenSchema()
+        public MySQLObjectIndexProvider(string databaseServiceSchema, string databaseServiceData)
+            : base (databaseServiceSchema, databaseServiceData)
         {
-            var db = DatabaseService.GetService("ObjectIndexSchema");
-            db.Open();
-            return db;
-        }
-
-        private IDatabaseService _OpenData()
-        {
-            var db = DatabaseService.GetService("ObjectIndexData");
-            db.Open();
-            return db;
+            
         }
 
         private static string _CreateTableName(IDatabaseService db, string nameSpace, string objectName)
@@ -118,25 +77,25 @@ WHERE {1}";
         private static string _CreateColumnDef(IDatabaseService db, ObjectIndexMetadata indexMetadata)
         {
             string name = db.EscapeCommandText(indexMetadata.Name);
-            string type = "nvarchar";
+            string type = "VARCHAR";
             string length = "(30)";
 
             switch (indexMetadata.DataType)
             {
                 case ObjectIndexType.Integer:
-                    type = "int";
+                    type = "INT";
                     length = "";
                     break;
                 case ObjectIndexType.Binary:
-                    type = "binary";
+                    type = "BINARY";
                     length = "(" + indexMetadata.Precision + ")";
                     break;
                 case ObjectIndexType.DateTime:
-                    type = "datetime";
+                    type = "DATETIME";
                     length = "";
                     break;
                 case ObjectIndexType.Decimal:
-                    type = "decimal";
+                    type = "DECIMAL";
                     length = "(" + indexMetadata.Precision + "," + indexMetadata.Scale + ")";
                     break;
                 default:
@@ -144,14 +103,14 @@ WHERE {1}";
                     break;
             }
 
-            return string.Format("[{0}] [{1}]{2} NOT NULL", name, type, length);
+            return string.Format("`{0}` {1}{2} NOT NULL", name, type, length);
         }
 
-        public int[] Find(string nameSpace, string objectName, ObjectIndex[] indexes)
+        public override int[] Find(string nameSpace, string objectName, ObjectIndex[] indexes)
         {
             int[] returnValue = null;
 
-            using (var db = _OpenData())
+            using (var db = OpenData())
             {
                 var tableName = _CreateTableName(db, nameSpace, objectName);
 
@@ -166,10 +125,9 @@ WHERE {1}";
                     {
                         sqlConstraint.Append(" AND ");
                     }
-                    sqlConstraint.Append('[');
-                    sqlConstraint.Append(db.EscapeCommandText(idx.Name));
-                    sqlConstraint.Append("] = @");
-                    sqlConstraint.Append(paramName);
+                    sqlConstraint.Append(db.MakeQuotedName(idx.Name));
+                    sqlConstraint.Append(" = ");
+                    sqlConstraint.Append(db.MakeParamReference(paramName));
                 }
 
                 returnValue = db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.ToString()), parameters.ToArray());
@@ -178,32 +136,32 @@ WHERE {1}";
             return returnValue;
         }
 
-        public void ProvisionIndex(ObjectMetadata metadata)
+        public override void ProvisionIndex(ObjectMetadata metadata)
         {
-            using (var db = _OpenSchema())
+            using (var db = OpenSchema())
             {
                 var tableName = _CreateTableName(db, metadata.NameSpace, metadata.ObjectName);
-                string idColName = "[" + _IDColumn + "]";
-                string colDefs = idColName + " [int] NOT NULL";
+                string idColName = db.MakeQuotedName(IDColumn);
+                string colDefs = idColName + " INT NOT NULL PRIMARY KEY";
                 string colIndexNames = idColName;
 
                 if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
                 {
                     colDefs += "," + string.Join(",", metadata.Indexes.Select(i => _CreateColumnDef(db, i)).ToArray());
-                    colIndexNames += "," + string.Join(",", metadata.Indexes.Select(i => "[" + db.EscapeCommandText(i.Name) + "]").ToArray());
+                    colIndexNames += "," + string.Join(",", metadata.Indexes.Select(i => db.MakeQuotedName(i.Name)).ToArray());
                 }
 
-                var createTableSQL = string.Format(SQLStatements.CreateTableIfNotExists, tableName, colDefs, _FileGroup);
+                var createTableSQL = string.Format(SQLStatements.CreateTableIfNotExists, tableName, colDefs);
                 db.ExecuteNonQuery(createTableSQL);
 
-                var indexTableSQL = string.Format(SQLStatements.CreateIndex, tableName, colIndexNames, _FileGroup);
+                var indexTableSQL = string.Format(SQLStatements.CreateIndex, tableName, colIndexNames);
                 db.ExecuteNonQuery(indexTableSQL);
             }
         }
 
-        public void UnprovisionIndex(string nameSpace, string objectName)
+        public override void UnprovisionIndex(string nameSpace, string objectName)
         {
-            using (var db = _OpenSchema())
+            using (var db = OpenSchema())
             {
                 var tableName = _CreateTableName(db, nameSpace, objectName);
 
@@ -212,9 +170,9 @@ WHERE {1}";
             }
         }
 
-        public void UpsertIndexValues(string nameSpace, string objectName, int objectId, ObjectIndex[] indexes)
+        public override void UpsertIndexValues(string nameSpace, string objectName, int objectId, ObjectIndex[] indexes)
         {
-            using (var db = _OpenData())
+            using (var db = OpenData())
             {
                 var tableName = _CreateTableName(db, nameSpace, objectName);
 
@@ -267,7 +225,7 @@ USING (VALUES (");
                 sql.Append(@")
     ON mergeTo.[");
                 
-                sql.Append(_IDColumn);
+                sql.Append(IDColumn);
 
                 sql.Append(@"] = @recordId
 WHEN MATCHED THEN
@@ -293,7 +251,7 @@ WHEN MATCHED THEN
 WHEN NOT MATCHED THEN
     INSERT ([");
                 
-                sql.Append(_IDColumn);
+                sql.Append(IDColumn);
                 sql.Append(@"],");
                 
                 // 4. generate set of fields for INSERT clause
@@ -332,19 +290,19 @@ WHEN NOT MATCHED THEN
             }
         }
 
-        public void RemoveIndexValue(string nameSpace, string objectName, int objectId)
+        public override void RemoveIndexValue(string nameSpace, string objectName, int objectId)
         {
-            using (var db = _OpenData())
+            using (var db = OpenData())
             {
                 var tableName = _CreateTableName(db, nameSpace, objectName);
 
-                db.ExecuteNonQuery(string.Format(SQLStatements.RemoveIndex, tableName, _IDColumn, objectId));
+                db.ExecuteNonQuery(string.Format(SQLStatements.RemoveIndex, tableName, IDColumn, objectId));
             }
         }
 
-        public void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds)
+        public override void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds)
         {
-            using (var db = _OpenData())
+            using (var db = OpenData())
             {
                 if (1 == objectIds.Length)
                 {
@@ -360,11 +318,11 @@ WHEN NOT MATCHED THEN
                         objectIdConstraint.Append(objectIds[i]);
                         objectIdConstraint.Append(',');
 
-                        if (0 < i && (i % _MaxIDConstraint) == 0)
+                        if (0 < i && (i % MaxIDConstraint) == 0)
                         {
                             objectIdConstraint.Length -= 1; // trim trailing comma
 
-                            db.ExecuteNonQuery(string.Format(SQLStatements.RemoveIndex, tableName, _IDColumn, objectIdConstraint.ToString()));
+                            db.ExecuteNonQuery(string.Format(SQLStatements.RemoveIndex, tableName, IDColumn, objectIdConstraint.ToString()));
 
                             objectIdConstraint.Length = 0;
                         }
@@ -374,15 +332,15 @@ WHEN NOT MATCHED THEN
                     {
                         objectIdConstraint.Length -= 1; // trim trailing comma
 
-                        db.ExecuteNonQuery(string.Format(SQLStatements.RemoveIndex, tableName, _IDColumn, objectIdConstraint.ToString()));
+                        db.ExecuteNonQuery(string.Format(SQLStatements.RemoveIndex, tableName, IDColumn, objectIdConstraint.ToString()));
                     }
                 }
             }
         }
 
-        public void Truncate(string nameSpace, string objectName)
+        public override void Truncate(string nameSpace, string objectName)
         {
-            using (var db = _OpenData())
+            using (var db = OpenData())
             {
                 var tableName = _CreateTableName(db, nameSpace, objectName);
                 var sql = string.Format(SQLStatements.TruncateTable, tableName);
@@ -390,7 +348,7 @@ WHEN NOT MATCHED THEN
             }
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
         }
     }

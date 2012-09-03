@@ -60,10 +60,13 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Data\DataTestHelper.cs" />
+    <Compile Include="Data\Drivers\MySQL\OpenTest.cs" />
     <Compile Include="Data\OpenDatabaseService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Data\Drivers\SQLServer\" />
     <Folder Include="Lang\" />
   </ItemGroup>
   <ItemGroup>
@@ -88,8 +91,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Scripts\Setup.sql" />
-    <Content Include="Scripts\TearDown.sql" />
+    <None Include="Scripts\MySQLSetup.sql" />
+    <None Include="Scripts\MySQLTearDown.sql" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
