@@ -39,7 +39,7 @@ namespace ZeroG.Data.Database.Drivers
     public sealed class MySQLDatabaseService : DatabaseService
     {
         #region Constants
-        public static readonly string ParameterQualifier = "?";
+        public static readonly string ParameterQualifier = "@";
         #endregion
 
         #region Constructors/Destructors

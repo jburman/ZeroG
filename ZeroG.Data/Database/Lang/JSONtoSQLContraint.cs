@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -94,12 +95,12 @@ namespace ZeroG.Data.Database.Lang
         private static Dictionary<string, ConstraintOperator> _operators;
         private static Dictionary<ConstraintOperator, string> _operatorsReverse;
 
-        IDatabaseService _db;
-        JSONWalkingEvents _events;
-        Stack<Constraint> _constraints;
-        Stack<Constraint> _groupingConstraints;
-        Constraint _constraint;
-        HashSet<string> _constraintLogic;
+        private IDatabaseService _db;
+        private JSONWalkingEvents _events;
+        private Dictionary<string, Type> _typeMappings;
+        private Stack<Constraint> _constraints;
+        private Constraint _constraint;
+        private HashSet<string> _constraintLogic;
 
         static JSONToSQLConstraint()
         {
@@ -121,10 +122,26 @@ namespace ZeroG.Data.Database.Lang
             }
         }
 
-        public JSONToSQLConstraint(IDatabaseService db, JSONWalkingEvents events)
+        public JSONToSQLConstraint(IDatabaseService db, JSONWalkingEvents events, Dictionary<string, Type> typeMappings)
         {
+            if (null == db)
+            {
+                throw new ArgumentNullException("db");
+            }
+
+            if (null == events)
+            {
+                throw new ArgumentNullException("events");
+            }
+
+            if (null == typeMappings)
+            {
+                throw new ArgumentNullException("typeMappings");
+            }
+
             _db = db;
             _events = events;
+            _typeMappings = typeMappings;
 
             _events.ObjectStart += new JSONEventHandler(_events_ObjectStart);
             _events.ObjectEnd += new JSONEventHandler(_events_ObjectEnd);
@@ -140,7 +157,6 @@ namespace ZeroG.Data.Database.Lang
             _events.Boolean += new JSONEventHandler<bool>(_events_Boolean);
 
             _constraints = new Stack<Constraint>();
-            _groupingConstraints = new Stack<Constraint>();
             _constraintLogic = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
 
             var names = Enum.GetNames(typeof(ConstraintLogic));
@@ -151,13 +167,13 @@ namespace ZeroG.Data.Database.Lang
         }
 
         #region Static helpers
-        public static SQLConstraint GenerateSQLConstraint(IDatabaseService db, string json)
+        public static SQLConstraint GenerateSQLConstraint(IDatabaseService db, Dictionary<string, Type> typeMappings, string json)
         {
             var tokenizer = new JSONTokenizer(new StringReader(json));
 
             var events = new JSONWalkingEvents();
 
-            var constraint = new JSONToSQLConstraint(db, events);
+            var constraint = new JSONToSQLConstraint(db, events, typeMappings);
 
             JSONWalkingValidator walker = new JSONWalkingValidator();
             walker.Walk(tokenizer.GetEnumerator(), events);
@@ -196,6 +212,11 @@ namespace ZeroG.Data.Database.Lang
             string paramName = "";
 
             sql.Append(_operatorsReverse[constraint.Operator]);
+            Type convertToType = null;
+            if (_typeMappings.ContainsKey(constraint.Name))
+            {
+                convertToType = _typeMappings[constraint.Name];
+            }
 
             if (ConstraintOperator.In == constraint.Operator || ConstraintOperator.NotIn == constraint.Operator)
             {
@@ -205,7 +226,12 @@ namespace ZeroG.Data.Database.Lang
                     foreach (var val in constraint.ArrayValues)
                     {
                         paramName = "p_" + parameters.Count;
-                        parameters.Add(_db.MakeParam(paramName, val));
+                        var paramVal = val;
+                        if (null != convertToType)
+                        {
+                            paramVal = Convert.ChangeType(paramVal, convertToType);
+                        }
+                        parameters.Add(_db.MakeParam(paramName, paramVal));
                         sql.Append(_db.MakeParamReference(paramName));
                         sql.Append(',');
                     }
@@ -214,7 +240,12 @@ namespace ZeroG.Data.Database.Lang
                 else
                 {
                     paramName = "p_" + parameters.Count;
-                    parameters.Add(_db.MakeParam(paramName, constraint.Value));
+                    var paramVal = constraint.Value;
+                    if (null != convertToType)
+                    {
+                        paramVal = Convert.ChangeType(paramVal, convertToType);
+                    }
+                    parameters.Add(_db.MakeParam(paramName, paramVal));
                     sql.Append(_db.MakeParamReference(paramName));
                 }
                 sql.Append(")");
@@ -227,8 +258,13 @@ namespace ZeroG.Data.Database.Lang
                 }
                 else
                 {
+                    var paramVal = constraint.Value;
+                    if (null != convertToType)
+                    {
+                        paramVal = Convert.ChangeType(paramVal, convertToType);
+                    }
                     paramName = "p_" + parameters.Count;
-                    parameters.Add(_db.MakeParam(paramName, constraint.Value));
+                    parameters.Add(_db.MakeParam(paramName, paramVal));
                     sql.Append(_db.MakeParamReference(paramName));
                 }
             }
