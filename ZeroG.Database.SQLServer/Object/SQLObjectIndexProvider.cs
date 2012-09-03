@@ -124,7 +124,7 @@ WHERE {1}";
             return string.Format("[{0}] [{1}]{2} NOT NULL", name, type, length);
         }
 
-        public override int[] Find(string nameSpace, string objectName, ObjectIndex[] indexes)
+        public override int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes)
         {
             int[] returnValue = null;
 
@@ -188,7 +188,7 @@ WHERE {1}";
             }
         }
 
-        public override void UpsertIndexValues(string nameSpace, string objectName, int objectId, ObjectIndex[] indexes)
+        public override void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes)
         {
             using (var db = OpenData())
             {

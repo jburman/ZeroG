@@ -39,6 +39,7 @@ namespace ZeroG.Data.Database
         public object Create(object parent, object configContext, XmlNode node)
         {
             Dictionary<string, DatabaseServiceConfiguration> configs = node.ChildNodes.OfType<XmlNode>()
+                .Where(n => XmlNodeType.Element == n.NodeType)
                 .Select(n => new DatabaseServiceConfiguration(
                     n.Attributes["name"].Value,
                     n.Attributes["type"].Value,

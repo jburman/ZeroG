@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using ZeroG.Lang.JSON;
@@ -148,6 +149,22 @@ namespace ZeroG.Data.Database.Lang
                 _constraintLogic.Add(name);
             }
         }
+
+        #region Static helpers
+        public static SQLConstraint GenerateSQLConstraint(IDatabaseService db, string json)
+        {
+            var tokenizer = new JSONTokenizer(new StringReader(json));
+
+            var events = new JSONWalkingEvents();
+
+            var constraint = new JSONToSQLConstraint(db, events);
+
+            JSONWalkingValidator walker = new JSONWalkingValidator();
+            walker.Walk(tokenizer.GetEnumerator(), events);
+
+            return constraint.GenerateSQLConstraint();
+        }
+        #endregion
 
         public SQLConstraint GenerateSQLConstraint()
         {
@@ -362,7 +379,7 @@ namespace ZeroG.Data.Database.Lang
             {
                 if (_constraintLogic.Contains(_constraint.LastKey))
                 {
-                    _constraint.Logic = (ConstraintLogic)Enum.Parse(typeof(ConstraintLogic), _constraint.LastKey);
+                    _constraint.Logic = (ConstraintLogic)Enum.Parse(typeof(ConstraintLogic), _constraint.LastKey, true);
                     _constraints.Push(_constraint);
                     if (null == _constraint.Constraints)
                     {

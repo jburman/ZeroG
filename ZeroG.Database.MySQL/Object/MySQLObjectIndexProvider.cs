@@ -39,10 +39,10 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
     internal class SQLStatements
     {
         public static readonly string CreateTableIfNotExists = @"CREATE TABLE IF NOT EXISTS `{0}`(
-	    {1})
+	    {1}
 	) ENGINE = InnoDB CHARACTER SET utf8 COLLATE utf8_general_ci";
 
-        public static readonly string CreateIndex = @"CREATE INDEX IF NOT EXISTS `IDX_{0}` USING HASH ({1})";
+        public static readonly string CreateIndex = @"CREATE INDEX `IDX_{0}` ON `{0}` ({1})";
 
         public static readonly string DropTableIfExists = @"DROP TABLE IF EXISTS `{0}`";
 
@@ -106,7 +106,7 @@ WHERE {1}";
             return string.Format("`{0}` {1}{2} NOT NULL", name, type, length);
         }
 
-        public override int[] Find(string nameSpace, string objectName, ObjectIndex[] indexes)
+        public override int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes)
         {
             int[] returnValue = null;
 
@@ -170,7 +170,7 @@ WHERE {1}";
             }
         }
 
-        public override void UpsertIndexValues(string nameSpace, string objectName, int objectId, ObjectIndex[] indexes)
+        public override void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes)
         {
             using (var db = OpenData())
             {

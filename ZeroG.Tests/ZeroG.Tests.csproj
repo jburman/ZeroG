@@ -46,6 +46,7 @@
       <HintPath>..\References\RazorDB.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -61,8 +62,9 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Data\DataTestHelper.cs" />
+    <Compile Include="Data\Drivers\MySQL\IndexProviderTest.cs" />
     <Compile Include="Data\Drivers\MySQL\OpenTest.cs" />
-    <Compile Include="Data\OpenDatabaseService.cs" />
+    <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

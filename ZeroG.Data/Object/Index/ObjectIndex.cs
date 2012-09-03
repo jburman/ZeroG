@@ -30,6 +30,14 @@ namespace ZeroG.Data.Object.Index
     [DataContract]
     public sealed class ObjectIndex
     {
+        public ObjectIndex() { }
+
+        public ObjectIndex(string name, object value)
+        {
+            Name = name;
+            Value = value;
+        }
+
         [DataMember(Order = 1)]
         public string Name;
         [DataMember(Order = 2)]

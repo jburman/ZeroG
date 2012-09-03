@@ -96,10 +96,10 @@ namespace ZeroG.Data.Database
             return db;
         }
 
-        public abstract int[] Find(string nameSpace, string objectName, ObjectIndex[] indexes);
+        public abstract int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
         public abstract void ProvisionIndex(ObjectMetadata metadata);
         public abstract void UnprovisionIndex(string nameSpace, string objectName);
-        public abstract void UpsertIndexValues(string nameSpace, string objectName, int objectId, ObjectIndex[] indexes);
+        public abstract void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes);
         public abstract void RemoveIndexValue(string nameSpace, string objectName, int objectId);
         public abstract void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds);
         public abstract void Truncate(string nameSpace, string objectName);

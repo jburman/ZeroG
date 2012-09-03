@@ -30,13 +30,13 @@ namespace ZeroG.Data.Object.Index
 {
     public interface IObjectIndexProvider : IDisposable
     {
-        int[] Find(string nameSpace, string objectName, ObjectIndex[] indexes);
+        int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
 
         void ProvisionIndex(ObjectMetadata metadata);
 
         void UnprovisionIndex(string nameSpace, string objectName);
 
-        void UpsertIndexValues(string nameSpace, string objectName, int objectId, ObjectIndex[] indexes);
+        void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes);
 
         void RemoveIndexValue(string nameSpace, string objectName, int objectId);
 
