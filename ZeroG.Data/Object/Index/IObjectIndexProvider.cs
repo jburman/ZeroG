@@ -32,6 +32,8 @@ namespace ZeroG.Data.Object.Index
     {
         int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
 
+        int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes);
+
         void ProvisionIndex(ObjectMetadata metadata);
 
         void UnprovisionIndex(string nameSpace, string objectName);

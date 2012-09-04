@@ -24,11 +24,25 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 
 namespace ZeroG.Data.Object.Index
 {
     public static class ObjectIndexTypeExtensions
     {
+        private static Dictionary<ObjectIndexType, Type> _typeMappings;
+
+        static ObjectIndexTypeExtensions()
+        {
+            _typeMappings = new Dictionary<ObjectIndexType, Type>();
+            _typeMappings.Add(ObjectIndexType.String, typeof(string));
+            _typeMappings.Add(ObjectIndexType.Integer, typeof(Int32));
+            _typeMappings.Add(ObjectIndexType.Binary, typeof(byte[]));
+            _typeMappings.Add(ObjectIndexType.Decimal, typeof(decimal));
+            _typeMappings.Add(ObjectIndexType.DateTime, typeof(DateTime));
+            _typeMappings.Add(ObjectIndexType.Unknown, typeof(string));
+        }
+
         public static ObjectIndexType GetDataType(this ObjectIndexType objectIndexType, object value)
         {
             if (value is byte[])
@@ -55,6 +69,11 @@ namespace ZeroG.Data.Object.Index
             {
                 return ObjectIndexType.Unknown;
             }
+        }
+
+        public static Type GetSystemType(this ObjectIndexType objectIndexType)
+        {
+            return _typeMappings[objectIndexType];
         }
     }
 }

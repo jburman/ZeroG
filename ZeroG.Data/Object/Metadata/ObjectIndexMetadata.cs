@@ -32,40 +32,45 @@ namespace ZeroG.Data.Object.Metadata
     [DataContract]
     public sealed class ObjectIndexMetadata
     {
-        public ObjectIndexMetadata()
+        private ObjectIndexMetadata()
         {
         }
 
         public ObjectIndexMetadata(string name, ObjectIndexType dataType)
+            : this(name, dataType, 7, 0)
+        {
+        }
+
+        public ObjectIndexMetadata(string name, ObjectIndexType dataType, uint precision)
+            : this(name, dataType, precision, 0)
+        {
+        }
+
+        public ObjectIndexMetadata(string name, ObjectIndexType dataType, uint precision, uint scale)
         {
             if (string.IsNullOrEmpty(name))
             {
                 throw new ArgumentException("Name is a required parameter.");
             }
 
+            if (ObjectIndexType.Unknown == dataType)
+            {
+                throw new ArgumentException("Data type is required to specified. Found: " + dataType);
+            }
+
             Name = name;
             DataType = dataType;
-        }
-
-        public ObjectIndexMetadata(string name, ObjectIndexType dataType, uint precision)
-            : this(name, dataType)
-        {
             Precision = precision;
-        }
-
-        public ObjectIndexMetadata(string name, ObjectIndexType dataType, uint precision, uint scale)
-            : this(name, dataType, precision)
-        {
             Scale = scale;
         }
 
         [DataMember(Order = 1)]
-        public string Name;
+        public string Name { get; private set; }
         [DataMember(Order = 2)]
-        public ObjectIndexType DataType;
+        public ObjectIndexType DataType { get; private set; }
         [DataMember(Order = 3)]
-        public uint Precision;
+        public uint Precision { get; private set; }
         [DataMember(Order = 4)]
-        public uint Scale;
+        public uint Scale { get; private set; }
     }
 }

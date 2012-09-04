@@ -131,5 +131,69 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             provider.Find(NameSpace1, ObjectName1,
                 new ObjectIndex("TestCol1", 100));
         }
+
+        [TestMethod]
+        [TestCategory("MySQL")]
+        public void SimpleFind()
+        {
+            var provider = IndexProvider;
+
+            provider.ProvisionIndex(
+                new ObjectMetadata(NameSpace1, ObjectName1,
+                    new ObjectIndexMetadata[]
+                    {
+                        new ObjectIndexMetadata("TestCol1", ObjectIndexType.Integer),
+                        new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15)
+                    }));
+
+            provider.UpsertIndexValues(NameSpace1, ObjectName1, 1,
+                new ObjectIndex("TestCol1", 100),
+                new ObjectIndex("TestCol2", "A"));
+
+            provider.UpsertIndexValues(NameSpace1, ObjectName1, 2,
+                new ObjectIndex("TestCol1", 105),
+                new ObjectIndex("TestCol2", "A"));
+
+            provider.UpsertIndexValues(NameSpace1, ObjectName1, 2,
+                new ObjectIndex("TestCol1", 500),
+                new ObjectIndex("TestCol2", "B"));
+
+            provider.UpsertIndexValues(NameSpace1, ObjectName1, 3,
+                new ObjectIndex("TestCol1", 500),
+                new ObjectIndex("TestCol2", "C"));
+
+
+            // test single constraint value that should return a single result
+            int[] ids = provider.Find(NameSpace1, ObjectName1,
+                new ObjectIndex("TestCol1", 100));
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1, ids[0]);
+
+            // test two constraint values that should return a single result
+            ids = provider.Find(NameSpace1, ObjectName1,
+                new ObjectIndex("TestCol1", 100),
+                new ObjectIndex("TestCol1", "A"));
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1, ids[0]);
+
+            // test single constraint value that should return two results
+            ids = provider.Find(NameSpace1, ObjectName1,
+                new ObjectIndex("TestCol1", 500));
+
+            Assert.AreEqual(2, ids.Length);
+            Assert.AreEqual(2, ids[0]);
+            Assert.AreEqual(3, ids[1]);
+
+            // test single constraint value that should return zero results
+            ids = provider.Find(NameSpace1, ObjectName1,
+                new ObjectIndex("TestCol1", 105),
+                new ObjectIndex("TestCol2", "B"));
+
+            Assert.AreEqual(0, ids.Length);
+        }
     }
 }

@@ -24,6 +24,8 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using ZeroG.Data.Database.Lang;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
 
@@ -96,7 +98,18 @@ namespace ZeroG.Data.Database
             return db;
         }
 
+        protected virtual SQLConstraint CreateSQLConstraint(IDatabaseService db, ObjectIndexMetadata[] indexes, string constraint)
+        {
+            var typeMappings = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
+            foreach (var idx in indexes)
+            {
+                typeMappings.Add(idx.Name, idx.DataType.GetSystemType());
+            }
+            return JSONToSQLConstraint.GenerateSQLConstraint(db, typeMappings, constraint);
+        }
+
         public abstract int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
+        public abstract int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes);
         public abstract void ProvisionIndex(ObjectMetadata metadata);
         public abstract void UnprovisionIndex(string nameSpace, string objectName);
         public abstract void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes);

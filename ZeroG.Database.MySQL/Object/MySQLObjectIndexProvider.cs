@@ -136,6 +136,16 @@ WHERE {1}";
             return returnValue;
         }
 
+        public override int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            using (var db = OpenData())
+            {
+                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var tableName = _CreateTableName(db, nameSpace, objectName);
+                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL), sqlConstraint.Parameters.ToArray());
+            }
+        }
+
         public override void ProvisionIndex(ObjectMetadata metadata)
         {
             using (var db = OpenSchema())
@@ -186,15 +196,33 @@ WHERE {1}";
                 
                 var sql = new StringBuilder();
 
-                sql.Append(@"MERGE [");
-                sql.Append(tableName);
-                sql.Append("]");
-                sql.Append(@" WITH(HOLDLOCK) AS mergeTo
-USING (VALUES (");
+                /*INSERT
+    INTO tbl_name (col_name,...)
+    VALUES ()
+    ON DUPLICATE KEY UPDATE
+      col_name=expr
+        */
+
+                sql.Append(@"INSERT INTO ");
+                sql.Append(db.MakeQuotedName(tableName));
+                sql.Append(@" (");
                 
                 int paramCount = parameters.Count;
 
-                // 1. generate set of values for USING VALUES clause
+                // 1. generate set of field names for USING AS clause
+                if(0 < paramCount) 
+                {
+                    for(int i = 0; paramCount > i; i++)
+                    {
+                        var idx = indexes[i];
+                        sql.Append(db.MakeQuotedName(idx.Name));
+                        sql.Append(',');
+                    }
+                    sql.Remove(sql.Length - 1,1);
+                }
+                sql.Append(')');
+
+                // 2. generate set of values for USING VALUES clause
                 if(0 < paramCount) 
                 {
                     for(int i = 0; paramCount > i; i++)
@@ -209,18 +237,7 @@ USING (VALUES (");
                 sql.Append(@"))
     AS source (");
                 
-                // 2. generate set of field names for USING AS clause
-                if(0 < paramCount) 
-                {
-                    for(int i = 0; paramCount > i; i++)
-                    {
-                        var idx = indexes[i];
-                        sql.Append('[');
-                        sql.Append(db.EscapeCommandText(idx.Name));
-                        sql.Append("],");
-                    }
-                    sql.Remove(sql.Length - 1,1);
-                }
+                
                 
                 sql.Append(@")
     ON mergeTo.[");

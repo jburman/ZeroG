@@ -154,6 +154,16 @@ WHERE {1}";
             return returnValue;
         }
 
+        public override int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            using (var db = OpenData())
+            {
+                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var tableName = _CreateTableName(db, nameSpace, objectName);
+                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL), sqlConstraint.Parameters.ToArray());
+            }
+        }
+
         public override void ProvisionIndex(ObjectMetadata metadata)
         {
             using (var db = OpenSchema())
