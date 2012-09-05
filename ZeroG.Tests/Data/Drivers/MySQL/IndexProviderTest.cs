@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using ZeroG.Data.Database;
 using ZeroG.Data.Database.Drivers.Object.Provider;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
@@ -174,7 +175,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             // test two constraint values that should return a single result
             ids = provider.Find(NameSpace1, ObjectName1,
                 new ObjectIndex("TestCol1", 100),
-                new ObjectIndex("TestCol1", "A"));
+                new ObjectIndex("TestCol2", "A"));
 
             Assert.IsNotNull(ids);
             Assert.AreEqual(1, ids.Length);
@@ -194,6 +195,77 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 new ObjectIndex("TestCol2", "B"));
 
             Assert.AreEqual(0, ids.Length);
+        }
+
+        [TestMethod]
+        [TestCategory("MySQL")]
+        public void SimpleFindDataTypes()
+        {
+            var provider = IndexProvider;
+
+            provider.ProvisionIndex(
+                new ObjectMetadata(NameSpace1, ObjectName1,
+                    new ObjectIndexMetadata[]
+                    {
+                        new ObjectIndexMetadata("IntCol", ObjectIndexType.Integer),
+                        new ObjectIndexMetadata("TextCol", ObjectIndexType.String, 15),
+                        new ObjectIndexMetadata("DecCol", ObjectIndexType.Decimal, 7, 2),
+                        new ObjectIndexMetadata("DateTimeCol", ObjectIndexType.DateTime),
+                        new ObjectIndexMetadata("BinCol", ObjectIndexType.Binary, 36)
+                    }));
+
+            Int32 testInt = 3447;
+            String testStr = "Test Value";
+            Decimal testDec = 156.12M;
+            DateTime testDate = new DateTime(2011, 2, 14, 3, 10, 0);
+            Guid testGuid = new Guid("76F5FB10BAEF4DE09578B3EB91FF6653");
+            string testBinStr = DatabaseHelper.ByteToHexString(testGuid.ToByteArray());
+
+            provider.UpsertIndexValues(NameSpace1, ObjectName1,
+                1000,
+                new ObjectIndex("IntCol", testInt),
+                new ObjectIndex("TextCol", testStr),
+                new ObjectIndex("DecCol", testDec),
+                new ObjectIndex("DateTimeCol", testDate),
+                new ObjectIndex("BinCol", testGuid.ToByteArray()));
+
+            provider.UpsertIndexValues(NameSpace1, ObjectName1,
+                1001,
+                new ObjectIndex("IntCol", 500),
+                new ObjectIndex("TextCol", "asdf"),
+                new ObjectIndex("DecCol", 5.4),
+                new ObjectIndex("DateTimeCol", DateTime.UtcNow),
+                new ObjectIndex("BinCol", Guid.NewGuid().ToByteArray()));
+
+            int[] ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("ID", 1000));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("IntCol", testInt));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("TextCol", testStr));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("DecCol", testDec));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("DateTimeCol", testDate));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("BinCol", testGuid.ToByteArray()));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
         }
     }
 }

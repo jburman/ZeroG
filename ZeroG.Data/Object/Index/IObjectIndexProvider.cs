@@ -45,5 +45,7 @@ namespace ZeroG.Data.Object.Index
         void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds);
 
         void Truncate(string nameSpace, string objectName);
+
+        void Close();
     }
 }

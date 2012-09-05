@@ -33,6 +33,7 @@ namespace ZeroG.Data.Database
 {
     public abstract class ObjectIndexProvider : IObjectIndexProvider
     {
+        private IDatabaseService _dbSchema, _dbData;
 
         #region Config settings
         // TODO: make config settings configurable from app.config
@@ -86,16 +87,22 @@ namespace ZeroG.Data.Database
 
         protected virtual IDatabaseService OpenSchema()
         {
-            var db = DatabaseService.GetService(_databaseServiceSchema);
-            db.Open();
-            return db;
+            if (null == _dbSchema || _dbSchema.IsClosed)
+            {
+                _dbSchema = DatabaseService.GetService(_databaseServiceSchema);
+                _dbSchema.Open();
+            }
+            return _dbSchema;
         }
 
         protected virtual IDatabaseService OpenData()
         {
-            var db = DatabaseService.GetService(_databaseServiceData);
-            db.Open();
-            return db;
+            if (null == _dbData || _dbData.IsClosed)
+            {
+                _dbData = DatabaseService.GetService(_databaseServiceData);
+                _dbData.Open();
+            }
+            return _dbData;
         }
 
         protected virtual SQLConstraint CreateSQLConstraint(IDatabaseService db, ObjectIndexMetadata[] indexes, string constraint)
@@ -116,6 +123,20 @@ namespace ZeroG.Data.Database
         public abstract void RemoveIndexValue(string nameSpace, string objectName, int objectId);
         public abstract void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds);
         public abstract void Truncate(string nameSpace, string objectName);
-        public abstract void Dispose();
+        public virtual void Close()
+        {
+            if (null != _dbSchema)
+            {
+                _dbSchema.Dispose();
+            }
+            if (null != _dbData)
+            {
+                _dbData.Dispose();
+            }
+        }
+        public virtual void Dispose()
+        {
+            Close();
+        }
     }
 }

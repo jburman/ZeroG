@@ -118,16 +118,30 @@ WHERE {1}";
                 var sqlConstraint = new StringBuilder();
                 for (int i = 0; indexes.Length > i; i++)
                 {
-                    var idx = indexes[i];
-                    var paramName = "p" + i + idx.Name;
-                    parameters.Add(db.MakeParam(paramName, idx.Value));
-                    if(0 < i) 
+                    if (0 < i)
                     {
                         sqlConstraint.Append(" AND ");
                     }
-                    sqlConstraint.Append(db.MakeQuotedName(idx.Name));
+                    
+                    var idx = indexes[i];
+                    var paramName = "p" + i + idx.Name;
+                    var value = idx.Value;
+                    if (value is byte[])
+                    {
+                        string hexStr = DatabaseHelper.ByteToHexString((byte[])value);
+                        value = hexStr;
+                        sqlConstraint.Append(" LEFT(");
+                        sqlConstraint.Append(db.MakeQuotedName(idx.Name));
+                        sqlConstraint.Append("," + hexStr.Length + ")");
+                    }
+                    else
+                    {
+                        sqlConstraint.Append(db.MakeQuotedName(idx.Name));
+                    }
                     sqlConstraint.Append(" = ");
                     sqlConstraint.Append(db.MakeParamReference(paramName));
+
+                    parameters.Add(db.MakeParam(paramName, value));
                 }
 
                 returnValue = db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.ToString()), parameters.ToArray());
@@ -190,116 +204,63 @@ WHERE {1}";
                 for (int i = 0; indexes.Length > i; i++)
                 {
                     var idx = indexes[i];
-                    var param = db.MakeParam(idx.Name + "_param", idx.Value);
+                    var value = idx.Value;
+                    if (value is byte[])
+                    {
+                        value = DatabaseHelper.ByteToHexString((byte[])value);
+                    }
+                    var param = db.MakeParam(idx.Name + "_param", value);
                     parameters.Add(param);
                 }
                 
                 var sql = new StringBuilder();
 
-                /*INSERT
-    INTO tbl_name (col_name,...)
-    VALUES ()
-    ON DUPLICATE KEY UPDATE
-      col_name=expr
-        */
-
                 sql.Append(@"INSERT INTO ");
                 sql.Append(db.MakeQuotedName(tableName));
                 sql.Append(@" (");
+                sql.Append(db.MakeQuotedName(IDColumn));
                 
                 int paramCount = parameters.Count;
 
-                // 1. generate set of field names for USING AS clause
+                // 1. generate set of field names for INTO clause
+                if(0 < paramCount) 
+                {
+                    for(int i = 0; paramCount > i; i++)
+                    {
+                        var idx = indexes[i];
+                        sql.Append(',');
+                        sql.Append(db.MakeQuotedName(idx.Name));
+                    }
+                }
+                sql.Append(") VALUES (");
+                sql.Append(db.MakeParamReference("recordId"));
+
+                // 2. generate set of values for VALUES clause
+                if(0 < paramCount) 
+                {
+                    for(int i = 0; paramCount > i; i++)
+                    {
+                        sql.Append(',');
+                        sql.Append(db.MakeParamReference(parameters[i].ParameterName));
+                    }
+                }
+                
+                sql.Append(@")
+    ON DUPLICATE KEY UPDATE
+");
+                
                 if(0 < paramCount) 
                 {
                     for(int i = 0; paramCount > i; i++)
                     {
                         var idx = indexes[i];
                         sql.Append(db.MakeQuotedName(idx.Name));
+                        sql.Append(" = ");
+                        sql.Append(db.MakeParamReference(parameters[i].ParameterName));
                         sql.Append(',');
                     }
                     sql.Remove(sql.Length - 1,1);
                 }
-                sql.Append(')');
-
-                // 2. generate set of values for USING VALUES clause
-                if(0 < paramCount) 
-                {
-                    for(int i = 0; paramCount > i; i++)
-                    {
-                        sql.Append('@');
-                        sql.Append(db.EscapeCommandText(parameters[i].ParameterName));
-                        sql.Append(',');
-                    }
-                    sql.Remove(sql.Length - 1,1);
-                }
-                
-                sql.Append(@"))
-    AS source (");
-                
-                
-                
-                sql.Append(@")
-    ON mergeTo.[");
-                
-                sql.Append(IDColumn);
-
-                sql.Append(@"] = @recordId
-WHEN MATCHED THEN
-    UPDATE
-    SET ");
-
-                if(0 < paramCount) 
-                {
-                    for(int i = 0; paramCount > i; i++)
-                    {
-                        var idx = indexes[i];
-                        sql.Append('[');
-                        sql.Append(db.EscapeCommandText(idx.Name));
-                        sql.Append("] = source.[");
-                        sql.Append(db.EscapeCommandText(idx.Name));
-                        sql.Append("],");
-                    }
-                    sql.Remove(sql.Length - 1,1);
-                }
-
-                // 3. generate set of fields for UPDATE SET clause
-                sql.Append(@"
-WHEN NOT MATCHED THEN
-    INSERT ([");
-                
-                sql.Append(IDColumn);
-                sql.Append(@"],");
-                
-                // 4. generate set of fields for INSERT clause
-                if (0 < paramCount)
-                {
-                    for (int i = 0; paramCount > i; i++)
-                    {
-                        var idx = indexes[i];
-                        sql.Append('[');
-                        sql.Append(db.EscapeCommandText(idx.Name));
-                        sql.Append("],");
-                    }
-                    sql.Remove(sql.Length - 1, 1);
-                }
-
-                sql.Append(@")
-    VALUES (@recordId,");
-
-                // 5. generate set of fields for INSERT VALUES clause
-                if (0 < paramCount)
-                {
-                    for (int i = 0; paramCount > i; i++)
-                    {
-                        var idx = indexes[i];
-                        sql.Append("source.[");
-                        sql.Append(db.EscapeCommandText(idx.Name));
-                        sql.Append("],");
-                    }
-                    sql.Remove(sql.Length - 1, 1);
-                }
-                sql.Append(");");
                 
                 parameters.Add(db.MakeParam("recordId", objectId));
 
