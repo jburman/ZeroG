@@ -124,9 +124,11 @@ WHERE {1}";
             return string.Format("[{0}] [{1}]{2} NOT NULL", name, type, length);
         }
 
-        public override int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes)
+        public override int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)
         {
             int[] returnValue = null;
+            bool useOr = ObjectFindLogic.Or == logic;
+            bool useLike = ObjectFindOperator.Like == oper;
 
             using (var db = OpenData())
             {
@@ -136,22 +138,54 @@ WHERE {1}";
                 var sqlConstraint = new StringBuilder();
                 for (int i = 0; indexes.Length > i; i++)
                 {
+                    if (0 < i)
+                    {
+                        if (useOr)
+                        {
+                            sqlConstraint.Append(" OR ");
+                        }
+                        else
+                        {
+                            sqlConstraint.Append(" AND ");
+                        }
+                    }
+
                     var idx = indexes[i];
                     var paramName = "p" + i + idx.Name;
-                    parameters.Add(db.MakeParam(paramName, idx.Value));
-                    if(0 < i) 
+                    var value = idx.Value;
+                    if (value is byte[])
                     {
-                        sqlConstraint.Append(" AND ");
+                        string hexStr = DatabaseHelper.ByteToHexString((byte[])value);
+                        value = hexStr;
+                        sqlConstraint.Append(db.MakeQuotedName(idx.Name));
                     }
-                    sqlConstraint.Append(db.MakeQuotedName(idx.Name));
-                    sqlConstraint.Append(" = ");
-                    sqlConstraint.Append(db.MakeParamReference(paramName));
+                    else
+                    {
+                        sqlConstraint.Append(db.MakeQuotedName(idx.Name));
+                    }
+                    if (useLike)
+                    {
+                        sqlConstraint.Append(' ');
+                        sqlConstraint.Append(db.MakeLikeParamReference(paramName));
+                        parameters.Add(db.MakeLikeParam(paramName, value));
+                    }
+                    else
+                    {
+                        sqlConstraint.Append(" = ");
+                        sqlConstraint.Append(db.MakeParamReference(paramName));
+                        parameters.Add(db.MakeParam(paramName, value));
+                    }
                 }
 
                 returnValue = db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.ToString()), parameters.ToArray());
             }
 
             return returnValue;
+        }
+
+        public override int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes)
+        {
+            return Find(nameSpace, objectName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
         }
 
         public override int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes)

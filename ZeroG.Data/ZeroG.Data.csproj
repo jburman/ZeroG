@@ -63,6 +63,8 @@
     <Compile Include="Database\ObjectIndexProvider.cs" />
     <Compile Include="Object\Config.cs" />
     <Compile Include="Object\Index\IObjectIndexProvider.cs" />
+    <Compile Include="Object\Index\ObjectFindLogic.cs" />
+    <Compile Include="Object\Index\ObjectFindOperator.cs" />
     <Compile Include="Object\Index\ObjectIndexer.cs" />
     <Compile Include="Object\ObjectID.cs" />
     <Compile Include="Object\ObjectIDStore.cs" />

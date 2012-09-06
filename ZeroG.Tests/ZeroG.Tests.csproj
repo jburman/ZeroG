@@ -35,6 +35,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="IKVM.Reflection">
+      <HintPath>..\References\IKVM.Reflection.dll</HintPath>
+    </Reference>
     <Reference Include="MySql.Data, Version=6.3.9.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\References\MySql.Data.dll</HintPath>
@@ -66,11 +69,12 @@
     <Compile Include="Data\Drivers\MySQL\IndexProviderTest.cs" />
     <Compile Include="Data\Drivers\MySQL\OpenTest.cs" />
     <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
+    <Compile Include="Lang\JSON\JSONTokenizerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Data\Drivers\SQLServer\" />
-    <Folder Include="Lang\" />
+    <Folder Include="Scripts\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -92,10 +96,6 @@
       <Project>{71ceb166-19be-45e2-9a38-8342db8c85be}</Project>
       <Name>ZeroG.Lang</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Scripts\MySQLSetup.sql" />
-    <None Include="Scripts\MySQLTearDown.sql" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

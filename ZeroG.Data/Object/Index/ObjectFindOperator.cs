@@ -23,31 +23,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System;
-using ZeroG.Data.Object.Metadata;
-
 namespace ZeroG.Data.Object.Index
 {
-    public interface IObjectIndexProvider : IDisposable
+    public enum ObjectFindOperator
     {
-        int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
-
-        int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes);
-
-        int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes);
-
-        void ProvisionIndex(ObjectMetadata metadata);
-
-        void UnprovisionIndex(string nameSpace, string objectName);
-
-        void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes);
-
-        void RemoveIndexValue(string nameSpace, string objectName, int objectId);
-
-        void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds);
-
-        void Truncate(string nameSpace, string objectName);
-
-        void Close();
+        Equals,
+        Like
     }
 }

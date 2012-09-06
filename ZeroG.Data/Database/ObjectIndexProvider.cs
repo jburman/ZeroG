@@ -116,6 +116,7 @@ namespace ZeroG.Data.Database
         }
 
         public abstract int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
+        public abstract int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes);
         public abstract int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes);
         public abstract void ProvisionIndex(ObjectMetadata metadata);
         public abstract void UnprovisionIndex(string nameSpace, string objectName);

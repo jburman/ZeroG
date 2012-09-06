@@ -1,0 +1,1 @@
+mstest.exe /testcontainer:../bin/Debug/ZeroG.Tests.dll /category:"MySQL"
