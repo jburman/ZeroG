@@ -219,7 +219,10 @@ namespace ZeroG.Data.Object
                         // This call validates the format of the metadata and will throw and exception
                         // if it is invalid.
                         _objectMetadata.StoreMetadata(metadata);
-                        _objectIndexer.ProvisionIndex(metadata);
+                        if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
+                        {
+                            _objectIndexer.ProvisionIndex(metadata);
+                        }
 
                         trans.Complete();
                     }
@@ -241,15 +244,25 @@ namespace ZeroG.Data.Object
             }
             else
             {
-                using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
+                var metadata = GetObjectMetadata(nameSpace, objectName);
+                if (null != metadata)
                 {
-                    _objectIndexer.Truncate(nameSpace, objectName);
-                    _objectIndexer.UnprovisionIndex(nameSpace, objectName);
+                    nameSpace = metadata.NameSpace;
+                    objectName = metadata.ObjectName;
 
-                    _objectStore.Truncate(nameSpace, objectName);
-                    _objectMetadata.RemoveMetadata(nameSpace, objectName);
+                    using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
+                    {
+                        if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
+                        {
+                            _objectIndexer.Truncate(nameSpace, objectName);
+                            _objectIndexer.UnprovisionIndex(nameSpace, objectName);
+                        }
 
-                    trans.Complete();
+                        _objectStore.Truncate(nameSpace, objectName);
+                        _objectMetadata.RemoveMetadata(nameSpace, objectName);
+
+                        trans.Complete();
+                    }
                 }
             }
         }
@@ -298,7 +311,10 @@ namespace ZeroG.Data.Object
             {
                 using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
                 {
-                    _objectIndexer.IndexObject(nameSpace, obj);
+                    if (null != obj.Indexes && 0 < obj.Indexes.Length)
+                    {
+                        _objectIndexer.IndexObject(nameSpace, obj);
+                    }
 
                     _objectStore.Set(nameSpace, obj);
 

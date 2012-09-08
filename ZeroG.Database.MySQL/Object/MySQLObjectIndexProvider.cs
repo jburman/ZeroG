@@ -338,7 +338,7 @@ WHERE {1}";
 
         public override void Truncate(string nameSpace, string objectName)
         {
-            using (var db = OpenData())
+            using (var db = OpenSchema())
             {
                 var tableName = _CreateTableName(db, nameSpace, objectName);
                 var sql = string.Format(SQLStatements.TruncateTable, tableName);

@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using ZeroG.Data.Database.Lang;
+using ZeroG.Data.Object;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
 
@@ -34,6 +35,9 @@ namespace ZeroG.Data.Database
 {
     public abstract class ObjectIndexProvider : IObjectIndexProvider
     {
+        internal static readonly string DefaultSchemaConnection = "ObjectIndexSchema";
+        internal static readonly string DefaultDataAccessConnection = "ObjectIndexData";
+
         private IDatabaseService _dbSchema, _dbData;
 
         #region Config settings
@@ -66,7 +70,7 @@ namespace ZeroG.Data.Database
         #endregion
 
         public ObjectIndexProvider()
-            : this("ObjectIndexSchema", "ObjectIndexData")
+            : this(Config.ObjectIndexSchemaConnection, Config.ObjectIndexDataConnection)
         {
         }
 

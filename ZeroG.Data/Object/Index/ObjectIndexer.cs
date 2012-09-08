@@ -24,7 +24,9 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Configuration;
+using ZeroG.Data.Database;
 using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object.Index
@@ -32,18 +34,27 @@ namespace ZeroG.Data.Object.Index
     internal sealed class ObjectIndexer : IDisposable
     {
         private IObjectIndexProvider _indexer;
+        private static Type _indexerType = null;
 
         public ObjectIndexer()
         {
-            var objectIndexProviderType = Type.GetType(ConfigurationManager.AppSettings[Config.ObjectIndexProviderConfigKey], true);
-
-            if (typeof(IObjectIndexProvider).IsAssignableFrom(objectIndexProviderType))
+            if (null == _indexerType)
             {
-                _indexer = (IObjectIndexProvider)Activator.CreateInstance(objectIndexProviderType);
+                var objectIndexProviderType = Type.GetType(ConfigurationManager.AppSettings[Config.ObjectIndexProviderConfigKey], true);
+
+                if (typeof(IObjectIndexProvider).IsAssignableFrom(objectIndexProviderType))
+                {
+                    _indexer = (IObjectIndexProvider)Activator.CreateInstance(objectIndexProviderType);
+                    _indexerType = objectIndexProviderType;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Unsupported IObjectIndexProvider type: " + objectIndexProviderType.FullName);
+                }
             }
             else
             {
-                throw new InvalidOperationException("Unsupported IObjectIndexProvider type: " + objectIndexProviderType.FullName);
+                _indexer = (IObjectIndexProvider)Activator.CreateInstance(_indexerType);
             }
         }
 

@@ -24,6 +24,7 @@
 #endregion
 
 using System.Configuration;
+using ZeroG.Data.Database;
 
 namespace ZeroG.Data.Object
 {
@@ -31,11 +32,45 @@ namespace ZeroG.Data.Object
     {
         public static readonly string ObjectIndexProviderConfigKey = "ObjectIndexProvider";
 
+
+        private static string _baseDataPath;
         public static string BaseDataPath
         {
             get
             {
-                return ConfigurationManager.AppSettings["ObjectServiceDataDir"];
+                if (null == _baseDataPath)
+                {
+                    _baseDataPath = ConfigurationManager.AppSettings["ObjectServiceDataDir"];
+                }
+                return _baseDataPath;
+            }
+        }
+
+        private static string _objectIndexSchemaConn;
+        public static string ObjectIndexSchemaConnection
+        {
+            get
+            {
+                if (null == _objectIndexSchemaConn)
+                {
+                    _objectIndexSchemaConn = ConfigurationManager.AppSettings["ObjectIndexSchemaConnection"];
+                    _objectIndexSchemaConn = _objectIndexSchemaConn ?? ObjectIndexProvider.DefaultSchemaConnection;
+                }
+                return _objectIndexSchemaConn;
+            }
+        }
+
+        private static string _objectIndexDataConn;
+        public static string ObjectIndexDataConnection
+        {
+            get
+            {
+                if (null == _objectIndexDataConn)
+                {
+                    _objectIndexDataConn = ConfigurationManager.AppSettings["ObjectIndexDataConnection"];
+                    _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
+                }
+                return _objectIndexDataConn;
             }
         }
     }
