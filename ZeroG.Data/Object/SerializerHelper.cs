@@ -69,5 +69,11 @@ namespace ZeroG.Data.Object
             Serializer.Serialize<T>(buffer, value);
             return buffer.ToArray();
         }
+
+        public static T Deserialize<T>(byte[] value)
+        {
+            var buffer = new MemoryStream(value);
+            return Serializer.Deserialize<T>(buffer);
+        }
     }
 }

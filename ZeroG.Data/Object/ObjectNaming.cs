@@ -66,6 +66,11 @@ namespace ZeroG.Data.Object
                 _validNameSpaces.Add(name);
             });
 
+            _objectMetadata.ObjectNameSpaceRemoved += new ObjectMetadatastoreUpdatedEvent((string name) =>
+            {
+                _validNameSpaces.Remove(name);
+            });
+
             _objectMetadata.ObjectMetadataAdded += new ObjectMetadatastoreUpdatedEvent((string name) =>
             {
                 _validNames.Add(name);
@@ -77,13 +82,13 @@ namespace ZeroG.Data.Object
             });
         }
 
-        private static Regex _NameSpaceValidator = new Regex("[a-zA-Z0-9]+(([\\._])[a-zA-Z0-9])*", RegexOptions.Compiled);
+        private static Regex _NameSpaceValidator = new Regex("^([a-zA-Z0-9]+([\\._]?[a-zA-Z0-9])*)$", RegexOptions.Compiled);
         public static bool IsValidNameSpace(string nameSpace)
         {
             return !string.IsNullOrEmpty(nameSpace) && 3 < nameSpace.Length && 30 > nameSpace.Length && _NameSpaceValidator.IsMatch(nameSpace);
         }
 
-        private static Regex _ObjectNameValidator = new Regex("[a-zA-Z0-9_]+", RegexOptions.Compiled);
+        private static Regex _ObjectNameValidator = new Regex("^([a-zA-Z0-9_]+)$", RegexOptions.Compiled);
         public static bool IsValidObjectName(string objectName)
         {
             return !string.IsNullOrEmpty(objectName) && 3 < objectName.Length && 30 > objectName.Length && _ObjectNameValidator.IsMatch(objectName);
@@ -136,6 +141,22 @@ namespace ZeroG.Data.Object
         public static byte[] CreateFullObjectKey(string objectFullName)
         {
             return SerializerHelper.Serialize(objectFullName);
+        }
+
+        public static string GetNameSpaceFromFullObjectName(string fullObjectName)
+        {
+            string returnVal = null;
+
+            if (!string.IsNullOrEmpty(fullObjectName))
+            {
+                var idx = fullObjectName.IndexOf('.');
+                if (-1 != idx)
+                {
+                    returnVal = fullObjectName.Substring(0, idx);
+                }
+            }
+
+            return returnVal;
         }
 
         internal static string GetCacheKeyName(string objectName)

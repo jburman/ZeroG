@@ -26,6 +26,7 @@
 using ProtoBuf;
 using RazorDB;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -38,6 +39,7 @@ namespace ZeroG.Data.Object.Metadata
         private KeyValueStore _nsStore;
 
         public event ObjectMetadatastoreUpdatedEvent ObjectNameSpaceAdded;
+        public event ObjectMetadatastoreUpdatedEvent ObjectNameSpaceRemoved;
         public event ObjectMetadatastoreUpdatedEvent ObjectMetadataAdded;
         public event ObjectMetadatastoreUpdatedEvent ObjectMetadataRemoved;
 
@@ -83,6 +85,57 @@ namespace ZeroG.Data.Object.Metadata
                 else
                 {
                     throw new ArgumentException("The name space is invalid. Please ensure it contains only alphanumeric characters and periods or underscores.");
+                }
+            }
+        }
+
+        public ObjectNameSpaceConfig GetNameSpace(string nameSpace)
+        {
+            // check reserved namespace
+            if (ObjectNaming.DefaultNameSpace.Equals(nameSpace, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new ArgumentException("The specified name space is reserved.");
+            }
+            else
+            {
+                var nsKey = SerializerHelper.Serialize(nameSpace);
+                var data = _nsStore.Get(nsKey);
+                if (null == data)
+                {
+                    return null;
+                }
+                else
+                {
+                    return SerializerHelper.Deserialize<ObjectNameSpaceConfig>(data);
+                }
+            }
+        }
+
+        public void RemoveNameSpace(string nameSpace)
+        {
+            // check reserved namespace
+            if (ObjectNaming.DefaultNameSpace.Equals(nameSpace, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new ArgumentException("The specified name space is reserved.");
+            }
+            else
+            {
+                var nsKey = SerializerHelper.Serialize(nameSpace);
+
+                if (null != _nsStore.Get(nsKey))
+                {
+                    if (0 == EnumerateObjectNames(nameSpace).Count())
+                    {
+                        _nsStore.Delete(nsKey);
+                        if (null != ObjectNameSpaceRemoved)
+                        {
+                            ObjectNameSpaceRemoved(nameSpace);
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Name space still contains objects. All objects must be unprovisioned before removing the name space.");
+                    }
                 }
             }
         }
@@ -147,6 +200,19 @@ namespace ZeroG.Data.Object.Metadata
             foreach (var e in _store.Enumerate())
             {
                 yield return encoding.GetString(e.Key);
+            }
+        }
+
+        public IEnumerable<string> EnumerateObjectNames(string nameSpace)
+        {
+            var encoding = Encoding.UTF8;
+            foreach (var e in _store.Enumerate())
+            {
+                string objFullName = encoding.GetString(e.Key);
+                if (nameSpace.Equals(ObjectNaming.GetNameSpaceFromFullObjectName(objFullName), StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return objFullName;
+                }
             }
         }
 

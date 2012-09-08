@@ -31,7 +31,7 @@ namespace ZeroG.Data.Object
     [DataContract]
     public sealed class ObjectNameSpaceConfig
     {
-        private ObjectNameSpaceConfig()
+        public ObjectNameSpaceConfig()
         {
         }
 

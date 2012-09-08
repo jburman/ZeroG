@@ -173,6 +173,24 @@ namespace ZeroG.Data.Object
             _objectMetadata.CreateNameSpace(nameSpaceConfig);
         }
 
+        public ObjectNameSpaceConfig GetNameSpace(string nameSpace)
+        {
+            if (null == nameSpace)
+            {
+                throw new ArgumentNullException("nameSpace");
+            }
+            return _objectMetadata.GetNameSpace(nameSpace);
+        }
+
+        public void RemoveNameSpace(string nameSpace)
+        {
+            if (null == nameSpace)
+            {
+                throw new ArgumentNullException("nameSpace");
+            }
+            _objectMetadata.RemoveNameSpace(nameSpace);
+        }
+
         public void ProvisionObjectStore(ObjectMetadata metadata)
         {
             if (null == metadata)

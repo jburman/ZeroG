@@ -70,6 +70,7 @@
     <Compile Include="Data\Drivers\MySQL\OpenTest.cs" />
     <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
     <Compile Include="Lang\JSON\JSONTokenizerTest.cs" />
+    <Compile Include="Object\ObjectMetadataTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
