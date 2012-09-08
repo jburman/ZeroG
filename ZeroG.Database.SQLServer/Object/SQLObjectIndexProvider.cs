@@ -167,7 +167,7 @@ WHERE {1}";
                     {
                         sqlConstraint.Append(' ');
                         sqlConstraint.Append(db.MakeLikeParamReference(paramName));
-                        parameters.Add(db.MakeLikeParam(paramName, value));
+                        parameters.Add(ObjectIndexProvider.MakeLikeParameter(db, paramName, value));
                     }
                     else
                     {

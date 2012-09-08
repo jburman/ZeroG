@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using ZeroG.Data.Database.Lang;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
@@ -83,6 +84,45 @@ namespace ZeroG.Data.Database
 
             _databaseServiceSchema = databaseServiceSchema;
             _databaseServiceData = databaseServiceData;
+        }
+
+        public static IDbDataParameter MakeLikeParameter(IDatabaseService db, string paramName, object value)
+        {
+            IDbDataParameter dbParam = null;
+
+            if (null != value && value is string)
+            {
+                var strVal = (string)value;
+                bool wildCardPrefix = false;
+                bool wildCardSuffix = false;
+                if (strVal.StartsWith("%"))
+                {
+                    wildCardPrefix = true;
+                    strVal = strVal.TrimStart('%');
+                }
+                if (strVal.EndsWith("%") && !strVal.EndsWith("\\%"))
+                {
+                    wildCardSuffix = true;
+                    strVal = strVal.TrimEnd('%');
+                }
+                dbParam = db.MakeLikeParam(paramName, strVal);
+                strVal = (string)dbParam.Value;
+                if (wildCardPrefix)
+                {
+                    strVal = "%" + strVal;
+                }
+                if (wildCardSuffix)
+                {
+                    strVal = strVal + "%";
+                }
+                dbParam.Value = strVal;
+            }
+            else
+            {
+                dbParam = db.MakeLikeParam(paramName, value);
+            }
+
+            return dbParam;
         }
 
         protected virtual IDatabaseService OpenSchema()

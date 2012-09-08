@@ -209,52 +209,68 @@ namespace ZeroG.Data.Database.Lang
         private void _GenerateSQL(StringBuilder sql, List<IDataParameter> parameters, Constraint constraint)
         {
             sql.Append(" " + _db.MakeQuotedName(constraint.Name) + " ");
-            string paramName = "";
 
-            sql.Append(_operatorsReverse[constraint.Operator]);
-            Type convertToType = null;
-            if (_typeMappings.ContainsKey(constraint.Name))
+            if (null == constraint.Value)
             {
-                convertToType = _typeMappings[constraint.Name];
+                sql.Append(_operatorsReverse[constraint.Operator]);
+                sql.Append(" NULL");
             }
-
-            if (ConstraintOperator.In == constraint.Operator || ConstraintOperator.NotIn == constraint.Operator)
+            else
             {
-                sql.Append(" (");
-                if (null != constraint.ArrayValues && 0 < constraint.ArrayValues.Count)
+                string paramName = "";
+                bool useLike = false;
+
+                if (ConstraintOperator.Like == constraint.Operator)
                 {
-                    foreach (var val in constraint.ArrayValues)
+                    useLike = true;
+                }
+                else if (ConstraintOperator.NotLike == constraint.Operator)
+                {
+                    useLike = true;
+                    sql.Append("NOT ");
+                }
+                else
+                {
+                    sql.Append(_operatorsReverse[constraint.Operator]);
+                }
+
+                Type convertToType = null;
+                if (_typeMappings.ContainsKey(constraint.Name))
+                {
+                    convertToType = _typeMappings[constraint.Name];
+                }
+
+                if (ConstraintOperator.In == constraint.Operator || ConstraintOperator.NotIn == constraint.Operator)
+                {
+                    sql.Append(" (");
+                    if (null != constraint.ArrayValues && 0 < constraint.ArrayValues.Count)
+                    {
+                        foreach (var val in constraint.ArrayValues)
+                        {
+                            paramName = "p_" + parameters.Count;
+                            var paramVal = val;
+                            if (null != convertToType)
+                            {
+                                paramVal = Convert.ChangeType(paramVal, convertToType);
+                            }
+                            parameters.Add(_db.MakeParam(paramName, paramVal));
+                            sql.Append(_db.MakeParamReference(paramName));
+                            sql.Append(',');
+                        }
+                        sql.Remove(sql.Length - 1, 1);
+                    }
+                    else
                     {
                         paramName = "p_" + parameters.Count;
-                        var paramVal = val;
+                        var paramVal = constraint.Value;
                         if (null != convertToType)
                         {
                             paramVal = Convert.ChangeType(paramVal, convertToType);
                         }
                         parameters.Add(_db.MakeParam(paramName, paramVal));
                         sql.Append(_db.MakeParamReference(paramName));
-                        sql.Append(',');
                     }
-                    sql.Remove(sql.Length - 1, 1);
-                }
-                else
-                {
-                    paramName = "p_" + parameters.Count;
-                    var paramVal = constraint.Value;
-                    if (null != convertToType)
-                    {
-                        paramVal = Convert.ChangeType(paramVal, convertToType);
-                    }
-                    parameters.Add(_db.MakeParam(paramName, paramVal));
-                    sql.Append(_db.MakeParamReference(paramName));
-                }
-                sql.Append(")");
-            }
-            else
-            {
-                if (null == constraint.Value)
-                {
-                    sql.Append("NULL");
+                    sql.Append(")");
                 }
                 else
                 {
@@ -264,8 +280,17 @@ namespace ZeroG.Data.Database.Lang
                         paramVal = Convert.ChangeType(paramVal, convertToType);
                     }
                     paramName = "p_" + parameters.Count;
-                    parameters.Add(_db.MakeParam(paramName, paramVal));
-                    sql.Append(_db.MakeParamReference(paramName));
+
+                    if (useLike)
+                    {
+                        parameters.Add(ObjectIndexProvider.MakeLikeParameter(_db, paramName, paramVal));
+                        sql.Append(_db.MakeLikeParamReference(paramName));
+                    }
+                    else
+                    {
+                        parameters.Add(_db.MakeParam(paramName, paramVal));
+                        sql.Append(_db.MakeParamReference(paramName));
+                    }
                 }
             }
 
