@@ -214,6 +214,12 @@ namespace ZeroG.Data.Object
                         throw new ArgumentException("Unknown namespace: " + metadata.NameSpace);
                     }
 
+                    // do not allow existing object store to be re-provisioned
+                    if (ObjectNameExists(metadata.NameSpace, metadata.ObjectName))
+                    {
+                        throw new ArgumentException("Object store already exists: " + ObjectNaming.CreateFullObjectKey(metadata.NameSpace, metadata.ObjectName));
+                    }
+
                     using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
                     {
                         // This call validates the format of the metadata and will throw and exception

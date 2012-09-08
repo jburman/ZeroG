@@ -9,41 +9,19 @@ namespace ZeroG.Tests.Object
     [TestClass]
     public class ObjectMetadataTest
     {
-        public static readonly string NameSpace1 = "ZG_testNS1";
-        public static readonly string ObjectName1 = "ZG_testObj1";
+        public static readonly string NameSpace1 = ObjectTestHelper.NameSpace1;
+        public static readonly string ObjectName1 = ObjectTestHelper.ObjectName1;
 
         [TestInitialize]
         public void PreTest()
         {
-            using (var svc = new ObjectService())
-            {
-                if (svc.NameSpaceExists(NameSpace1))
-                {
-                    if (svc.ObjectNameExists(NameSpace1, ObjectName1))
-                    {
-                        svc.UnprovisionObjectStore(NameSpace1, ObjectName1);
-                    }
-
-                    svc.RemoveNameSpace(NameSpace1);
-                }
-            }
+            ObjectTestHelper.CleanTestObjects();
         }
 
         [TestCleanup]
         public void PostTest()
         {
-            using (var svc = new ObjectService())
-            {
-                if (svc.NameSpaceExists(NameSpace1))
-                {
-                    if (svc.ObjectNameExists(NameSpace1, ObjectName1))
-                    {
-                        svc.UnprovisionObjectStore(NameSpace1, ObjectName1);
-                    }
-
-                    svc.RemoveNameSpace(NameSpace1);
-                }
-            }
+            ObjectTestHelper.CleanTestObjects();
         }
 
         #region Name Space tests
@@ -180,6 +158,25 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(7u, metadata.Indexes[2].Precision);
                 Assert.AreEqual(3u, metadata.Indexes[2].Scale);
 
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void ProvisionDuplicateObjectStore()
+        {
+            using (var svc = new ObjectService())
+            {
+                Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(NameSpace1, ObjectName1));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(NameSpace1, ObjectName1));
             }
         }
 
