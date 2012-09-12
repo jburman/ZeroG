@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ZeroG.Data.Object;
+using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Tests.Object
@@ -139,6 +140,59 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void StoreAndRetrieveByIndex()
         {
+            using (var svc = new ObjectService())
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[] 
+                        {
+                            new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                        }));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var intIndex1 = 5;
+                var intIndex2 = 12500;
+                var strIndex1 = "asdf";
+                var strIndex2 = "index test val";
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        new ObjectIndex("IntIndex1", intIndex1),
+                        new ObjectIndex("StrIndex1", strIndex1)
+                    }
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        new ObjectIndex("IntIndex1", intIndex2),
+                        new ObjectIndex("StrIndex1", strIndex2)
+                    }
+                });
+
+                var findVals = svc.Find(ns, obj, new ObjectIndex[]
+                {
+                    new ObjectIndex("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+            }
         }
     }
 }

@@ -53,7 +53,12 @@ namespace ZeroG.Data.Object
 
         public bool HasID()
         {
-            return ObjectID.HasID(ID, UniqueID);
+            return ObjectID.HasID(ID);
+        }
+
+        public bool HasUniqueID()
+        {
+            return ObjectID.HasUniqueID(UniqueID);
         }
     }
 }

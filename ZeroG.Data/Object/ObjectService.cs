@@ -302,8 +302,12 @@ namespace ZeroG.Data.Object
             if (!obj.HasID())
             {
                 objId = _objectIDStore.GetNextID(objNameKey);
-                objUniqueId = Guid.NewGuid().ToByteArray();
                 obj.ID = objId;
+            }
+
+            if (!obj.HasUniqueID())
+            {
+                objUniqueId = Guid.NewGuid().ToByteArray();
                 obj.UniqueID = objUniqueId;
             }
 

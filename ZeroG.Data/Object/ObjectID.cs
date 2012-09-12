@@ -37,12 +37,22 @@ namespace ZeroG.Data.Object
 
         public bool HasID()
         {
-            return HasID(ID, UniqueID);
+            return ObjectID.HasID(ID);
         }
 
-        internal static bool HasID(int id, byte[] uniqueId)
+        public bool HasUniqueID()
         {
-            return -1 != id && null != uniqueId;
+            return ObjectID.HasUniqueID(UniqueID);
+        }
+
+        internal static bool HasID(int id)
+        {
+            return -1 != id;
+        }
+
+        internal static bool HasUniqueID(byte[] uniqueId)
+        {
+            return null != uniqueId;
         }
     }
 }
