@@ -31,6 +31,8 @@ namespace ZeroG.Data.Object.Index
 {
     public interface IObjectIndexProvider : IDisposable
     {
+        bool Exists(string nameSpace, string objectName);
+
         int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
 
         int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes);

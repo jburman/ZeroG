@@ -3,10 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using ZeroG.Data.Object;
-using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
+using ZeroG.Data.Object.Index;
 
 namespace ZeroG.Tests.Object
 {
@@ -26,6 +25,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         public void StoreAndRetrieve()
         {
             using (var svc = new ObjectService())
@@ -102,6 +102,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         public void GetNonExistingObject()
         {
             using (var svc = new ObjectService())
@@ -138,6 +139,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         public void StoreAndRetrieveByIndex()
         {
             using (var svc = new ObjectService())
@@ -158,10 +160,13 @@ namespace ZeroG.Tests.Object
 
                 var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
                 var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var val3 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
                 var intIndex1 = 5;
                 var intIndex2 = 12500;
+                var intIndex3 = -100;
                 var strIndex1 = "asdf";
                 var strIndex2 = "index test val";
+                var strIndex3 = "zzyyxx";
 
                 var objID1 = svc.Store(ns, new PersistentObject()
                 {
@@ -185,13 +190,104 @@ namespace ZeroG.Tests.Object
                     }
                 });
 
-                var findVals = svc.Find(ns, obj, new ObjectIndex[]
+                var objID3 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val3.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        new ObjectIndex("IntIndex1", intIndex3),
+                        new ObjectIndex("StrIndex1", strIndex3)
+                    }
+                });
+
+                // test a single index lookup using And
+                var findVals = svc.FindWhereEqualsAnd(ns, obj, new ObjectIndex[]
                 {
                     new ObjectIndex("IntIndex1", 12500)
                 }).ToArray();
 
                 Assert.AreEqual(1, findVals.Length);
                 Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test two index lookups using And
+                findVals = svc.FindWhereEqualsAnd(ns, obj, new ObjectIndex[]
+                {
+                    new ObjectIndex("StrIndex1", "index test val"),
+                    new ObjectIndex("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test a single lookup using Or
+                findVals = svc.FindWhereEqualsOr(ns, obj, new ObjectIndex[]
+                {
+                    new ObjectIndex("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test two index lookups using Or
+                findVals = svc.FindWhereEqualsOr(ns, obj, new ObjectIndex[]
+                {
+                    new ObjectIndex("IntIndex1", 12500),
+                    new ObjectIndex("StrIndex1", "asdf")
+                }).ToArray();
+
+                Assert.AreEqual(2, findVals.Length);
+                var findVal1 = new Guid(findVals[0]);
+                var findVal2 = new Guid(findVals[1]);
+                Assert.IsFalse(findVal1 == findVal2);
+                Assert.IsTrue(findVal1 == val1 || findVal1 == val2);
+                Assert.IsTrue(findVal2 == val1 || findVal2 == val2);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void StoreAndRetrieveManyObjects()
+        {
+            using (var svc = new ObjectService())
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                int ObjCount = 100000;
+
+                var val1 = new Guid("{8AD7F9E4-B2B8-4511-B520-08914B999044}").ToByteArray();
+
+                // store objects
+                for (int i = 0; ObjCount > i; i++)
+                {
+                    var storeObj = new PersistentObject()
+                    {
+                        Name = obj,
+                        ID = i,
+                        Value = val1
+                    };
+                    svc.Store(ns, storeObj);
+                }
+
+                // retrieve objects
+                int count = 0;
+                for (int i = 0; ObjCount > i; i++)
+                {
+                    var getObj = svc.Get(ns, obj, i);
+                    if (null != getObj)
+                    {
+                        ++count;
+                    }
+                }
+
+                Assert.AreEqual(ObjCount, count);
             }
         }
     }

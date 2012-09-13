@@ -38,6 +38,8 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 {
     internal class SQLStatements
     {
+        public static readonly string TableExists = @"SHOW TABLES LIKE '{0}'";
+
         public static readonly string CreateTableIfNotExists = @"CREATE TABLE IF NOT EXISTS `{0}`(
 	    {1}
 	) ENGINE = InnoDB CHARACTER SET utf8 COLLATE utf8_general_ci";
@@ -104,6 +106,26 @@ WHERE {1}";
             }
 
             return string.Format("`{0}` {1}{2} NOT NULL", name, type, length);
+        }
+
+        public override bool Exists(string nameSpace, string objectName)
+        {
+            bool returnValue = false;
+
+            using (var db = OpenSchema())
+            {
+                var tableName = _CreateTableName(db, nameSpace, objectName);
+
+                using (var reader = db.ExecuteReader(string.Format(SQLStatements.TableExists, tableName)))
+                {
+                    if (reader.Read())
+                    {
+                        returnValue = true;
+                    }
+                }
+            }
+
+            return returnValue;
         }
 
         public override int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)

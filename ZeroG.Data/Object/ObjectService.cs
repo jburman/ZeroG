@@ -260,12 +260,16 @@ namespace ZeroG.Data.Object
                     {
                         if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
                         {
-                            _objectIndexer.Truncate(nameSpace, objectName);
-                            _objectIndexer.UnprovisionIndex(nameSpace, objectName);
+                            if (_objectIndexer.Exists(nameSpace, objectName))
+                            {
+                                _objectIndexer.Truncate(nameSpace, objectName);
+                                _objectIndexer.UnprovisionIndex(nameSpace, objectName);
+                            }
                         }
 
                         _objectStore.Truncate(nameSpace, objectName);
                         _objectMetadata.RemoveMetadata(nameSpace, objectName);
+                        _objectIDStore.Reset(ObjectNaming.CreateFullObjectKey(nameSpace, objectName));
 
                         trans.Complete();
                     }
@@ -362,13 +366,71 @@ namespace ZeroG.Data.Object
             return _objectStore.GetByUniqueID(nameSpace, objectName, uniqueId);
         }
 
-        public IEnumerable<byte[]> Find(string nameSpace, string objectName, ObjectIndex[] indexes)
+        public IEnumerable<byte[]> Find(string nameSpace, string objectName, string constraint)
         {
-            var objectIds = _objectIndexer.Find(nameSpace, objectName, indexes);
+            _ValidateArguments(nameSpace, objectName);
+
+            var metadata = _objectMetadata.GetMetadata(ObjectNaming.CreateFullObjectName(nameSpace, objectName));
+
+            if (null == metadata)
+            {
+                throw new InvalidOperationException("Metadata not found for object: " + ObjectNaming.CreateFullObjectName(nameSpace, objectName));
+            }
+
+            var objectIds = _objectIndexer.Find(nameSpace, objectName, constraint, metadata.Indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(nameSpace, objectName, objectId);
             }
+        }
+
+        public IEnumerable<byte[]> FindWhereEqualsAnd(string nameSpace, string objectName, ObjectIndex[] indexes)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectIds = _Find(nameSpace, objectName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
+            foreach (var objectId in objectIds)
+            {
+                yield return _objectStore.Get(nameSpace, objectName, objectId);
+            }
+        }
+
+        public IEnumerable<byte[]> FindWhereLikeAnd(string nameSpace, string objectName, ObjectIndex[] indexes)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectIds = _Find(nameSpace, objectName, ObjectFindLogic.And, ObjectFindOperator.Like, indexes);
+            foreach (var objectId in objectIds)
+            {
+                yield return _objectStore.Get(nameSpace, objectName, objectId);
+            }
+        }
+
+        public IEnumerable<byte[]> FindWhereEqualsOr(string nameSpace, string objectName, ObjectIndex[] indexes)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectIds = _Find(nameSpace, objectName, ObjectFindLogic.Or, ObjectFindOperator.Equals, indexes);
+            foreach (var objectId in objectIds)
+            {
+                yield return _objectStore.Get(nameSpace, objectName, objectId);
+            }
+        }
+
+        public IEnumerable<byte[]> FindWhereLikeOr(string nameSpace, string objectName, ObjectIndex[] indexes)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectIds = _Find(nameSpace, objectName, ObjectFindLogic.Or, ObjectFindOperator.Like, indexes);
+            foreach (var objectId in objectIds)
+            {
+                yield return _objectStore.Get(nameSpace, objectName, objectId);
+            }
+        }
+
+        internal int[] _Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
+        {
+            return _objectIndexer.Find(nameSpace, objectName, logic, oper, indexes);
         }
 
         public void Remove(string nameSpace, string objectName, int id)

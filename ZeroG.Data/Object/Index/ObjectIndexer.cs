@@ -75,9 +75,19 @@ namespace ZeroG.Data.Object.Index
             return true;
         }
 
-        public int[] Find(string nameSpace, string objectName, ObjectIndex[] indexes)
+        public bool Exists(string nameSpace, string objectName)
         {
-            return _indexer.Find(nameSpace, objectName, indexes);
+            return _indexer.Exists(nameSpace, objectName);
+        }
+
+        internal int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
+        {
+            return _indexer.Find(nameSpace, objectName, logic, oper, indexes);
+        }
+
+        public int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            return _indexer.Find(nameSpace, objectName, constraint, indexes);
         }
 
         public void IndexObject(string nameSpace, PersistentObject obj)

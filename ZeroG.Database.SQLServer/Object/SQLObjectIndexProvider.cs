@@ -38,27 +38,29 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 {
     internal class SQLStatements
     {
+        public static readonly string TableExists = @"select COUNT(*) from sysobjects where name='{0}' and xtype='U'";
+
         public static readonly string CreateTableIfNotExists = @"IF NOT EXISTS (select * from sysobjects where name='{0}' and xtype='U')
-    CREATE TABLE [{0}](
+    CREATE TABLE [ZeroG].[{0}](
 	    {1}
 	CONSTRAINT [PK_{0}] PRIMARY KEY CLUSTERED 
 	    ([ID] ASC)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [{2}]
 	) ON [{2}]";
 
         public static readonly string CreateIndex = @"IF EXISTS (select * from sysobjects where name='{0}' and xtype='U')
-	CREATE NONCLUSTERED INDEX [IDX_{0}] ON [{0}](
+	CREATE NONCLUSTERED INDEX [IDX_{0}] ON [ZeroG].[{0}](
 		{1}
 	)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [{2}]";
 
         public static readonly string DropTableIfExists = @"IF EXISTS (select * from sysobjects where name='{0}' and xtype='U')
-    DROP TABLE [{0}]";
+    DROP TABLE [ZeroG].[{0}]";
 
-        public static readonly string Find = @"SELECT [ID] FROM [{0}]
+        public static readonly string Find = @"SELECT [ID] FROM [ZeroG].[{0}]
 WHERE {1}";
 
-        public static string RemoveIndex = @"DELETE FROM [{0}] WHERE [{1}] IN ({2})";
+        public static string RemoveIndex = @"DELETE FROM [ZeroG].[{0}] WHERE [{1}] IN ({2})";
 
-        public static readonly string TruncateTable = "TRUNCATE TABLE [{0}]";
+        public static readonly string TruncateTable = "TRUNCATE TABLE [ZeroG].[{0}]";
     }
 
     public class SQLObjectIndexProvider : ObjectIndexProvider
@@ -122,6 +124,18 @@ WHERE {1}";
             }
 
             return string.Format("[{0}] [{1}]{2} NOT NULL", name, type, length);
+        }
+
+        public override bool Exists(string nameSpace, string objectName)
+        {
+            bool returnValue = false;
+
+            using (var db = OpenSchema())
+            {
+                returnValue = 0 < db.ExecuteScalar<int>(string.Format(SQLStatements.TableExists, _CreateTableName(db, nameSpace, objectName)), 0);
+            }
+
+            return returnValue;
         }
 
         public override int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)
@@ -245,45 +259,45 @@ WHERE {1}";
                     var param = db.MakeParam(idx.Name + "_param", idx.Value);
                     parameters.Add(param);
                 }
-                
+
                 var sql = new StringBuilder();
 
-                sql.Append(@"MERGE ");
+                sql.Append(@"MERGE [ZeroG].");
                 sql.Append(db.MakeQuotedName(tableName));
                 sql.Append(@" WITH(HOLDLOCK) AS mergeTo
 USING (VALUES (");
-                
+
                 int paramCount = parameters.Count;
 
                 // 1. generate set of values for USING VALUES clause
-                if(0 < paramCount) 
+                if (0 < paramCount)
                 {
-                    for(int i = 0; paramCount > i; i++)
+                    for (int i = 0; paramCount > i; i++)
                     {
                         sql.Append(db.MakeParamReference(parameters[i].ParameterName));
                         sql.Append(',');
                     }
-                    sql.Remove(sql.Length - 1,1);
+                    sql.Remove(sql.Length - 1, 1);
                 }
-                
+
                 sql.Append(@"))
     AS source (");
-                
+
                 // 2. generate set of field names for USING AS clause
-                if(0 < paramCount) 
+                if (0 < paramCount)
                 {
-                    for(int i = 0; paramCount > i; i++)
+                    for (int i = 0; paramCount > i; i++)
                     {
                         var idx = indexes[i];
                         sql.Append(db.MakeQuotedName(idx.Name));
                         sql.Append(',');
                     }
-                    sql.Remove(sql.Length - 1,1);
+                    sql.Remove(sql.Length - 1, 1);
                 }
-                
+
                 sql.Append(@")
     ON mergeTo.");
-                
+
                 sql.Append(db.MakeQuotedName(IDColumn));
 
                 sql.Append(@" = ");
@@ -293,9 +307,9 @@ WHEN MATCHED THEN
     UPDATE
     SET ");
 
-                if(0 < paramCount) 
+                if (0 < paramCount)
                 {
-                    for(int i = 0; paramCount > i; i++)
+                    for (int i = 0; paramCount > i; i++)
                     {
                         var idx = indexes[i];
                         sql.Append(db.MakeQuotedName(idx.Name));
@@ -303,7 +317,7 @@ WHEN MATCHED THEN
                         sql.Append(db.MakeQuotedName(idx.Name));
                         sql.Append(",");
                     }
-                    sql.Remove(sql.Length - 1,1);
+                    sql.Remove(sql.Length - 1, 1);
                 }
 
                 // 3. generate set of fields for UPDATE SET clause
@@ -313,7 +327,7 @@ WHEN NOT MATCHED THEN
 
                 sql.Append(db.MakeQuotedName(IDColumn));
                 sql.Append(@",");
-                
+
                 // 4. generate set of fields for INSERT clause
                 if (0 < paramCount)
                 {
@@ -346,7 +360,7 @@ WHEN NOT MATCHED THEN
                     sql.Remove(sql.Length - 1, 1);
                 }
                 sql.Append(");");
-                
+
                 parameters.Add(db.MakeParam("recordId", objectId));
 
                 db.ExecuteNonQuery(sql.ToString(), parameters.ToArray());
@@ -403,7 +417,7 @@ WHEN NOT MATCHED THEN
 
         public override void Truncate(string nameSpace, string objectName)
         {
-            using (var db = OpenData())
+            using (var db = OpenSchema())
             {
                 var tableName = _CreateTableName(db, nameSpace, objectName);
                 var sql = string.Format(SQLStatements.TruncateTable, tableName);

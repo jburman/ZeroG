@@ -95,6 +95,7 @@ namespace ZeroG.Tests.Object
         #region Object Metadata tests
 
         [TestMethod]
+        [TestCategory("Core")]
         public void ProvisionObjectStoreNoIndexes()
         {
             using (var svc = new ObjectService())
@@ -119,6 +120,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         public void ProvisionObjectStoreWithIndexes()
         {
             using (var svc = new ObjectService())
@@ -163,6 +165,7 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
+        [TestCategory("Core")]
         public void ProvisionDuplicateObjectStore()
         {
             using (var svc = new ObjectService())
