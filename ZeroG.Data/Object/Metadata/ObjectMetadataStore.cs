@@ -162,9 +162,8 @@ namespace ZeroG.Data.Object.Metadata
 
             var fullObjName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
             var objKey = SerializerHelper.Serialize(fullObjName);
-            var buffer = new MemoryStream();
-            Serializer.Serialize<ObjectMetadata>(buffer, metadata);
-            _store.Set(objKey, buffer.ToArray());
+            var metadataVal = SerializerHelper.Serialize<ObjectMetadata>(metadata);
+            _store.Set(objKey, metadataVal);
 
             if (null != ObjectMetadataAdded)
             {
@@ -191,7 +190,7 @@ namespace ZeroG.Data.Object.Metadata
         {
             var objKey = ObjectNaming.CreateFullObjectKey(objectFullName);
             var value = _store.Get(objKey);
-            return Serializer.Deserialize<ObjectMetadata>(new MemoryStream(value));
+            return SerializerHelper.Deserialize<ObjectMetadata>(value);
         }
 
         public IEnumerable<string> EnumerateObjectNames()

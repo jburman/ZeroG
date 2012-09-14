@@ -51,6 +51,11 @@ namespace ZeroG.Data.Object
             return BitConverter.GetBytes(id);
         }
 
+        public static byte[] Serialize(int id)
+        {
+            return BitConverter.GetBytes(id);
+        }
+
         public static byte[] Serialize(Guid id)
         {
             if (null == id)
