@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Transactions;
+using ZeroG.Data.Object.Cache;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
 
@@ -39,8 +40,10 @@ namespace ZeroG.Data.Object
         private ObjectMetadataStore _objectMetadata;
         private ObjectNaming _objectNaming;
         private ObjectIDStore _objectIDStore;
+        private ObjectVersionStore _objectVersions;
         private ObjectStore _objectStore;
         private ObjectIndexer _objectIndexer;
+        private ObjectCache _cache;
 
         private List<IDisposable> _assignments;
 
@@ -60,13 +63,20 @@ namespace ZeroG.Data.Object
             _objectMetadata = new ObjectMetadataStore();
             _objectNaming = new ObjectNaming(_objectMetadata);
             _objectIDStore = new ObjectIDStore();
+            _objectVersions = new ObjectVersionStore(_objectMetadata);
             _objectStore = new ObjectStore(_objectMetadata);
             _objectIndexer = new ObjectIndexer();
 
             _assignments.Add(_objectMetadata);
             _assignments.Add(_objectIDStore);
+            _assignments.Add(_objectVersions);
             _assignments.Add(_objectStore);
             _assignments.Add(_objectIndexer);
+
+            if (Config.CacheEnabled)
+            {
+                _cache = new ObjectCache(_objectMetadata, _objectVersions);
+            }
         }
 
         #endregion

@@ -75,6 +75,38 @@ namespace ZeroG.Data.Object
             return buffer.ToArray();
         }
 
+        public static byte[] Deserialize(string value)
+        {
+            if (null != value)
+            {
+                return _utf8.GetBytes(value);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public static string DeserializeString(byte[] val)
+        {
+            return _utf8.GetString(val);
+        }
+
+        public static int DeserializeInt32(byte[] val)
+        {
+            return BitConverter.ToInt32(val, 0);
+        }
+
+        public static uint DeserializeUInt32(byte[] val)
+        {
+            return BitConverter.ToUInt32(val, 0);
+        }
+
+        public static Guid DeserializeGuid(byte[] val)
+        {
+            return new Guid(val);
+        }
+
         public static T Deserialize<T>(byte[] value)
         {
             var buffer = new MemoryStream(value);

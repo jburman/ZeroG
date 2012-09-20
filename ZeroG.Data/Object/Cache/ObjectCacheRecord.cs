@@ -23,42 +23,16 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System.Runtime.Serialization;
+using System.Collections.Generic;
 
-namespace ZeroG.Data.Object.Metadata
+namespace ZeroG.Data.Object.Cache
 {
-    [DataContract]
-    public sealed class ObjectMetadata
+    internal class ObjectCacheRecord
     {
-        internal ObjectMetadata()
-        {
-        }
-
-        public ObjectMetadata(string nameSpace, string objectName)
-            : this(nameSpace, objectName, null, null)
-        {
-        }
-
-        public ObjectMetadata(string nameSpace, string objectName, ObjectIndexMetadata[] indexes)
-            : this(nameSpace, objectName, indexes, null)
-        {
-        }
-
-        public ObjectMetadata(string nameSpace, string objectName, ObjectIndexMetadata[] indexes, string[] dependencies)
-        {
-            NameSpace = nameSpace;
-            ObjectName = objectName;
-            Indexes = indexes;
-            Dependencies = dependencies;
-        }
-
-        [DataMember(Order = 1)]
-        public string NameSpace { get; private set; }
-        [DataMember(Order = 2)]
-        public string ObjectName { get; private set; }
-        [DataMember(Order = 3)]
-        public ObjectIndexMetadata[] Indexes { get; private set; }
-        [DataMember(Order = 4)]
-        public string[] Dependencies { get; private set; }
+        public string ObjectFullName;
+        public uint Version;
+        public uint TotalSize;
+        public uint Count;
+        public Dictionary<int, byte[]> Objects;
     }
 }

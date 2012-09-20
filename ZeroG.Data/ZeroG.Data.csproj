@@ -61,6 +61,8 @@
     <Compile Include="Database\IDatabaseService.cs" />
     <Compile Include="Database\Lang\JSONtoSQLContraint.cs" />
     <Compile Include="Database\ObjectIndexProvider.cs" />
+    <Compile Include="Object\Cache\ObjectCache.cs" />
+    <Compile Include="Object\Cache\ObjectCacheRecord.cs" />
     <Compile Include="Object\Config.cs" />
     <Compile Include="Object\Index\IObjectIndexProvider.cs" />
     <Compile Include="Object\Index\ObjectFindLogic.cs" />
@@ -79,6 +81,7 @@
     <Compile Include="Object\ObjectNaming.cs" />
     <Compile Include="Object\ObjectService.cs" />
     <Compile Include="Object\ObjectStore.cs" />
+    <Compile Include="Object\ObjectVersionStore.cs" />
     <Compile Include="Object\PersistentObject.cs" />
     <Compile Include="Object\SerializerHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
