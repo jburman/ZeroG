@@ -23,36 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System.Runtime.Serialization;
-
 namespace ZeroG.Data.Object
 {
-    [DataContract]
-    public sealed class ObjectID
-    {
-        [DataMember(Order = 1)]
-        public int ID;
-        [DataMember(Order = 2)]
-        public byte[] SecondaryKey;
-
-        public bool HasID()
-        {
-            return ObjectID.HasID(ID);
-        }
-
-        public bool HasSecondaryKey()
-        {
-            return ObjectID.HasSecondaryKey(SecondaryKey);
-        }
-
-        internal static bool HasID(int id)
-        {
-            return -1 != id;
-        }
-
-        internal static bool HasSecondaryKey(byte[] secondaryKey)
-        {
-            return null != secondaryKey;
-        }
-    }
+    internal delegate void ObjectVersionChangedEvent(string value, uint newVersion);
 }

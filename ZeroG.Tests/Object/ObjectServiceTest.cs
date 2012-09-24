@@ -43,16 +43,21 @@ namespace ZeroG.Tests.Object
                 var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
                 var val3 = new Guid("{82B2056A-7F32-4CDE-AC57-DB375086B40F}");
 
+                var secKey1 = Encoding.UTF8.GetBytes("001");
+                var secKey2 = Encoding.UTF8.GetBytes("002");
+
                 var objID1 = svc.Store(ns, new PersistentObject()
                 {
                     Name = obj,
-                    Value = val1.ToByteArray()
+                    Value = val1.ToByteArray(),
+                    SecondaryKey = secKey1
                 });
 
                 var objID2 = svc.Store(ns, new PersistentObject()
                 {
                     Name = obj,
-                    Value = val2.ToByteArray()
+                    Value = val2.ToByteArray(),
+                    SecondaryKey = secKey2
                 });
 
                 // retrieve by object ID
@@ -66,8 +71,8 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(val2, new Guid(retval2));
 
                 // retrieve by unique ID
-                retval1 = svc.GetByUniqueID(ns, obj, objID1.UniqueID);
-                retval2 = svc.GetByUniqueID(ns, obj, objID2.UniqueID);
+                retval1 = svc.GetBySecondaryKey(ns, obj, objID1.SecondaryKey);
+                retval2 = svc.GetBySecondaryKey(ns, obj, objID2.SecondaryKey);
 
                 Assert.IsNotNull(retval1);
                 Assert.IsNotNull(retval2);
@@ -82,7 +87,7 @@ namespace ZeroG.Tests.Object
                 svc.Store(ns, new PersistentObject()
                 {
                     ID = id,
-                    UniqueID = uniqueId,
+                    SecondaryKey = uniqueId,
                     Name = obj,
                     Value = val3.ToByteArray()
                 });
@@ -93,7 +98,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(val3, new Guid(retval3));
 
                 // retrieve by unique ID
-                retval1 = svc.GetByUniqueID(ns, obj, uniqueId);
+                retval1 = svc.GetBySecondaryKey(ns, obj, uniqueId);
 
                 Assert.IsNotNull(retval3);
 
@@ -134,7 +139,7 @@ namespace ZeroG.Tests.Object
                 var uniqueId = new Guid("{8AD7F9E4-B2B8-4511-B520-08914B999044}").ToByteArray();
 
                 Assert.IsNull(svc.Get(ns, obj, 5));
-                Assert.IsNull(svc.GetByUniqueID(ns, obj, uniqueId));
+                Assert.IsNull(svc.GetBySecondaryKey(ns, obj, uniqueId));
             }
         }
 

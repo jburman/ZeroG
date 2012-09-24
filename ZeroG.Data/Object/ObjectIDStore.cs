@@ -68,11 +68,11 @@ namespace ZeroG.Data.Object
             }
         }
 
-        public void Reset(byte[] key)
+        public void Reset(string objectFullName)
         {
             lock (_idLock)
             {
-                _store.Set(key, BitConverter.GetBytes(0));
+                _store.Set(ObjectNaming.CreateFullObjectKey(objectFullName), BitConverter.GetBytes(0));
             }
         }
 

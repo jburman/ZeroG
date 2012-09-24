@@ -61,6 +61,21 @@ namespace ZeroG.Data.Object
             }
         }
 
+        private static bool? _indexCacheEnabled;
+        public static bool IndexCacheEnabled
+        {
+            get
+            {
+                if (null == _indexCacheEnabled)
+                {
+                    bool result = false;
+                    bool.TryParse(ConfigurationManager.AppSettings["ObjectIndexCacheEnabled"], out result);
+                    _indexCacheEnabled = result;
+                }
+                return _indexCacheEnabled.Value;
+            }
+        }
+
         private static string _objectIndexSchemaConn;
         public static string ObjectIndexSchemaConnection
         {

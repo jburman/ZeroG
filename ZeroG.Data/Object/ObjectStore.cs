@@ -35,7 +35,7 @@ namespace ZeroG.Data.Object
 {
     internal class ObjectStore : IDisposable
     {
-        private static readonly string _UniqueIDKeyName = "UID";
+        private static readonly string _SecondaryKeyName = "SID";
 
         private ObjectMetadataStore _objectMetadata;
         private Dictionary<string, KeyValueStore> _stores;
@@ -51,27 +51,27 @@ namespace ZeroG.Data.Object
             _stores = new Dictionary<string, KeyValueStore>(StringComparer.OrdinalIgnoreCase);
         }
 
-        private KeyValueStore _EnsureStore(string fullObjectName)
+        private KeyValueStore _EnsureStore(string objectFullName)
         {
             lock (_stores)
             {
-                if (_stores.ContainsKey(fullObjectName))
+                if (_stores.ContainsKey(objectFullName))
                 {
-                    return _stores[fullObjectName];
+                    return _stores[objectFullName];
                 }
                 else
                 {
-                    var metadata = _objectMetadata.GetMetadata(fullObjectName);
+                    var metadata = _objectMetadata.GetMetadata(objectFullName);
 
                     if (null == metadata)
                     {
-                        throw new ArgumentException("Object Store not found: " + fullObjectName);
+                        throw new ArgumentException("Object Store not found: " + objectFullName);
                     }
                     // construct name from stored metadata for consistency
-                    fullObjectName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
+                    objectFullName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
 
-                    var store = new KeyValueStore(Path.Combine(Path.Combine(Config.BaseDataPath, "Store"), fullObjectName));
-                    _stores[fullObjectName] = store;
+                    var store = new KeyValueStore(Path.Combine(Path.Combine(Config.BaseDataPath, "Store"), objectFullName));
+                    _stores[objectFullName] = store;
                     return store;
                 }
             }
@@ -82,42 +82,44 @@ namespace ZeroG.Data.Object
             var fullObjectName = ObjectNaming.CreateFullObjectName(nameSpace, obj.Name);
             var store = _EnsureStore(fullObjectName);
 
+            if (obj.HasSecondaryKey())
+            {
+                var keyIndex = new Dictionary<string, byte[]>();
+                keyIndex[_SecondaryKeyName] = obj.SecondaryKey;
 
-            var keyIndex = new Dictionary<string, byte[]>();
-            keyIndex[_UniqueIDKeyName] = obj.UniqueID;
-
-            store.Set(SerializerHelper.Serialize(obj.ID), obj.Value, keyIndex);
+                store.Set(SerializerHelper.Serialize(obj.ID), obj.Value, keyIndex);
+            }
+            else
+            {
+                store.Set(SerializerHelper.Serialize(obj.ID), obj.Value);
+            }
         }
 
-        public byte[] Get(string nameSpace, string objName, int id)
+        public byte[] Get(string objectFullName, int id)
         {
-            var fullObjectName = ObjectNaming.CreateFullObjectName(nameSpace, objName);
-            var store = _EnsureStore(fullObjectName);
+            var store = _EnsureStore(objectFullName);
 
             return store.Get(SerializerHelper.Serialize(id));
         }
 
-        public byte[] GetByUniqueID(string nameSpace, string objName, byte[] uniqueId)
+        public byte[] GetBySecondaryKey(string objectFullName, byte[] key)
         {
-            var fullObjectName = ObjectNaming.CreateFullObjectName(nameSpace, objName);
-            var store = _EnsureStore(fullObjectName);
-            return store.Find(_UniqueIDKeyName, uniqueId).FirstOrDefault().Value;
+            var store = _EnsureStore(objectFullName);
+            return store.Find(_SecondaryKeyName, key).FirstOrDefault().Value;
         }
 
-        public void Remove(string nameSpace, string objName, int id)
+        public void Remove(string objectFullName, int id)
         {
-            var fullObjectName = ObjectNaming.CreateFullObjectName(nameSpace, objName);
-            var store = _EnsureStore(fullObjectName);
+            var store = _EnsureStore(objectFullName);
             store.Delete(SerializerHelper.Serialize(id));
-            store.CleanIndex(_UniqueIDKeyName);
+            store.CleanIndex(_SecondaryKeyName);
         }
 
-        public void Truncate(string nameSpace, string objName)
+        public void Truncate(string objectFullName)
         {
-            var fullObjectName = ObjectNaming.CreateFullObjectName(nameSpace, objName);
-            var store = _EnsureStore(fullObjectName);
+            var store = _EnsureStore(objectFullName);
             store.Truncate();
-            store.CleanIndex(_UniqueIDKeyName);
+            store.CleanIndex(_SecondaryKeyName);
         }
 
         #region Dispose implementation

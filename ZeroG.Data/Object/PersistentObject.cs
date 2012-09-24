@@ -40,7 +40,7 @@ namespace ZeroG.Data.Object
         [DataMember(Order = 2)]
         public int ID;
         [DataMember(Order = 3)]
-        public byte[] UniqueID;
+        public byte[] SecondaryKey;
         [DataMember(Order = 4)]
         public byte[] Value;
         [DataMember(Order = 5)]
@@ -56,9 +56,9 @@ namespace ZeroG.Data.Object
             return ObjectID.HasID(ID);
         }
 
-        public bool HasUniqueID()
+        public bool HasSecondaryKey()
         {
-            return ObjectID.HasUniqueID(UniqueID);
+            return ObjectID.HasSecondaryKey(SecondaryKey);
         }
     }
 }

@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using ZeroG.Data.Database;
+using ZeroG.Data.Object.Cache;
 using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object.Index
@@ -34,22 +35,33 @@ namespace ZeroG.Data.Object.Index
     internal sealed class ObjectIndexer : IDisposable
     {
         private IObjectIndexProvider _indexer;
+        private ObjectIndexerCache _cache;
+
         private static Type _indexerType = null;
+
+        public ObjectIndexer(ObjectIndexerCache cache) : this()
+        {
+            _cache = cache;
+        }
 
         public ObjectIndexer()
         {
             if (null == _indexerType)
             {
-                var objectIndexProviderType = Type.GetType(ConfigurationManager.AppSettings[Config.ObjectIndexProviderConfigKey], true);
+                var setting = ConfigurationManager.AppSettings[Config.ObjectIndexProviderConfigKey];
+                if (!string.IsNullOrEmpty(setting))
+                {
+                    var objectIndexProviderType = Type.GetType(setting, true);
 
-                if (typeof(IObjectIndexProvider).IsAssignableFrom(objectIndexProviderType))
-                {
-                    _indexer = (IObjectIndexProvider)Activator.CreateInstance(objectIndexProviderType);
-                    _indexerType = objectIndexProviderType;
-                }
-                else
-                {
-                    throw new InvalidOperationException("Unsupported IObjectIndexProvider type: " + objectIndexProviderType.FullName);
+                    if (typeof(IObjectIndexProvider).IsAssignableFrom(objectIndexProviderType))
+                    {
+                        _indexer = (IObjectIndexProvider)Activator.CreateInstance(objectIndexProviderType);
+                        _indexerType = objectIndexProviderType;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Unsupported IObjectIndexProvider type: " + objectIndexProviderType.FullName);
+                    }
                 }
             }
             else
@@ -82,7 +94,33 @@ namespace ZeroG.Data.Object.Index
 
         internal int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
         {
-            return _indexer.Find(nameSpace, objectName, logic, oper, indexes);
+            int[] returnValue = null;
+
+            if (null != _cache)
+            {
+                var parameters = new object[3 + ((null == indexes.Length) ? 0 : indexes.Length)];
+                parameters[0] = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+                parameters[1] = logic;
+                parameters[2] = oper;
+                if (null != indexes)
+                {
+                    for (int i = 0; indexes.Length > i; i++)
+                    {
+                        parameters[i + 3] = indexes[i];
+                    }
+                }
+                returnValue = _cache.Get(parameters);
+                if (null == returnValue)
+                {
+                    returnValue = _indexer.Find(nameSpace, objectName, logic, oper, indexes);
+                    _cache.Set(returnValue, parameters);
+                }
+            }
+            else
+            {
+                returnValue = _indexer.Find(nameSpace, objectName, logic, oper, indexes);
+            }
+            return returnValue;
         }
 
         public int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes)

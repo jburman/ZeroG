@@ -37,6 +37,11 @@ namespace ZeroG.Data.Object
     {
         public static readonly string GlobalObjectVersionName = ObjectNaming.CreateFullObjectName(ObjectNaming.DefaultNameSpace, "GlobalVersion");
 
+        public ObjectVersionChangedEvent VersionChanged;
+        public ObjectVersionChangedEvent VersionRemoved;
+
+        private static readonly uint VersionRollover = 10000000;
+
         private ObjectMetadataStore _metadata;
         private KeyValueStore _store;
         private Dictionary<string, uint> _versions;
@@ -48,34 +53,70 @@ namespace ZeroG.Data.Object
             _versions = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
         }
 
-        public uint Update(string fullObjectName)
+        public uint Update(string objectFullName)
         {
-            uint returnValue = Current(fullObjectName) + 1;
+            var returnValue = _Update(objectFullName);
 
-            _store.Set(SerializerHelper.Serialize(fullObjectName), BitConverter.GetBytes(returnValue));
-            _versions[fullObjectName] = returnValue;
+            foreach (var dep in _metadata.EnumerateObjectDependencies(objectFullName))
+            {
+                _Update(dep);
+            }
 
             return returnValue;
         }
 
-        public uint Current(string fullObjectName)
+        private uint _Update(string objectFullName)
+        {
+            uint returnValue = Current(objectFullName) + 1;
+            if (VersionRollover < returnValue)
+            {
+                returnValue = 1;
+            }
+
+            _store.Set(SerializerHelper.Serialize(objectFullName), BitConverter.GetBytes(returnValue));
+            _versions[objectFullName] = returnValue;
+
+            if (null != VersionChanged)
+            {
+                VersionChanged(objectFullName, returnValue);
+            }
+
+            return returnValue;
+        }
+
+        public uint Current(string objectFullName)
         {
             uint returnValue = 0;
 
-            if (_versions.ContainsKey(fullObjectName))
+            if (_versions.ContainsKey(objectFullName))
             {
-                returnValue = _versions[fullObjectName];
+                returnValue = _versions[objectFullName];
             }
             else
             {
-                var val = _store.Get(SerializerHelper.Serialize(fullObjectName));
+                var val = _store.Get(SerializerHelper.Serialize(objectFullName));
                 if (null != val)
                 {
                     returnValue = BitConverter.ToUInt32(val, 0);
-                    _versions[fullObjectName] = returnValue;
+                    _versions[objectFullName] = returnValue;
                 }
             }
             return returnValue;
+        }
+
+        public void Remove(string objectFullName)
+        {
+            foreach (var dep in _metadata.EnumerateObjectDependencies(objectFullName))
+            {
+                _Update(dep);
+            }
+            _versions.Remove(objectFullName);
+            _store.Delete(SerializerHelper.Serialize(objectFullName));
+
+            if (null != VersionRemoved)
+            {
+                VersionRemoved(objectFullName, 0);
+            }
         }
 
         #region Dispose implementation

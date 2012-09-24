@@ -48,5 +48,22 @@ namespace ZeroG.Data.Object.Index
             var dataType = default(ObjectIndexType);
             return dataType.GetDataType(Value);
         }
+
+        public override string ToString()
+        {
+            return Name + "=" + Value;
+        }
+
+        public override int GetHashCode()
+        {
+            return ToString().GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (null == obj) { return false; }
+
+            return ToString() == obj.ToString();
+        }
     }
 }

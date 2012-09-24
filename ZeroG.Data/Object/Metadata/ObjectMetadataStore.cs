@@ -171,13 +171,18 @@ namespace ZeroG.Data.Object.Metadata
             }
         }
 
-        public void RemoveMetadata(string nameSpace, string objectName)
+        public void Remove(string nameSpace, string objectName)
         {
-            var objKey = ObjectNaming.CreateFullObjectKey(nameSpace, objectName);
+            Remove(ObjectNaming.CreateFullObjectName(nameSpace, objectName));
+        }
+
+        public void Remove(string objectFullName)
+        {
+            var objKey = ObjectNaming.CreateFullObjectKey(objectFullName);
             _store.Delete(objKey);
             if (null != ObjectMetadataRemoved)
             {
-                ObjectMetadataRemoved(ObjectNaming.CreateFullObjectName(nameSpace, objectName));
+                ObjectMetadataRemoved(objectFullName);
             }
         }
 
@@ -190,7 +195,14 @@ namespace ZeroG.Data.Object.Metadata
         {
             var objKey = ObjectNaming.CreateFullObjectKey(objectFullName);
             var value = _store.Get(objKey);
-            return SerializerHelper.Deserialize<ObjectMetadata>(value);
+            if (null == value)
+            {
+                return null;
+            }
+            else
+            {
+                return SerializerHelper.Deserialize<ObjectMetadata>(value);
+            }
         }
 
         public IEnumerable<string> EnumerateObjectNames()
@@ -221,6 +233,21 @@ namespace ZeroG.Data.Object.Metadata
             foreach (var e in _nsStore.Enumerate())
             {
                 yield return encoding.GetString(e.Key);
+            }
+        }
+
+        public IEnumerable<string> EnumerateObjectDependencies(string objectFullName)
+        {
+            var md = GetMetadata(objectFullName);
+            if (null != md)
+            {
+                if (null != md.Dependencies)
+                {
+                    foreach (var dep in md.Dependencies)
+                    {
+                        yield return dep;
+                    }
+                }
             }
         }
 
