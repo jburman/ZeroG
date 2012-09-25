@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Metadata;
 using ZeroG.Data.Object.Index;
+using System.Collections.Generic;
 
 namespace ZeroG.Tests.Object
 {
@@ -237,12 +238,58 @@ namespace ZeroG.Tests.Object
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
                     "ZeroG Test", "Unit Test", DateTime.Now));
 
-                svc.ProvisionObjectStore(
-                    new ObjectMetadata(NameSpace1, ObjectName1, null, new string[]
+                try
+                {
+
+                    svc.ProvisionObjectStore(
+                        new ObjectMetadata(NameSpace1, ObjectName1, null, new string[]
                         {
                             ObjectTestHelper.ObjectName2,
                             ObjectTestHelper.ObjectName3
                         }));
+                }
+                catch (Exception ex)
+                {
+                    Assert.AreEqual(0, ex.Message.IndexOf("Object dependency does not exist"));
+
+                    throw;
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void ProvisionObjectStoreWithTooManyDependencies()
+        {
+            var config = ObjectTestHelper.GetConfig();
+
+            // generate one too many object dependencies
+            var depList = new List<string>();
+            for (int i = 0; config.MaxObjectDependencies+1 > i; i++)
+            {
+                depList.Add("ObjDep" + i);
+            }
+
+            using (var svc = new ObjectService(config))
+            {
+                Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                try
+                {
+
+                    svc.ProvisionObjectStore(
+                        new ObjectMetadata(NameSpace1, ObjectName1, null, depList.ToArray()));
+                }
+                catch (Exception ex)
+                {
+                    Assert.AreEqual(0, ex.Message.IndexOf("Maximum number of dependencies exceeded"));
+
+                    throw;
+                }
             }
         }
 

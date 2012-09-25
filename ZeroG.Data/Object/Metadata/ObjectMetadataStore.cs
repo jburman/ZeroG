@@ -35,6 +35,8 @@ namespace ZeroG.Data.Object.Metadata
 {
     internal class ObjectMetadataStore : IDisposable
     {
+        Config _config;
+
         private KeyValueStore _store;
         private KeyValueStore _nsStore;
 
@@ -45,6 +47,12 @@ namespace ZeroG.Data.Object.Metadata
 
         public ObjectMetadataStore(Config config)
         {
+            if (null == config)
+            {
+                throw new ArgumentNullException("config");
+            }
+
+            _config = config;
             _store = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectMetadataStore"));
             _nsStore = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectNameSpaceStore"));
         }
@@ -162,6 +170,12 @@ namespace ZeroG.Data.Object.Metadata
 
             if (null != metadata.Dependencies)
             {
+                // validate # of dependencies
+                if (metadata.Dependencies.Length > _config.MaxObjectDependencies)
+                {
+                    throw new ArgumentException("Maximum number of dependencies exceeded.");
+                }
+
                 // validate that dependencies exist
                 foreach (var dep in metadata.Dependencies)
                 {

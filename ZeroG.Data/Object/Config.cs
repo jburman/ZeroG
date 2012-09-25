@@ -36,15 +36,19 @@ namespace ZeroG.Data.Object
         {
             _baseDataPath = ConfigurationManager.AppSettings["ObjectServiceDataDir"];
             
-            bool result = false;
-            bool.TryParse(ConfigurationManager.AppSettings["ObjectIndexCacheEnabled"], out result);
-            _indexCacheEnabled = result;
+            bool boolParse = false;
+            bool.TryParse(ConfigurationManager.AppSettings["ObjectIndexCacheEnabled"], out boolParse);
+            _indexCacheEnabled = boolParse;
 
             _objectIndexSchemaConn = ConfigurationManager.AppSettings["ObjectIndexSchemaConnection"];
             _objectIndexSchemaConn = _objectIndexSchemaConn ?? ObjectIndexProvider.DefaultSchemaConnection;
 
             _objectIndexDataConn = ConfigurationManager.AppSettings["ObjectIndexDataConnection"];
             _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
+
+            uint intParse = 5;
+            uint.TryParse(ConfigurationManager.AppSettings["MaxObjectDependencies"], out intParse);
+            _maxObjectDependencies = intParse;
         }
 
         public Config(string baseDataPath) : this()
@@ -55,12 +59,14 @@ namespace ZeroG.Data.Object
         public Config(string baseDataPath,
             bool indexCacheEnabled,
             string objectIndexSchemaConn,
-            string objectIndexDataConn)
+            string objectIndexDataConn,
+            uint maxObjectDependences)
         {
             _baseDataPath = baseDataPath;
             _indexCacheEnabled = indexCacheEnabled;
             _objectIndexSchemaConn = objectIndexSchemaConn;
             _objectIndexDataConn = objectIndexDataConn;
+            _maxObjectDependencies = maxObjectDependences;
         }
 
         private static Config _default;
@@ -109,6 +115,15 @@ namespace ZeroG.Data.Object
             get
             {
                 return _objectIndexDataConn;
+            }
+        }
+
+        private uint _maxObjectDependencies;
+        public uint MaxObjectDependencies
+        {
+            get
+            {
+                return _maxObjectDependencies;
             }
         }
     }
