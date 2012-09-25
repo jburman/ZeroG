@@ -159,7 +159,7 @@ namespace ZeroG.Tests.Object
                 var uniqueId = new Guid("{8AD7F9E4-B2B8-4511-B520-08914B999044}").ToByteArray();
 
                 Assert.IsNull(svc.Get(ns, obj, 5));
-                Assert.IsNull(svc.GetBySecondaryKey(ns, obj, uniqueId));
+                Assert.AreEqual(0, svc.GetBySecondaryKey(ns, obj, uniqueId).Length);
             }
         }
 
