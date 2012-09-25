@@ -37,16 +37,23 @@ namespace ZeroG.Data.Object
     {
         private static readonly string _SecondaryKeyName = "SID";
 
+        private Config _config;
         private ObjectMetadataStore _objectMetadata;
         private Dictionary<string, KeyValueStore> _stores;
 
-        public ObjectStore(ObjectMetadataStore objectMetadata)
+        public ObjectStore(Config config, ObjectMetadataStore objectMetadata)
         {
+            if (null == config)
+            {
+                throw new ArgumentNullException("config");
+            }
+
             if (null == objectMetadata)
             {
                 throw new ArgumentNullException("objectMetadata");
             }
 
+            _config = config;
             _objectMetadata = objectMetadata;
             _stores = new Dictionary<string, KeyValueStore>(StringComparer.OrdinalIgnoreCase);
         }
@@ -70,7 +77,7 @@ namespace ZeroG.Data.Object
                     // construct name from stored metadata for consistency
                     objectFullName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
 
-                    var store = new KeyValueStore(Path.Combine(Path.Combine(Config.BaseDataPath, "Store"), objectFullName));
+                    var store = new KeyValueStore(Path.Combine(Path.Combine(_config.BaseDataPath, "Store"), objectFullName));
                     _stores[objectFullName] = store;
                     return store;
                 }

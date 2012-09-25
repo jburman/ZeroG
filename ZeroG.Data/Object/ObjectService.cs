@@ -56,22 +56,26 @@ namespace ZeroG.Data.Object
             _DefaultTransactionOptions.Timeout = TransactionManager.DefaultTimeout;
         }
 
-        public ObjectService()
+        public ObjectService() : this(Config.Default)
+        {
+        }
+
+        public ObjectService(Config config)
         {
             _assignments = new List<IDisposable>();
 
 
-            _objectMetadata = new ObjectMetadataStore();
+            _objectMetadata = new ObjectMetadataStore(config);
             _objectNaming = new ObjectNaming(_objectMetadata);
-            _objectIDStore = new ObjectIDStore();
-            _objectVersions = new ObjectVersionStore(_objectMetadata);
+            _objectIDStore = new ObjectIDStore(config);
+            _objectVersions = new ObjectVersionStore(config, _objectMetadata);
 
-            if (Config.IndexCacheEnabled)
+            if (config.IndexCacheEnabled)
             {
                 _indexerCache = new ObjectIndexerCache(_objectMetadata, _objectVersions);
             }
 
-            _objectStore = new ObjectStore(_objectMetadata);
+            _objectStore = new ObjectStore(config, _objectMetadata);
             _objectIndexer = new ObjectIndexer(_indexerCache);
 
             _assignments.Add(_objectMetadata);
@@ -360,8 +364,6 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
-            byte[] returnValue = null;
 
             return _objectStore.Get(objectFullName, id);
         }

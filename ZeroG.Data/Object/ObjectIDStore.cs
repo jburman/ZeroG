@@ -34,9 +34,9 @@ namespace ZeroG.Data.Object
         private KeyValueStore _store;
         private object _idLock = new object();
 
-        public ObjectIDStore()
+        public ObjectIDStore(Config config)
         {
-            _store = new KeyValueStore(Path.Combine(Config.BaseDataPath, "ObjectIDStore"));
+            _store = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectIDStore"));
         }
 
         public int GetNextID(byte[] key)

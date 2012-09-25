@@ -32,59 +32,82 @@ namespace ZeroG.Data.Object
     {
         public static readonly string ObjectIndexProviderConfigKey = "ObjectIndexProvider";
 
+        public Config()
+        {
+            _baseDataPath = ConfigurationManager.AppSettings["ObjectServiceDataDir"];
+            
+            bool result = false;
+            bool.TryParse(ConfigurationManager.AppSettings["ObjectIndexCacheEnabled"], out result);
+            _indexCacheEnabled = result;
 
-        private static string _baseDataPath;
-        public static string BaseDataPath
+            _objectIndexSchemaConn = ConfigurationManager.AppSettings["ObjectIndexSchemaConnection"];
+            _objectIndexSchemaConn = _objectIndexSchemaConn ?? ObjectIndexProvider.DefaultSchemaConnection;
+
+            _objectIndexDataConn = ConfigurationManager.AppSettings["ObjectIndexDataConnection"];
+            _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
+        }
+
+        public Config(string baseDataPath) : this()
+        {
+            _baseDataPath = baseDataPath;
+        }
+
+        public Config(string baseDataPath,
+            bool indexCacheEnabled,
+            string objectIndexSchemaConn,
+            string objectIndexDataConn)
+        {
+            _baseDataPath = baseDataPath;
+            _indexCacheEnabled = indexCacheEnabled;
+            _objectIndexSchemaConn = objectIndexSchemaConn;
+            _objectIndexDataConn = objectIndexDataConn;
+        }
+
+        private static Config _default;
+        public static Config Default
         {
             get
             {
-                if (null == _baseDataPath)
+                if (null == _default)
                 {
-                    _baseDataPath = ConfigurationManager.AppSettings["ObjectServiceDataDir"];
+                    _default = new Config();
                 }
+                return _default;
+            }
+        }
+
+        private string _baseDataPath;
+        public string BaseDataPath
+        {
+            get
+            {
                 return _baseDataPath;
             }
         }
 
-        private static bool? _indexCacheEnabled;
-        public static bool IndexCacheEnabled
+        private bool _indexCacheEnabled;
+        public bool IndexCacheEnabled
         {
             get
             {
-                if (null == _indexCacheEnabled)
-                {
-                    bool result = false;
-                    bool.TryParse(ConfigurationManager.AppSettings["ObjectIndexCacheEnabled"], out result);
-                    _indexCacheEnabled = result;
-                }
-                return _indexCacheEnabled.Value;
+                return _indexCacheEnabled;
             }
         }
 
-        private static string _objectIndexSchemaConn;
-        public static string ObjectIndexSchemaConnection
+        private string _objectIndexSchemaConn;
+        public string ObjectIndexSchemaConnection
         {
             get
             {
-                if (null == _objectIndexSchemaConn)
-                {
-                    _objectIndexSchemaConn = ConfigurationManager.AppSettings["ObjectIndexSchemaConnection"];
-                    _objectIndexSchemaConn = _objectIndexSchemaConn ?? ObjectIndexProvider.DefaultSchemaConnection;
-                }
                 return _objectIndexSchemaConn;
             }
         }
 
-        private static string _objectIndexDataConn;
-        public static string ObjectIndexDataConnection
+        private string _objectIndexDataConn;
+        public string ObjectIndexDataConnection
         {
             get
             {
-                if (null == _objectIndexDataConn)
-                {
-                    _objectIndexDataConn = ConfigurationManager.AppSettings["ObjectIndexDataConnection"];
-                    _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
-                }
                 return _objectIndexDataConn;
             }
         }

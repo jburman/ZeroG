@@ -69,8 +69,13 @@ namespace ZeroG.Data.Database
 
         #endregion
 
-        public ObjectIndexProvider()
-            : this(Config.ObjectIndexSchemaConnection, Config.ObjectIndexDataConnection)
+        public ObjectIndexProvider() 
+            : this(Config.Default)
+        {
+        }
+
+        public ObjectIndexProvider(Config config)
+            : this(config.ObjectIndexSchemaConnection, config.ObjectIndexDataConnection)
         {
         }
 

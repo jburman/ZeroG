@@ -58,17 +58,19 @@ WHERE {1}";
 
     public class MySQLObjectIndexProvider : ObjectIndexProvider
     {
-
         public MySQLObjectIndexProvider()
             : base()
         {
+        }
 
+        public MySQLObjectIndexProvider(Config config)
+            : base(config)
+        {
         }
 
         public MySQLObjectIndexProvider(string databaseServiceSchema, string databaseServiceData)
             : base (databaseServiceSchema, databaseServiceData)
-        {
-            
+        {    
         }
 
         private static string _CreateTableName(IDatabaseService db, string objectFullName)

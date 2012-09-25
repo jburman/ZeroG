@@ -14,9 +14,14 @@ namespace ZeroG.Tests.Object
         public static readonly string ObjectName2 = "ZG_testObj2";
         public static readonly string ObjectName3 = "ZG_testObj3";
 
+        public static Config GetConfig()
+        {
+            return Config.Default;
+        }
+
         public static void CleanTestObjects()
         {
-            using (var svc = new ObjectService())
+            using (var svc = new ObjectService(GetConfig()))
             {
                 if (svc.NameSpaceExists(NameSpace1))
                 {

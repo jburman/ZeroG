@@ -84,6 +84,11 @@ WHERE {1}";
         {
         }
 
+        public SQLObjectIndexProvider(Config config)
+            : base(config)
+        {
+        }
+
         public SQLObjectIndexProvider(string databaseServiceSchema, string databaseServiceData)
             : base(databaseServiceSchema, databaseServiceData)
         {

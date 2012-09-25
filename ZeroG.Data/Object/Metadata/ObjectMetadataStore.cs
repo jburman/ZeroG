@@ -43,10 +43,10 @@ namespace ZeroG.Data.Object.Metadata
         public event ObjectMetadatastoreUpdatedEvent ObjectMetadataAdded;
         public event ObjectMetadatastoreUpdatedEvent ObjectMetadataRemoved;
 
-        public ObjectMetadataStore()
+        public ObjectMetadataStore(Config config)
         {
-            _store = new KeyValueStore(Path.Combine(Config.BaseDataPath, "ObjectMetadataStore"));
-            _nsStore = new KeyValueStore(Path.Combine(Config.BaseDataPath, "ObjectNameSpaceStore"));
+            _store = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectMetadataStore"));
+            _nsStore = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectNameSpaceStore"));
         }
 
         public void CreateNameSpace(ObjectNameSpaceConfig config)

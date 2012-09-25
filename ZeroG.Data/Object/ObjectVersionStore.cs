@@ -46,10 +46,10 @@ namespace ZeroG.Data.Object
         private KeyValueStore _store;
         private Dictionary<string, uint> _versions;
 
-        public ObjectVersionStore(ObjectMetadataStore metadata)
+        public ObjectVersionStore(Config config, ObjectMetadataStore metadata)
         {
             _metadata = metadata;
-            _store = new KeyValueStore(Path.Combine(Config.BaseDataPath, "ObjectVersionStore"));
+            _store = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectVersionStore"));
             _versions = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
         }
 
