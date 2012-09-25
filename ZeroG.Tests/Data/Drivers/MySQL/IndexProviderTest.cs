@@ -39,6 +39,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
 
         internal static string NameSpace1 = "ZGTestNS";
         internal static string ObjectName1 = "ZGTestObj1";
+        internal static string ObjectFullName1 = "ZGTestNS.ZGTestObj1";
 
         #region Additional test attributes
         internal static MySQLObjectIndexProvider IndexProvider
@@ -54,7 +55,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         {
             try
             {
-                IndexProvider.UnprovisionIndex(NameSpace1, ObjectName1);
+                IndexProvider.UnprovisionIndex(ObjectFullName1);
             }
             catch
             {
@@ -66,7 +67,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         {
             try
             {
-                IndexProvider.UnprovisionIndex(NameSpace1, ObjectName1);
+                IndexProvider.UnprovisionIndex(ObjectFullName1);
             }
             catch
             {
@@ -89,7 +90,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                     }));
 
             // verify that we can lookup using the index
-            int[] ids = provider.Find(NameSpace1, ObjectName1,
+            int[] ids = provider.Find(ObjectFullName1,
                 new ObjectIndex("TestCol1", 100));
 
             Assert.IsNotNull(ids);
@@ -114,14 +115,14 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                     }));
 
                 // verify that we can lookup using the index
-                int[] ids = provider.Find(NameSpace1, ObjectName1,
+                int[] ids = provider.Find(ObjectFullName1,
                     new ObjectIndex("TestCol1", 100));
 
                 Assert.IsNotNull(ids);
 
                 Assert.AreEqual(0, ids.Length);
 
-                provider.UnprovisionIndex(NameSpace1, ObjectName1);
+                provider.UnprovisionIndex(ObjectFullName1);
             }
             catch(Exception ex)
             {
@@ -129,7 +130,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             }
 
             // should throw
-            provider.Find(NameSpace1, ObjectName1,
+            provider.Find(ObjectFullName1,
                 new ObjectIndex("TestCol1", 100));
         }
 
@@ -147,25 +148,25 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                         new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15)
                     }));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 1,
+            provider.UpsertIndexValues(ObjectFullName1, 1,
                 new ObjectIndex("TestCol1", 100),
                 new ObjectIndex("TestCol2", "A"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 2,
+            provider.UpsertIndexValues(ObjectFullName1, 2,
                 new ObjectIndex("TestCol1", 105),
                 new ObjectIndex("TestCol2", "A"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 3,
+            provider.UpsertIndexValues(ObjectFullName1, 3,
                 new ObjectIndex("TestCol1", 500),
                 new ObjectIndex("TestCol2", "B"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 4,
+            provider.UpsertIndexValues(ObjectFullName1, 4,
                 new ObjectIndex("TestCol1", 500),
                 new ObjectIndex("TestCol2", "C"));
 
 
             // test single constraint value that should return a single result
-            int[] ids = provider.Find(NameSpace1, ObjectName1,
+            int[] ids = provider.Find(ObjectFullName1,
                 new ObjectIndex("TestCol1", 100));
 
             Assert.IsNotNull(ids);
@@ -173,7 +174,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids[0]);
 
             // test two constraint values that should return a single result
-            ids = provider.Find(NameSpace1, ObjectName1,
+            ids = provider.Find(ObjectFullName1,
                 new ObjectIndex("TestCol1", 100),
                 new ObjectIndex("TestCol2", "A"));
 
@@ -182,7 +183,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids[0]);
 
             // test single constraint value that should return two results
-            ids = provider.Find(NameSpace1, ObjectName1,
+            ids = provider.Find(ObjectFullName1,
                 new ObjectIndex("TestCol1", 500));
 
             Assert.AreEqual(2, ids.Length);
@@ -190,7 +191,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(4, ids[1]);
 
             // test single constraint value that should return zero results
-            ids = provider.Find(NameSpace1, ObjectName1,
+            ids = provider.Find(ObjectFullName1,
                 new ObjectIndex("TestCol1", 105),
                 new ObjectIndex("TestCol2", "B"));
 
@@ -221,7 +222,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Guid testGuid = new Guid("76F5FB10BAEF4DE09578B3EB91FF6653");
             string testBinStr = DatabaseHelper.ByteToHexString(testGuid.ToByteArray());
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1,
+            provider.UpsertIndexValues(ObjectFullName1,
                 1000,
                 new ObjectIndex("IntCol", testInt),
                 new ObjectIndex("TextCol", testStr),
@@ -229,7 +230,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 new ObjectIndex("DateTimeCol", testDate),
                 new ObjectIndex("BinCol", testGuid.ToByteArray()));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1,
+            provider.UpsertIndexValues(ObjectFullName1,
                 1001,
                 new ObjectIndex("IntCol", 500),
                 new ObjectIndex("TextCol", "asdf"),
@@ -237,32 +238,32 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 new ObjectIndex("DateTimeCol", DateTime.UtcNow),
                 new ObjectIndex("BinCol", Guid.NewGuid().ToByteArray()));
 
-            int[] ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("ID", 1000));
+            int[] ids = provider.Find(ObjectFullName1, new ObjectIndex("ID", 1000));
             Assert.IsNotNull(ids);
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(1000, ids[0]);
 
-            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("IntCol", testInt));
+            ids = provider.Find(ObjectFullName1, new ObjectIndex("IntCol", testInt));
             Assert.IsNotNull(ids);
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(1000, ids[0]);
 
-            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("TextCol", testStr));
+            ids = provider.Find(ObjectFullName1, new ObjectIndex("TextCol", testStr));
             Assert.IsNotNull(ids);
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(1000, ids[0]);
 
-            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("DecCol", testDec));
+            ids = provider.Find(ObjectFullName1, new ObjectIndex("DecCol", testDec));
             Assert.IsNotNull(ids);
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(1000, ids[0]);
 
-            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("DateTimeCol", testDate));
+            ids = provider.Find(ObjectFullName1, new ObjectIndex("DateTimeCol", testDate));
             Assert.IsNotNull(ids);
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(1000, ids[0]);
 
-            ids = provider.Find(NameSpace1, ObjectName1, new ObjectIndex("BinCol", testGuid.ToByteArray()));
+            ids = provider.Find(ObjectFullName1, new ObjectIndex("BinCol", testGuid.ToByteArray()));
             Assert.IsNotNull(ids);
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(1000, ids[0]);
@@ -282,25 +283,25 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                         new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15)
                     }));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 1,
+            provider.UpsertIndexValues(ObjectFullName1, 1,
                 new ObjectIndex("TestCol1", 100),
                 new ObjectIndex("TestCol2", "A"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 2,
+            provider.UpsertIndexValues(ObjectFullName1, 2,
                 new ObjectIndex("TestCol1", 105),
                 new ObjectIndex("TestCol2", "A"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 3,
+            provider.UpsertIndexValues(ObjectFullName1, 3,
                 new ObjectIndex("TestCol1", 500),
                 new ObjectIndex("TestCol2", "B"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 4,
+            provider.UpsertIndexValues(ObjectFullName1, 4,
                 new ObjectIndex("TestCol1", 500),
                 new ObjectIndex("TestCol2", "C"));
 
 
             // test two constraints on the same index that should return a two results
-            int[] ids = provider.Find(NameSpace1, ObjectName1, ObjectFindLogic.Or, ObjectFindOperator.Equals,
+            int[] ids = provider.Find(ObjectFullName1, ObjectFindLogic.Or, ObjectFindOperator.Equals,
                 new ObjectIndex("TestCol1", 100),
                 new ObjectIndex("TestCol1", 105));
 
@@ -310,7 +311,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(2, ids[1]);
 
             // test two constraint on separate indexes that should return two results
-            ids = provider.Find(NameSpace1, ObjectName1, ObjectFindLogic.Or, ObjectFindOperator.Equals,
+            ids = provider.Find(ObjectFullName1, ObjectFindLogic.Or, ObjectFindOperator.Equals,
                 new ObjectIndex("TestCol1", 105),
                 new ObjectIndex("TestCol2", "C"));
 
@@ -334,20 +335,20 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                         new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15)
                     }));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 1,
+            provider.UpsertIndexValues(ObjectFullName1, 1,
                 new ObjectIndex("TestCol1", 100),
                 new ObjectIndex("TestCol2", "AsDf"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 2,
+            provider.UpsertIndexValues(ObjectFullName1, 2,
                 new ObjectIndex("TestCol1", 105),
                 new ObjectIndex("TestCol2", "ASdZZz"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 3,
+            provider.UpsertIndexValues(ObjectFullName1, 3,
                 new ObjectIndex("TestCol1", 500),
                 new ObjectIndex("TestCol2", "B"));
 
             // should return one result
-            int[] ids = provider.Find(NameSpace1, ObjectName1, ObjectFindLogic.And, ObjectFindOperator.Like,
+            int[] ids = provider.Find(ObjectFullName1, ObjectFindLogic.And, ObjectFindOperator.Like,
                 new ObjectIndex("TestCol1", 100));
 
             Assert.IsNotNull(ids);
@@ -355,7 +356,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids[0]);
 
             // should return one result
-            ids = provider.Find(NameSpace1, ObjectName1, ObjectFindLogic.Or, ObjectFindOperator.Like,
+            ids = provider.Find(ObjectFullName1, ObjectFindLogic.Or, ObjectFindOperator.Like,
                 new ObjectIndex("TestCol2", "asdf"));
 
             Assert.IsNotNull(ids);
@@ -363,7 +364,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids[0]);
 
             // should return two results
-            ids = provider.Find(NameSpace1, ObjectName1, ObjectFindLogic.Or, ObjectFindOperator.Like,
+            ids = provider.Find(ObjectFullName1, ObjectFindLogic.Or, ObjectFindOperator.Like,
                 new ObjectIndex("TestCol2", "as%"));
 
             Assert.IsNotNull(ids);
@@ -388,24 +389,24 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 new ObjectMetadata(NameSpace1, ObjectName1,
                     indexMetadata));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 1,
+            provider.UpsertIndexValues(ObjectFullName1, 1,
                 new ObjectIndex("TestCol1", 100),
                 new ObjectIndex("TestCol2", "A"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 2,
+            provider.UpsertIndexValues(ObjectFullName1, 2,
                 new ObjectIndex("TestCol1", 105),
                 new ObjectIndex("TestCol2", "A"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 3,
+            provider.UpsertIndexValues(ObjectFullName1, 3,
                 new ObjectIndex("TestCol1", 500),
                 new ObjectIndex("TestCol2", "B"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 4,
+            provider.UpsertIndexValues(ObjectFullName1, 4,
                 new ObjectIndex("TestCol1", 500),
                 new ObjectIndex("TestCol2", "C"));
 
             // test single constraint value that should return a single result
-            int[] ids = provider.Find(NameSpace1, ObjectName1,
+            int[] ids = provider.Find(ObjectFullName1,
                 @"{ ""TestCol1"" : 100, ""Op"" : ""="" }",
                 indexMetadata);
 
@@ -414,7 +415,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids[0]);
 
             // test two constraint values that should return a single result
-            ids = provider.Find(NameSpace1, ObjectName1,
+            ids = provider.Find(ObjectFullName1,
                 @"{ ""TestCol1"" : 100, ""Op"" : ""="",
 ""AND"" : { ""TestCol2"" : ""A"", ""Op"" : ""=""}}",
                 indexMetadata);
@@ -424,7 +425,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids[0]);
 
             // test single constraint value that should return two results
-            ids = provider.Find(NameSpace1, ObjectName1,
+            ids = provider.Find(ObjectFullName1,
                 @"{ ""TestCol1"" : 500, ""Op"" : ""="" }",
                 indexMetadata);
 
@@ -433,7 +434,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(4, ids[1]);
 
             // test single constraint value that should return zero results
-            ids = provider.Find(NameSpace1, ObjectName1,
+            ids = provider.Find(ObjectFullName1,
                 @"{ ""TestCol1"" : 105, ""Op"" : ""="",
 ""AND"" : { ""TestCol2"" : ""B"", ""Op"" : ""=""}}",
                 indexMetadata);
@@ -457,16 +458,16 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 new ObjectMetadata(NameSpace1, ObjectName1,
                     indexMetadata));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 1,
+            provider.UpsertIndexValues(ObjectFullName1, 1,
                 new ObjectIndex("TestCol1", 100),
                 new ObjectIndex("TestCol2", "asdf"));
 
-            provider.UpsertIndexValues(NameSpace1, ObjectName1, 2,
+            provider.UpsertIndexValues(ObjectFullName1, 2,
                 new ObjectIndex("TestCol1", 200),
                 new ObjectIndex("TestCol2", "zxzy"));
 
             // test single constraint value that should return a single result
-            int[] ids = provider.Find(NameSpace1, ObjectName1,
+            int[] ids = provider.Find(ObjectFullName1,
                 @"{ ""TestCol2"" : ""%sd%"", ""Op"" : ""LIKE"" }",
                 indexMetadata);
 
@@ -474,7 +475,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(1, ids[0]);
 
-            ids = provider.Find(NameSpace1, ObjectName1,
+            ids = provider.Find(ObjectFullName1,
                 @"{ ""TestCol2"" : ""as%"", ""Op"" : ""NOT LIKE"" }",
                 indexMetadata);
 

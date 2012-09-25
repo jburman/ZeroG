@@ -46,21 +46,6 @@ namespace ZeroG.Data.Object
             }
         }
 
-        private static bool? _cacheEnabled;
-        public static bool CacheEnabled
-        {
-            get
-            {
-                if (null == _cacheEnabled)
-                {
-                    bool result = false;
-                    bool.TryParse(ConfigurationManager.AppSettings["ObjectServiceCacheEnabled"], out result);
-                    _cacheEnabled = result;
-                }
-                return _cacheEnabled.Value;
-            }
-        }
-
         private static bool? _indexCacheEnabled;
         public static bool IndexCacheEnabled
         {

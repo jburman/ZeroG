@@ -87,19 +87,19 @@ namespace ZeroG.Data.Object.Index
             return true;
         }
 
-        public bool Exists(string nameSpace, string objectName)
+        public bool Exists(string objectFullName)
         {
-            return _indexer.Exists(nameSpace, objectName);
+            return _indexer.Exists(objectFullName);
         }
 
-        internal int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
+        internal int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
         {
             int[] returnValue = null;
 
             if (null != _cache)
             {
-                var parameters = new object[3 + ((null == indexes.Length) ? 0 : indexes.Length)];
-                parameters[0] = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+                var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
+                parameters[0] = objectFullName;
                 parameters[1] = logic;
                 parameters[2] = oper;
                 if (null != indexes)
@@ -112,38 +112,63 @@ namespace ZeroG.Data.Object.Index
                 returnValue = _cache.Get(parameters);
                 if (null == returnValue)
                 {
-                    returnValue = _indexer.Find(nameSpace, objectName, logic, oper, indexes);
+                    returnValue = _indexer.Find(objectFullName, logic, oper, indexes);
                     _cache.Set(returnValue, parameters);
                 }
             }
             else
             {
-                returnValue = _indexer.Find(nameSpace, objectName, logic, oper, indexes);
+                returnValue = _indexer.Find(objectFullName, logic, oper, indexes);
             }
             return returnValue;
         }
 
-        public int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes)
+        public int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
-            return _indexer.Find(nameSpace, objectName, constraint, indexes);
+            int[] returnValue = null;
+
+            if (null != _cache)
+            {
+                var parameters = new object[2 + ((null == indexes) ? 0 : indexes.Length)];
+                parameters[0] = objectFullName;
+                parameters[1] = constraint;
+                if (null != indexes)
+                {
+                    for (int i = 0; indexes.Length > i; i++)
+                    {
+                        parameters[i + 3] = indexes[i];
+                    }
+                }
+                returnValue = _cache.Get(parameters);
+                if (null == returnValue)
+                {
+                    returnValue = _indexer.Find(objectFullName, constraint, indexes);
+                    _cache.Set(returnValue, parameters);
+                }
+            }
+            else
+            {
+                returnValue = _indexer.Find(objectFullName, constraint, indexes);
+            }
+            return returnValue;
         }
 
         public void IndexObject(string nameSpace, PersistentObject obj)
         {
             if (_ValidateIndexes(nameSpace, obj))
             {
-                _indexer.UpsertIndexValues(nameSpace, obj.Name, obj.ID, obj.Indexes);
+                _indexer.UpsertIndexValues(ObjectNaming.CreateFullObjectName(nameSpace, obj.Name), obj.ID, obj.Indexes);
             }
         }
 
-        public void RemoveObjectIndex(string nameSpace, string objectName, int objectId)
+        public void RemoveObjectIndex(string objectFullName, int objectId)
         {
-            _indexer.RemoveIndexValue(nameSpace, objectName, objectId);
+            _indexer.RemoveIndexValue(objectFullName, objectId);
         }
 
-        public void RemoveObjectIndexes(string nameSpace, string objectName, int[] objectIds)
+        public void RemoveObjectIndexes(string objectFullName, int[] objectIds)
         {
-            _indexer.RemoveIndexValues(nameSpace, objectName, objectIds);
+            _indexer.RemoveIndexValues(objectFullName, objectIds);
         }
 
         public void ProvisionIndex(ObjectMetadata metadata)
@@ -151,14 +176,14 @@ namespace ZeroG.Data.Object.Index
             _indexer.ProvisionIndex(metadata);
         }
 
-        public void UnprovisionIndex(string nameSpace, string objectName)
+        public void UnprovisionIndex(string objectFullName)
         {
-            _indexer.UnprovisionIndex(nameSpace, objectName);
+            _indexer.UnprovisionIndex(objectFullName);
         }
 
-        public void Truncate(string nameSpace, string objectName)
+        public void Truncate(string objectFullName)
         {
-            _indexer.Truncate(nameSpace, objectName);
+            _indexer.Truncate(objectFullName);
         }
 
         #region Dispose implementation

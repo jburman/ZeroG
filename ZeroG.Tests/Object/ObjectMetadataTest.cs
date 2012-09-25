@@ -11,6 +11,8 @@ namespace ZeroG.Tests.Object
     {
         public static readonly string NameSpace1 = ObjectTestHelper.NameSpace1;
         public static readonly string ObjectName1 = ObjectTestHelper.ObjectName1;
+        public static readonly string ObjectName2 = ObjectTestHelper.ObjectName2;
+        public static readonly string ObjectName3 = ObjectTestHelper.ObjectName3;
 
         [TestInitialize]
         public void PreTest()
@@ -180,6 +182,67 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(NameSpace1, ObjectName1));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void ProvisionObjectStoreWithDependencies()
+        {
+            using (var svc = new ObjectService())
+            {
+                Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(NameSpace1, ObjectName2));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(NameSpace1, ObjectName3));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(NameSpace1, ObjectName1, null, new string[]
+                        {
+                            ObjectTestHelper.ObjectName2,
+                            ObjectTestHelper.ObjectName3
+                        }));
+
+                Assert.IsTrue(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                var metadata = svc.GetObjectMetadata(NameSpace1, ObjectName1);
+                Assert.IsNotNull(metadata);
+
+                Assert.AreEqual(NameSpace1, metadata.NameSpace);
+                Assert.AreEqual(ObjectName1, metadata.ObjectName);
+                Assert.IsNull(metadata.Indexes);
+
+                Assert.IsNotNull(metadata.Dependencies);
+                Assert.AreEqual(2, metadata.Dependencies.Length);
+                Assert.AreEqual(ObjectTestHelper.ObjectName2, metadata.Dependencies[0]);
+                Assert.AreEqual(ObjectTestHelper.ObjectName3, metadata.Dependencies[1]);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void ProvisionObjectStoreWithNonExistingDependencies()
+        {
+            using (var svc = new ObjectService())
+            {
+                Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(NameSpace1, ObjectName1, null, new string[]
+                        {
+                            ObjectTestHelper.ObjectName2,
+                            ObjectTestHelper.ObjectName3
+                        }));
             }
         }
 

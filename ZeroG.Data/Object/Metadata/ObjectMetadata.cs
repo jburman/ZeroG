@@ -60,5 +60,13 @@ namespace ZeroG.Data.Object.Metadata
         public ObjectIndexMetadata[] Indexes { get; private set; }
         [DataMember(Order = 4)]
         public string[] Dependencies { get; private set; }
+
+        public string ObjectFullName
+        {
+            get
+            {
+                return ObjectNaming.CreateFullObjectName(NameSpace, ObjectName);
+            }
+        }
     }
 }

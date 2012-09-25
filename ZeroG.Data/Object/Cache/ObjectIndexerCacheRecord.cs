@@ -27,12 +27,12 @@ using System.Collections.Generic;
 
 namespace ZeroG.Data.Object.Cache
 {
-    internal class ObjectCacheRecord
+    internal class ObjectIndexerCacheRecord
     {
         public string ObjectFullName;
+        public bool IsDirty;
         public uint Version;
-        public uint TotalSize;
         public uint Count;
-        public Dictionary<int, byte[]> Objects;
+        public Dictionary<uint, int[]> ObjectIDs;
     }
 }

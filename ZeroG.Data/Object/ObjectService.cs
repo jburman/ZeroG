@@ -43,7 +43,6 @@ namespace ZeroG.Data.Object
         private ObjectVersionStore _objectVersions;
         private ObjectStore _objectStore;
         private ObjectIndexer _objectIndexer;
-        private ObjectCache _cache;
         private ObjectIndexerCache _indexerCache;
 
         private List<IDisposable> _assignments;
@@ -66,11 +65,6 @@ namespace ZeroG.Data.Object
             _objectNaming = new ObjectNaming(_objectMetadata);
             _objectIDStore = new ObjectIDStore();
             _objectVersions = new ObjectVersionStore(_objectMetadata);
-
-            if (Config.CacheEnabled)
-            {
-                _cache = new ObjectCache(_objectMetadata, _objectVersions);
-            }
 
             if (Config.IndexCacheEnabled)
             {
@@ -280,15 +274,15 @@ namespace ZeroG.Data.Object
                     {
                         if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
                         {
-                            if (_objectIndexer.Exists(nameSpace, objectName))
+                            if (_objectIndexer.Exists(objectFullName))
                             {
-                                _objectIndexer.Truncate(nameSpace, objectName);
-                                _objectIndexer.UnprovisionIndex(nameSpace, objectName);
+                                _objectIndexer.Truncate(objectFullName);
+                                _objectIndexer.UnprovisionIndex(objectFullName);
                             }
                         }
 
-                       _objectStore.Truncate(objectFullName);
-                        _objectMetadata.Remove(nameSpace, objectName);
+                        _objectStore.Truncate(objectFullName);
+                        _objectMetadata.Remove(objectFullName);
                         _objectIDStore.Reset(objectFullName);
                         _objectVersions.Remove(objectFullName);
                         trans.Complete();
@@ -348,11 +342,6 @@ namespace ZeroG.Data.Object
                     _objectVersions.Update(objectFullName);
 
                     trans.Complete();
-
-                    if (null != _cache)
-                    {
-                        _cache.Add(objectFullName, obj.ID, obj.Value);
-                    }
                 }
             }
             catch (Exception)
@@ -374,15 +363,7 @@ namespace ZeroG.Data.Object
 
             byte[] returnValue = null;
 
-            if (null != _cache)
-            {
-                returnValue = _cache.Get(objectFullName, id);
-            }
-            if (null == returnValue)
-            {
-                returnValue = _objectStore.Get(objectFullName, id);
-            }
-            return returnValue;
+            return _objectStore.Get(objectFullName, id);
         }
 
         public byte[] GetBySecondaryKey(string nameSpace, string objectName, byte[] key)
@@ -412,7 +393,7 @@ namespace ZeroG.Data.Object
                 throw new InvalidOperationException("Metadata not found for object: " + objectFullName);
             }
 
-            var objectIds = _objectIndexer.Find(nameSpace, objectName, constraint, metadata.Indexes);
+            var objectIds = _objectIndexer.Find(objectFullName, constraint, metadata.Indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
@@ -425,7 +406,7 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var objectIds = _Find(nameSpace, objectName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
+            var objectIds = _Find(objectFullName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
@@ -438,7 +419,7 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var objectIds = _Find(nameSpace, objectName, ObjectFindLogic.And, ObjectFindOperator.Like, indexes);
+            var objectIds = _Find(objectFullName, ObjectFindLogic.And, ObjectFindOperator.Like, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
@@ -451,7 +432,7 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var objectIds = _Find(nameSpace, objectName, ObjectFindLogic.Or, ObjectFindOperator.Equals, indexes);
+            var objectIds = _Find(objectFullName, ObjectFindLogic.Or, ObjectFindOperator.Equals, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
@@ -464,16 +445,16 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var objectIds = _Find(nameSpace, objectName, ObjectFindLogic.Or, ObjectFindOperator.Like, indexes);
+            var objectIds = _Find(objectFullName, ObjectFindLogic.Or, ObjectFindOperator.Like, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
             }
         }
 
-        internal int[] _Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
+        internal int[] _Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
         {
-            return _objectIndexer.Find(nameSpace, objectName, logic, oper, indexes);
+            return _objectIndexer.Find(objectFullName, logic, oper, indexes);
         }
 
         public void Remove(string nameSpace, string objectName, int id)
@@ -484,7 +465,7 @@ namespace ZeroG.Data.Object
 
             using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
             {
-                _objectIndexer.RemoveObjectIndex(nameSpace, objectName, id);
+                _objectIndexer.RemoveObjectIndex(objectFullName, id);
 
                 _objectStore.Remove(objectFullName, id);
 
@@ -500,14 +481,14 @@ namespace ZeroG.Data.Object
 
             using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
             {
-                _objectIndexer.RemoveObjectIndexes(nameSpace, objectName, ids);
+                _objectIndexer.RemoveObjectIndexes(objectFullName, ids);
 
                 foreach (var id in ids)
                 {
                     _objectStore.Remove(objectFullName, id);
                 }
                 _objectVersions.Update(objectFullName);
-                
+
                 trans.Complete();
             }
         }
@@ -520,7 +501,7 @@ namespace ZeroG.Data.Object
 
             using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
             {
-                _objectIndexer.Truncate(nameSpace, objectName);
+                _objectIndexer.Truncate(objectFullName);
 
                 _objectStore.Truncate(objectFullName);
 

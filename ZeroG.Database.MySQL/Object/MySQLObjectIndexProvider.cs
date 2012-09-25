@@ -71,9 +71,9 @@ WHERE {1}";
             
         }
 
-        private static string _CreateTableName(IDatabaseService db, string nameSpace, string objectName)
+        private static string _CreateTableName(IDatabaseService db, string objectFullName)
         {
-            return db.EscapeCommandText(nameSpace + "_" + objectName);
+            return db.EscapeCommandText(objectFullName.Replace('.', '_'));
         }
 
         private static string _CreateColumnDef(IDatabaseService db, ObjectIndexMetadata indexMetadata)
@@ -108,13 +108,13 @@ WHERE {1}";
             return string.Format("`{0}` {1}{2} NOT NULL", name, type, length);
         }
 
-        public override bool Exists(string nameSpace, string objectName)
+        public override bool Exists(string objectFullName)
         {
             bool returnValue = false;
 
             using (var db = OpenSchema())
             {
-                var tableName = _CreateTableName(db, nameSpace, objectName);
+                var tableName = _CreateTableName(db, objectFullName);
 
                 using (var reader = db.ExecuteReader(string.Format(SQLStatements.TableExists, tableName)))
                 {
@@ -128,7 +128,7 @@ WHERE {1}";
             return returnValue;
         }
 
-        public override int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)
+        public override int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)
         {
             int[] returnValue = null;
             bool useOr = ObjectFindLogic.Or == logic;
@@ -136,7 +136,7 @@ WHERE {1}";
 
             using (var db = OpenData())
             {
-                var tableName = _CreateTableName(db, nameSpace, objectName);
+                var tableName = _CreateTableName(db, objectFullName);
 
                 var parameters = new List<IDbDataParameter>();
                 var sqlConstraint = new StringBuilder();
@@ -187,17 +187,17 @@ WHERE {1}";
             return returnValue;
         }
 
-        public override int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes)
+        public override int[] Find(string objectFullName, params ObjectIndex[] indexes)
         {
-            return Find(nameSpace, objectName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
+            return Find(objectFullName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
         }
 
-        public override int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes)
+        public override int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
             using (var db = OpenData())
             {
                 var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
-                var tableName = _CreateTableName(db, nameSpace, objectName);
+                var tableName = _CreateTableName(db, objectFullName);
                 return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL), sqlConstraint.Parameters.ToArray());
             }
         }
@@ -206,7 +206,7 @@ WHERE {1}";
         {
             using (var db = OpenSchema())
             {
-                var tableName = _CreateTableName(db, metadata.NameSpace, metadata.ObjectName);
+                var tableName = _CreateTableName(db, metadata.ObjectFullName);
                 string idColName = db.MakeQuotedName(IDColumn);
                 string colDefs = idColName + " INT NOT NULL PRIMARY KEY";
                 string colIndexNames = idColName;
@@ -225,22 +225,22 @@ WHERE {1}";
             }
         }
 
-        public override void UnprovisionIndex(string nameSpace, string objectName)
+        public override void UnprovisionIndex(string objectFullName)
         {
             using (var db = OpenSchema())
             {
-                var tableName = _CreateTableName(db, nameSpace, objectName);
+                var tableName = _CreateTableName(db, objectFullName);
 
                 var dropTableSQL = string.Format(SQLStatements.DropTableIfExists, tableName);
                 db.ExecuteNonQuery(dropTableSQL);
             }
         }
 
-        public override void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes)
+        public override void UpsertIndexValues(string objectFullName, int objectId, params ObjectIndex[] indexes)
         {
             using (var db = OpenData())
             {
-                var tableName = _CreateTableName(db, nameSpace, objectName);
+                var tableName = _CreateTableName(db, objectFullName);
 
                 var parameters = new List<IDataParameter>();
                 for (int i = 0; indexes.Length > i; i++)
@@ -310,27 +310,27 @@ WHERE {1}";
             }
         }
 
-        public override void RemoveIndexValue(string nameSpace, string objectName, int objectId)
+        public override void RemoveIndexValue(string objectFullName, int objectId)
         {
             using (var db = OpenData())
             {
-                var tableName = _CreateTableName(db, nameSpace, objectName);
+                var tableName = _CreateTableName(db, objectFullName);
 
                 db.ExecuteNonQuery(string.Format(SQLStatements.RemoveIndex, tableName, IDColumn, objectId));
             }
         }
 
-        public override void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds)
+        public override void RemoveIndexValues(string objectFullName, int[] objectIds)
         {
             using (var db = OpenData())
             {
                 if (1 == objectIds.Length)
                 {
-                    RemoveIndexValue(nameSpace, objectName, objectIds[0]);
+                    RemoveIndexValue(objectFullName, objectIds[0]);
                 }
                 else
                 {
-                    var tableName = _CreateTableName(db, nameSpace, objectName);
+                    var tableName = _CreateTableName(db, objectFullName);
 
                     var objectIdConstraint = new StringBuilder();
                     for (int i = 0; objectIds.Length > i; i++)
@@ -358,11 +358,11 @@ WHERE {1}";
             }
         }
 
-        public override void Truncate(string nameSpace, string objectName)
+        public override void Truncate(string objectFullName)
         {
             using (var db = OpenSchema())
             {
-                var tableName = _CreateTableName(db, nameSpace, objectName);
+                var tableName = _CreateTableName(db, objectFullName);
                 var sql = string.Format(SQLStatements.TruncateTable, tableName);
                 db.ExecuteNonQuery(sql);
             }

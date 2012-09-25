@@ -31,25 +31,25 @@ namespace ZeroG.Data.Object.Index
 {
     public interface IObjectIndexProvider : IDisposable
     {
-        bool Exists(string nameSpace, string objectName);
+        bool Exists(string objectFullName);
 
-        int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
+        int[] Find(string objectFullName, params ObjectIndex[] indexes);
 
-        int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes);
+        int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes);
 
-        int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes);
+        int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
 
         void ProvisionIndex(ObjectMetadata metadata);
 
-        void UnprovisionIndex(string nameSpace, string objectName);
+        void UnprovisionIndex(string objectFullName);
 
-        void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes);
+        void UpsertIndexValues(string objectFullName, int objectId, params ObjectIndex[] indexes);
 
-        void RemoveIndexValue(string nameSpace, string objectName, int objectId);
+        void RemoveIndexValue(string objectFullName, int objectId);
 
-        void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds);
+        void RemoveIndexValues(string objectFullName, int[] objectIds);
 
-        void Truncate(string nameSpace, string objectName);
+        void Truncate(string objectFullName);
 
         void Close();
     }

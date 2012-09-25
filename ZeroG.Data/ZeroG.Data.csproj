@@ -61,8 +61,7 @@
     <Compile Include="Database\IDatabaseService.cs" />
     <Compile Include="Database\Lang\JSONtoSQLContraint.cs" />
     <Compile Include="Database\ObjectIndexProvider.cs" />
-    <Compile Include="Object\Cache\ObjectCache.cs" />
-    <Compile Include="Object\Cache\ObjectCacheRecord.cs" />
+    <Compile Include="Object\Cache\ObjectIndexerCacheRecord.cs" />
     <Compile Include="Object\Cache\ObjectIndexerCache.cs" />
     <Compile Include="Object\Config.cs" />
     <Compile Include="Object\Index\IObjectIndexProvider.cs" />

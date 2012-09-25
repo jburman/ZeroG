@@ -159,16 +159,16 @@ namespace ZeroG.Data.Database
             return JSONToSQLConstraint.GenerateSQLConstraint(db, typeMappings, constraint);
         }
 
-        public abstract bool Exists(string nameSpace, string objectName);
-        public abstract int[] Find(string nameSpace, string objectName, params ObjectIndex[] indexes);
-        public abstract int[] Find(string nameSpace, string objectName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes);
-        public abstract int[] Find(string nameSpace, string objectName, string constraint, ObjectIndexMetadata[] indexes);
+        public abstract bool Exists(string objectFullName);
+        public abstract int[] Find(string objectFullName, params ObjectIndex[] indexes);
+        public abstract int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes);
+        public abstract int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
         public abstract void ProvisionIndex(ObjectMetadata metadata);
-        public abstract void UnprovisionIndex(string nameSpace, string objectName);
-        public abstract void UpsertIndexValues(string nameSpace, string objectName, int objectId, params ObjectIndex[] indexes);
-        public abstract void RemoveIndexValue(string nameSpace, string objectName, int objectId);
-        public abstract void RemoveIndexValues(string nameSpace, string objectName, int[] objectIds);
-        public abstract void Truncate(string nameSpace, string objectName);
+        public abstract void UnprovisionIndex(string objectFullName);
+        public abstract void UpsertIndexValues(string objectFullName, int objectId, params ObjectIndex[] indexes);
+        public abstract void RemoveIndexValue(string objectFullName, int objectId);
+        public abstract void RemoveIndexValues(string objectFullName, int[] objectIds);
+        public abstract void Truncate(string objectFullName);
         public virtual void Close()
         {
             if (null != _dbSchema)

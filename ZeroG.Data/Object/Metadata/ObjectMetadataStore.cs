@@ -160,6 +160,19 @@ namespace ZeroG.Data.Object.Metadata
                 }
             }
 
+            if (null != metadata.Dependencies)
+            {
+                // validate that dependencies exist
+                foreach (var dep in metadata.Dependencies)
+                {
+                    var fullDepObjName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, dep);
+                    if (!Exists(fullDepObjName))
+                    {
+                        throw new ArgumentException("Object dependency does not exist: " + fullDepObjName);
+                    }
+                }
+            }
+
             var fullObjName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
             var objKey = SerializerHelper.Serialize(fullObjName);
             var metadataVal = SerializerHelper.Serialize<ObjectMetadata>(metadata);
@@ -245,10 +258,15 @@ namespace ZeroG.Data.Object.Metadata
                 {
                     foreach (var dep in md.Dependencies)
                     {
-                        yield return dep;
+                        yield return ObjectNaming.CreateFullObjectName(md.NameSpace, dep);
                     }
                 }
             }
+        }
+
+        public bool Exists(string objectFullName)
+        {
+            return null != _store.Get(SerializerHelper.Serialize(objectFullName));
         }
 
         #region Dispose implementation
