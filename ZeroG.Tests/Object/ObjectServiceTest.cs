@@ -71,14 +71,17 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(val2, new Guid(retval2));
 
                 // retrieve by unique ID
-                retval1 = svc.GetBySecondaryKey(ns, obj, objID1.SecondaryKey);
-                retval2 = svc.GetBySecondaryKey(ns, obj, objID2.SecondaryKey);
+                var secretval1 = svc.GetBySecondaryKey(ns, obj, objID1.SecondaryKey);
+                var secretval2 = svc.GetBySecondaryKey(ns, obj, objID2.SecondaryKey);
 
-                Assert.IsNotNull(retval1);
-                Assert.IsNotNull(retval2);
+                Assert.IsNotNull(secretval1);
+                Assert.IsNotNull(secretval2);
 
-                Assert.AreEqual(val1, new Guid(retval1));
-                Assert.AreEqual(val2, new Guid(retval2));
+                Assert.AreEqual(1, secretval1.Length);
+                Assert.AreEqual(1, secretval2.Length);
+
+                Assert.AreEqual(val1, new Guid(secretval1[0]));
+                Assert.AreEqual(val2, new Guid(secretval2[0]));
 
                 // this tests setting pre-defined IDs
                 int id = 5;
@@ -98,11 +101,28 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(val3, new Guid(retval3));
 
                 // retrieve by unique ID
-                retval1 = svc.GetBySecondaryKey(ns, obj, uniqueId);
+                var secretval3 = svc.GetBySecondaryKey(ns, obj, uniqueId);
 
-                Assert.IsNotNull(retval3);
+                Assert.IsNotNull(secretval3);
+                Assert.AreEqual(1, secretval3.Length);
+                Assert.AreEqual(val3, new Guid(secretval3[0]));
 
-                Assert.AreEqual(val3, new Guid(retval3));
+                // store another value against unique ID and retrieve both
+                id = 6;
+
+                svc.Store(ns, new PersistentObject()
+                {
+                    ID = id,
+                    SecondaryKey = uniqueId,
+                    Name = obj,
+                    Value = val1.ToByteArray()
+                });
+
+                var secretval4 = svc.GetBySecondaryKey(ns, obj, uniqueId);
+                Assert.IsNotNull(secretval4);
+                Assert.AreEqual(2, secretval4.Length);
+                Assert.AreEqual(val3, new Guid(secretval4[0]));
+                Assert.AreEqual(val1, new Guid(secretval4[1]));
             }
         }
 

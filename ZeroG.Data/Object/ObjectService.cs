@@ -368,7 +368,7 @@ namespace ZeroG.Data.Object
             return _objectStore.Get(objectFullName, id);
         }
 
-        public byte[] GetBySecondaryKey(string nameSpace, string objectName, byte[] key)
+        public byte[][] GetBySecondaryKey(string nameSpace, string objectName, byte[] key)
         {
             _ValidateArguments(nameSpace, objectName);
 
@@ -379,7 +379,7 @@ namespace ZeroG.Data.Object
                 throw new ArgumentNullException("key");
             }
 
-            return _objectStore.GetBySecondaryKey(objectFullName, key);
+            return _objectStore.GetBySecondaryKey(objectFullName, key).ToArray();
         }
 
         public IEnumerable<byte[]> Find(string nameSpace, string objectName, string constraint)

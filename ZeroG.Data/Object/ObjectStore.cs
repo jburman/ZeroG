@@ -109,10 +109,13 @@ namespace ZeroG.Data.Object
             return store.Get(SerializerHelper.Serialize(id));
         }
 
-        public byte[] GetBySecondaryKey(string objectFullName, byte[] key)
+        public IEnumerable<byte[]> GetBySecondaryKey(string objectFullName, byte[] key)
         {
             var store = _EnsureStore(objectFullName);
-            return store.Find(_SecondaryKeyName, key).FirstOrDefault().Value;
+            foreach (var entry in store.Find(_SecondaryKeyName, key))
+            {
+                yield return entry.Value;
+            }
         }
 
         public void Remove(string objectFullName, int id)
