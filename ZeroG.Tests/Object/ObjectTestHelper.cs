@@ -19,6 +19,16 @@ namespace ZeroG.Tests.Object
             return Config.Default;
         }
 
+        public static Config GetConfigWithCaching()
+        {
+            var defaultConfig = GetConfig();
+            return new Config(defaultConfig.BaseDataPath,
+                true,
+                defaultConfig.ObjectIndexSchemaConnection,
+                defaultConfig.ObjectIndexDataConnection,
+                defaultConfig.MaxObjectDependencies);
+        }
+
         public static void CleanTestObjects()
         {
             using (var svc = new ObjectService(GetConfig()))

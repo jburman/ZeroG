@@ -73,6 +73,7 @@
     <Compile Include="Object\ObjectMetadataTest.cs" />
     <Compile Include="Object\ObjectServiceTest.cs" />
     <Compile Include="Object\ObjectTestHelper.cs" />
+    <Compile Include="Object\ObjectIndexerCacheTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
