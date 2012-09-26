@@ -136,7 +136,7 @@ namespace ZeroG.Data.Object.Index
                 {
                     for (int i = 0; indexes.Length > i; i++)
                     {
-                        parameters[i + 3] = indexes[i];
+                        parameters[i + 2] = indexes[i];
                     }
                 }
                 returnValue = _cache.Get(parameters);

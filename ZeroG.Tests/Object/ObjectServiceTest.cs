@@ -387,5 +387,54 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(ObjCount, count);
             }
         }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void StoreAndRetrieveManyObjectsBySecondaryKey()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                int ObjCount = 100000;
+
+                var val1 = new Guid("{8AD7F9E4-B2B8-4511-B520-08914B999044}").ToByteArray();
+                var utf8 = Encoding.UTF8;
+
+                // store objects
+                for (int i = 0; ObjCount > i; i++)
+                {
+                    var storeObj = new PersistentObject()
+                    {
+                        Name = obj,
+                        ID = i,
+                        SecondaryKey = utf8.GetBytes("secKey" + i),
+                        Value = val1
+                    };
+                    svc.Store(ns, storeObj);
+                }
+
+                // retrieve objects
+                int count = 0;
+                for (int i = 0; ObjCount > i; i++)
+                {
+                    var key = utf8.GetBytes("secKey" + i);
+                    var getObj = svc.GetBySecondaryKey(ns, obj, key);
+                    if (null != getObj)
+                    {
+                        ++count;
+                    }
+                }
+
+                Assert.AreEqual(ObjCount, count);
+            }
+        }
     }
 }
