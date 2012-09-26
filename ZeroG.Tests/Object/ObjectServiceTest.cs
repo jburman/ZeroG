@@ -6,6 +6,7 @@ using System.Text;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Metadata;
 using ZeroG.Data.Object.Index;
+using System.IO;
 
 namespace ZeroG.Tests.Object
 {
@@ -427,6 +428,52 @@ namespace ZeroG.Tests.Object
                 {
                     var key = utf8.GetBytes("secKey" + i);
                     var getObj = svc.GetBySecondaryKey(ns, obj, key);
+                    if (null != getObj)
+                    {
+                        ++count;
+                    }
+                }
+
+                Assert.AreEqual(ObjCount, count);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void StoreAndRetrieveManyLargeObjects()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                int ObjCount = 500;
+
+                var textBlob = Encoding.UTF8.GetBytes(File.ReadAllText("TestData\\blob.txt"));
+
+                // store objects
+                for (int i = 0; ObjCount > i; i++)
+                {
+                    var storeObj = new PersistentObject()
+                    {
+                        Name = obj,
+                        ID = i,
+                        Value = textBlob
+                    };
+                    svc.Store(ns, storeObj);
+                }
+
+                // retrieve objects
+                int count = 0;
+                for (int i = 0; ObjCount > i; i++)
+                {
+                    var getObj = svc.Get(ns, obj, i);
                     if (null != getObj)
                     {
                         ++count;
