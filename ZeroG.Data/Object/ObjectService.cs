@@ -368,7 +368,7 @@ namespace ZeroG.Data.Object
             return _objectStore.Get(objectFullName, id);
         }
 
-        public byte[][] GetBySecondaryKey(string nameSpace, string objectName, byte[] key)
+        public byte[] GetBySecondaryKey(string nameSpace, string objectName, byte[] key)
         {
             _ValidateArguments(nameSpace, objectName);
 
@@ -379,7 +379,7 @@ namespace ZeroG.Data.Object
                 throw new ArgumentNullException("key");
             }
 
-            return _objectStore.GetBySecondaryKey(objectFullName, key).ToArray();
+            return _objectStore.GetBySecondaryKey(objectFullName, key);
         }
 
         public IEnumerable<byte[]> Find(string nameSpace, string objectName, string constraint)
@@ -467,8 +467,10 @@ namespace ZeroG.Data.Object
 
             using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
             {
-                _objectIndexer.RemoveObjectIndex(objectFullName, id);
-
+                if (_objectIndexer.Exists(objectFullName))
+                {
+                    _objectIndexer.RemoveObjectIndex(objectFullName, id);
+                }
                 _objectStore.Remove(objectFullName, id);
 
                 trans.Complete();
@@ -483,8 +485,10 @@ namespace ZeroG.Data.Object
 
             using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
             {
-                _objectIndexer.RemoveObjectIndexes(objectFullName, ids);
-
+                if (_objectIndexer.Exists(objectFullName))
+                {
+                    _objectIndexer.RemoveObjectIndexes(objectFullName, ids);
+                }
                 foreach (var id in ids)
                 {
                     _objectStore.Remove(objectFullName, id);

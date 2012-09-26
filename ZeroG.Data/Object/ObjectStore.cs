@@ -30,16 +30,17 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using ZeroG.Data.Object.Metadata;
+using System.Text;
 
 namespace ZeroG.Data.Object
 {
     internal class ObjectStore : IDisposable
     {
-        private static readonly string _SecondaryKeyName = "SID";
-
         private Config _config;
         private ObjectMetadataStore _objectMetadata;
         private Dictionary<string, KeyValueStore> _stores;
+        private Dictionary<string, KeyValueStore> _secondaryStores;
+        private Dictionary<string, bool> _secondaryStoreExists;
 
         public ObjectStore(Config config, ObjectMetadataStore objectMetadata)
         {
@@ -56,15 +57,24 @@ namespace ZeroG.Data.Object
             _config = config;
             _objectMetadata = objectMetadata;
             _stores = new Dictionary<string, KeyValueStore>(StringComparer.OrdinalIgnoreCase);
+            _secondaryStores = new Dictionary<string, KeyValueStore>(StringComparer.OrdinalIgnoreCase);
+            _secondaryStoreExists = new Dictionary<string, bool>();
         }
 
-        private KeyValueStore _EnsureStore(string objectFullName)
+        #region Private helpers
+
+        private string _CreateStorePath(string storeName, string objectFullName)
         {
-            lock (_stores)
+            return Path.Combine(Path.Combine(_config.BaseDataPath, storeName), objectFullName);
+        }
+
+        private KeyValueStore _EnsureStore(Dictionary<string, KeyValueStore> storeCollection, string path, string objectFullName)
+        {
+            lock (storeCollection)
             {
-                if (_stores.ContainsKey(objectFullName))
+                if (storeCollection.ContainsKey(objectFullName))
                 {
-                    return _stores[objectFullName];
+                    return storeCollection[objectFullName];
                 }
                 else
                 {
@@ -77,59 +87,181 @@ namespace ZeroG.Data.Object
                     // construct name from stored metadata for consistency
                     objectFullName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
 
-                    var store = new KeyValueStore(Path.Combine(Path.Combine(_config.BaseDataPath, "Store"), objectFullName));
-                    _stores[objectFullName] = store;
+                    var store = new KeyValueStore(_CreateStorePath(path, objectFullName));
+                    storeCollection[objectFullName] = store;
                     return store;
                 }
             }
         }
 
-        public void Set(string nameSpace, PersistentObject obj)
+        private KeyValueStore _EnsureStore(string objectFullName)
         {
-            var fullObjectName = ObjectNaming.CreateFullObjectName(nameSpace, obj.Name);
-            var store = _EnsureStore(fullObjectName);
+            return _EnsureStore(_stores, "Store", objectFullName);
+        }
 
-            if (obj.HasSecondaryKey())
+        private KeyValueStore _EnsureSecondaryStore(string objectFullName)
+        {
+            _secondaryStoreExists[objectFullName] = true;
+            return _EnsureStore(_secondaryStores, "SecondaryStore", objectFullName);
+        }
+
+        private bool _SecondaryStoreExists(string objectFullName)
+        {
+            if (!_secondaryStoreExists.ContainsKey(objectFullName))
             {
-                var keyIndex = new Dictionary<string, byte[]>();
-                keyIndex[_SecondaryKeyName] = obj.SecondaryKey;
+                _secondaryStoreExists[objectFullName] = Directory.Exists(_CreateStorePath("SecondaryStore", objectFullName));
+            }
 
-                store.Set(SerializerHelper.Serialize(obj.ID), obj.Value, keyIndex);
+            return _secondaryStoreExists[objectFullName];
+        }
+
+        private byte[] _CreateValueForStorage(byte[] value, byte[] secondaryKey)
+        {
+            if (null == secondaryKey)
+            {
+                return value;
             }
             else
             {
-                store.Set(SerializerHelper.Serialize(obj.ID), obj.Value);
+                var valueLen = value.Length;
+                var secondaryKeyLen = secondaryKey.Length;
+
+                var newValue = new byte[valueLen + secondaryKeyLen + 6];
+
+                newValue[0] = 124; // put two leading pipes as an indicator
+                newValue[1] = 124;
+
+                var buf = BitConverter.GetBytes(secondaryKeyLen);
+
+                newValue[2] = buf[0];
+                newValue[3] = buf[1];
+                newValue[4] = buf[2];
+                newValue[5] = buf[3];
+
+                Array.Copy(secondaryKey, 0, newValue, 6, secondaryKeyLen);
+
+                Array.Copy(value, 0, newValue, 6 + secondaryKeyLen, value.Length);
+
+                return newValue;
             }
+        }
+
+        private byte[] _GetValueFromStoredValue(byte[] value)
+        {
+            byte[] returnValue = value;
+
+            if (null != value && 5 < value.Length)
+            {
+                // check for leading double pipes indicating that next 4 characters can be treated as the secondary key length
+                if (value[0] == 124 && value[1] == 124)
+                {
+                    var offset = BitConverter.ToInt32(value, 2) + 6;
+                    var valLen = value.Length;
+                    if (offset < valLen)
+                    {
+                        var newVal = new byte[value.Length - offset];
+                        Array.Copy(value, offset, newVal, 0, newVal.Length);
+                        returnValue = newVal;
+                    }
+                }
+            }
+
+            return returnValue;
+        }
+
+        private byte[] _GetSecondaryKeyFromStoredValue(byte[] value)
+        {
+            byte[] returnValue = null;
+
+            if (null != value && 5 < value.Length)
+            {
+                // check for leading double pipes indicating that next 4 characters can be treated as the secondary key length
+                if (value[0] == 124 && value[1] == 124)
+                {
+                    var keyLen = BitConverter.ToInt32(value, 2);
+                    returnValue = new byte[keyLen];
+                    Array.Copy(value, 6, returnValue, 0, keyLen);
+                }
+            }
+
+            return returnValue;
+        }
+
+        #endregion
+
+        public void Set(string nameSpace, PersistentObject obj)
+        {
+            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, obj.Name);
+            var store = _EnsureStore(objectFullName);
+            var storeValue = _CreateValueForStorage(obj.Value, obj.SecondaryKey);
+
+            store.Set(SerializerHelper.Serialize(obj.ID), storeValue);
+
+            if (obj.HasSecondaryKey())
+            {
+                var secondaryStore = _EnsureSecondaryStore(objectFullName);
+                secondaryStore.Set(obj.SecondaryKey, SerializerHelper.Serialize(obj.ID));
+            }
+        }
+
+        private byte[] _Get(KeyValueStore store, byte[] key)
+        {
+            var val = store.Get(key);
+
+            return _GetValueFromStoredValue(val);
         }
 
         public byte[] Get(string objectFullName, int id)
         {
             var store = _EnsureStore(objectFullName);
-
-            return store.Get(SerializerHelper.Serialize(id));
+            var key = SerializerHelper.Serialize(id);
+            return _Get(store, key);
         }
 
-        public IEnumerable<byte[]> GetBySecondaryKey(string objectFullName, byte[] key)
+        public byte[] GetBySecondaryKey(string objectFullName, byte[] key)
         {
-            var store = _EnsureStore(objectFullName);
-            foreach (var entry in store.Find(_SecondaryKeyName, key))
+            var store = _EnsureSecondaryStore(objectFullName);
+            byte[] returnValue = null;
+
+            var primaryKey = store.Get(key);
+            if (null != primaryKey)
             {
-                yield return entry.Value;
+                returnValue = _Get(_EnsureStore(objectFullName), primaryKey);
             }
+
+            return returnValue;
         }
 
         public void Remove(string objectFullName, int id)
         {
             var store = _EnsureStore(objectFullName);
-            store.Delete(SerializerHelper.Serialize(id));
-            store.CleanIndex(_SecondaryKeyName);
+            var primaryKey = SerializerHelper.Serialize(id);
+            if (_SecondaryStoreExists(objectFullName))
+            {
+                var val = store.Get(primaryKey);
+                if (null != val)
+                {
+                    var secondaryKey = _GetSecondaryKeyFromStoredValue(val);
+                    if (null != secondaryKey)
+                    {
+                        var secondaryStore = _EnsureSecondaryStore(objectFullName);
+                        secondaryStore.Delete(secondaryKey);
+                    }
+                }
+            }
+            store.Delete(primaryKey);
         }
 
         public void Truncate(string objectFullName)
         {
             var store = _EnsureStore(objectFullName);
             store.Truncate();
-            store.CleanIndex(_SecondaryKeyName);
+
+            if (_SecondaryStoreExists(objectFullName))
+            {
+                store = _EnsureSecondaryStore(objectFullName);
+                store.Truncate();
+            }
         }
 
         #region Dispose implementation
@@ -150,6 +282,14 @@ namespace ZeroG.Data.Object
                     lock (_stores)
                     {
                         foreach (var s in _stores)
+                        {
+                            s.Value.Dispose();
+                        }
+                    }
+
+                    lock (_secondaryStores)
+                    {
+                        foreach (var s in _secondaryStores)
                         {
                             s.Value.Dispose();
                         }
