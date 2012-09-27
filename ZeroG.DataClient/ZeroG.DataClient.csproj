@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{8F055E63-1417-4D8E-B7ED-B3B63D630784}</ProjectGuid>
+    <ProjectGuid>{5258843A-203B-4B6F-9958-4CBB795D5496}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ZeroG.Data.Database.Drivers</RootNamespace>
-    <AssemblyName>ZeroG.Database.SQLServer</AssemblyName>
+    <RootNamespace>ZeroG.Data.Object</RootNamespace>
+    <AssemblyName>ZeroG.DataClient</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,25 +33,18 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IObjectServiceClient.cs" />
+    <Compile Include="ObjectID.cs" />
+    <Compile Include="ObjectIndex.cs" />
+    <Compile Include="ObjectIndexType.cs" />
+    <Compile Include="ObjectIndexTypeExtensions.cs" />
+    <Compile Include="PersistentObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Object\SQLObjectIndexProvider.cs" />
-    <Compile Include="SQLServerDatabaseService.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ZeroG.DataClient\ZeroG.DataClient.csproj">
-      <Project>{5258843a-203b-4b6f-9958-4cbb795d5496}</Project>
-      <Name>ZeroG.DataClient</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ZeroG.Data\ZeroG.Data.csproj">
-      <Project>{DB190F97-AB50-4659-BC56-377457EFDFCE}</Project>
-      <Name>ZeroG.Data</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

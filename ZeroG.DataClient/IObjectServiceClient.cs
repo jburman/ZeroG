@@ -23,15 +23,24 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace ZeroG.Data.Object.Index
+namespace ZeroG.Data.Object
 {
-    public enum ObjectIndexType
+    /// <summary>
+    /// The IObjectServiceClient interface provides a convenience interface for interacting with the ObjectService.
+    /// </summary>
+    public interface IObjectServiceClient
     {
-        Integer,
-        Decimal,
-        Binary,
-        String,
-        DateTime,
-        Unknown
+        ObjectID Store(byte[] value);
+        ObjectID Store(byte[] secondaryKey, byte[] value);
+        ObjectID StoreCompressed(byte[] value);
+        ObjectID StoreCompressed(byte[] secondaryKey, byte[] value);
+
+        byte[] Get(int objectId);
+        byte[] GetBySecondaryKey(byte[] secondaryKey);
+        byte[] GetCompressed(int objectId);
+        byte[] GetCompressedBySecondaryKey(byte[] secondaryKey);
+
+        void Remove(int id);
+        void Remove(int[] id);
     }
 }

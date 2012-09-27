@@ -28,7 +28,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
-using ZeroG.Data.Object.Index;
 
 namespace ZeroG.Data.Object
 {

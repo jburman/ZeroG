@@ -26,7 +26,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ZeroG.Data.Object.Index
+namespace ZeroG.Data.Object
 {
     public static class ObjectIndexTypeExtensions
     {

@@ -23,47 +23,15 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System.Runtime.Serialization;
-
-namespace ZeroG.Data.Object.Index
+namespace ZeroG.Data.Object
 {
-    [DataContract]
-    public sealed class ObjectIndex
+    public enum ObjectIndexType
     {
-        public ObjectIndex() { }
-
-        public ObjectIndex(string name, object value)
-        {
-            Name = name;
-            Value = value;
-        }
-
-        [DataMember(Order = 1)]
-        public string Name;
-        [DataMember(Order = 2)]
-        public object Value;
-
-        public ObjectIndexType GetDataType()
-        {
-            var dataType = default(ObjectIndexType);
-            return dataType.GetDataType(Value);
-        }
-
-        public override string ToString()
-        {
-            return Name + "=" + Value;
-        }
-
-        public override int GetHashCode()
-        {
-            return ToString().GetHashCode();
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (null == obj) { return false; }
-
-            return ToString() == obj.ToString();
-        }
+        Integer,
+        Decimal,
+        Binary,
+        String,
+        DateTime,
+        Unknown
     }
 }

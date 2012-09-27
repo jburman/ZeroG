@@ -49,6 +49,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ZeroG.DataClient\ZeroG.DataClient.csproj">
+      <Project>{5258843a-203b-4b6f-9958-4cbb795d5496}</Project>
+      <Name>ZeroG.DataClient</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ZeroG.Data\ZeroG.Data.csproj">
       <Project>{DB190F97-AB50-4659-BC56-377457EFDFCE}</Project>
       <Name>ZeroG.Data</Name>

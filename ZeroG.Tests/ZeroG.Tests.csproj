@@ -70,6 +70,7 @@
     <Compile Include="Data\Drivers\MySQL\OpenTest.cs" />
     <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
     <Compile Include="Lang\JSON\JSONTokenizerTest.cs" />
+    <Compile Include="Object\LocalObjectServiceClientTest.cs" />
     <Compile Include="Object\ObjectMetadataTest.cs" />
     <Compile Include="Object\ObjectServiceTest.cs" />
     <Compile Include="Object\ObjectTestHelper.cs" />
@@ -91,6 +92,10 @@
     <ProjectReference Include="..\ZeroG.Database.SQLServer\ZeroG.Database.SQLServer.csproj">
       <Project>{8f055e63-1417-4d8e-b7ed-b3b63d630784}</Project>
       <Name>ZeroG.Database.SQLServer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ZeroG.DataClient\ZeroG.DataClient.csproj">
+      <Project>{5258843a-203b-4b6f-9958-4cbb795d5496}</Project>
+      <Name>ZeroG.DataClient</Name>
     </ProjectReference>
     <ProjectReference Include="..\ZeroG.Data\ZeroG.Data.csproj">
       <Project>{db190f97-ab50-4659-bc56-377457efdfce}</Project>
