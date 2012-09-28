@@ -40,6 +40,10 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
     {
         public static readonly string TableExists = @"select COUNT(*) from sysobjects where name='{0}' and xtype='U'";
 
+        public static readonly string RowsExist = @"SELECT 1 FROM [ZeroG].[{0}] WHERE {1}";
+
+        public static readonly string RowsCount = @"SELECT COUNT(1) FROM [ZeroG].[{0}] WHERE {1}";
+
         public static readonly string CreateTableIfNotExists = @"IF NOT EXISTS (select * from sysobjects where name='{0}' and xtype='U')
     CREATE TABLE [ZeroG].[{0}](
 	    {1}
@@ -145,12 +149,22 @@ WHERE {1}";
 
         public override bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
-            throw new NotImplementedException();
+            using (var db = OpenData())
+            {
+                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var tableName = _CreateTableName(db, objectFullName);
+                return 1 == db.ExecuteScalar<int>(string.Format(SQLStatements.RowsExist, tableName, sqlConstraint.SQL), 0, sqlConstraint.Parameters.ToArray());
+            }
         }
 
         public override int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
-            throw new NotImplementedException();
+            using (var db = OpenData())
+            {
+                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var tableName = _CreateTableName(db, objectFullName);
+                return db.ExecuteScalar<int>(string.Format(SQLStatements.RowsCount, tableName, sqlConstraint.SQL), 0, sqlConstraint.Parameters.ToArray());
+            }
         }
 
         public override int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)

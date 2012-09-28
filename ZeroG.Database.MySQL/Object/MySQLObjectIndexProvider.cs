@@ -42,6 +42,8 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 
         public static readonly string RowsExist = @"SELECT 1 FROM `{0}` WHERE {1}";
 
+        public static readonly string RowsCount = @"SELECT COUNT(1) FROM `{0}` WHERE {1}";
+
         public static readonly string CreateTableIfNotExists = @"CREATE TABLE IF NOT EXISTS `{0}`(
 	    {1}
 	) ENGINE = InnoDB CHARACTER SET utf8 COLLATE utf8_general_ci";
@@ -144,7 +146,12 @@ WHERE {1}";
 
         public override int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
-            throw new NotImplementedException();
+            using (var db = OpenData())
+            {
+                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var tableName = _CreateTableName(db, objectFullName);
+                return db.ExecuteScalar<int>(string.Format(SQLStatements.RowsCount, tableName, sqlConstraint.SQL), 0, sqlConstraint.Parameters.ToArray());
+            }
         }
 
         public override int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)

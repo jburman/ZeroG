@@ -596,5 +596,50 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.IsFalse(provider.Exists(ObjectFullName1,
                 @"{ ""TestCol1"" : 102, ""Op"" : ""="" }", indexMetadata));
         }
+
+        [TestMethod]
+        [TestCategory("MySQL")]
+        public void Count()
+        {
+            var provider = IndexProvider;
+            var indexMetadata = new ObjectIndexMetadata[]
+            {
+                new ObjectIndexMetadata("TestCol1", ObjectIndexType.Integer),
+                new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15)
+            };
+
+            provider.ProvisionIndex(
+                new ObjectMetadata(NameSpace1, ObjectName1,
+                    indexMetadata));
+
+            provider.UpsertIndexValues(ObjectFullName1, 1,
+                new ObjectIndex("TestCol1", 100),
+                new ObjectIndex("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 2,
+                new ObjectIndex("TestCol1", 105),
+                new ObjectIndex("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 3,
+                new ObjectIndex("TestCol1", 500),
+                new ObjectIndex("TestCol2", "B"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 4,
+                new ObjectIndex("TestCol1", 500),
+                new ObjectIndex("TestCol2", "C"));
+
+
+            Assert.AreEqual(1, provider.Count(ObjectFullName1,
+                @"{ ""TestCol1"" : 100, ""Op"" : ""="" }", indexMetadata));
+
+            Assert.AreEqual(0, provider.Count(ObjectFullName1,
+                @"{ ""TestCol1"" : 102, ""Op"" : ""="" }", indexMetadata));
+
+            Assert.AreEqual(4, provider.Count(ObjectFullName1,
+                @"{ ""TestCol1"" : 0, ""Op"" : "">"" }", indexMetadata));
+
+            Assert.AreEqual(2, provider.Count(ObjectFullName1,
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", indexMetadata));
+        }
     }
 }
