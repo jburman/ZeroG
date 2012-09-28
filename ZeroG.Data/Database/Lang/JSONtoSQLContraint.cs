@@ -52,7 +52,9 @@ namespace ZeroG.Data.Database.Lang
         In,
         NotIn,
         LessThan,
-        GreaterThan
+        LessThanOrEquals,
+        GreaterThan,
+        GreaterThanOrEquals
     }
 
     public enum ConstraintLogic
@@ -112,7 +114,9 @@ namespace ZeroG.Data.Database.Lang
             _operators["IN"] = ConstraintOperator.In;
             _operators["NOT IN"] = ConstraintOperator.NotIn;
             _operators["<"] = ConstraintOperator.LessThan;
+            _operators["<="] = ConstraintOperator.LessThanOrEquals;
             _operators[">"] = ConstraintOperator.GreaterThan;
+            _operators[">="] = ConstraintOperator.GreaterThanOrEquals;
 
             _operatorsReverse = new Dictionary<ConstraintOperator, string>();
 
@@ -210,7 +214,7 @@ namespace ZeroG.Data.Database.Lang
         {
             sql.Append(" " + _db.MakeQuotedName(constraint.Name) + " ");
 
-            if (null == constraint.Value)
+            if (null == constraint.Value && null == constraint.ArrayValues)
             {
                 sql.Append(_operatorsReverse[constraint.Operator]);
                 sql.Append(" NULL");

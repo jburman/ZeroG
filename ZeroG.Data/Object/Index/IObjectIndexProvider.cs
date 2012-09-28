@@ -31,7 +31,11 @@ namespace ZeroG.Data.Object.Index
 {
     public interface IObjectIndexProvider : IDisposable
     {
-        bool Exists(string objectFullName);
+        bool ObjectExists(string objectFullName);
+
+        bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
+
+        int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
 
         int[] Find(string objectFullName, params ObjectIndex[] indexes);
 

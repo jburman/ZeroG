@@ -445,7 +445,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
 
         [TestMethod]
         [TestCategory("MySQL")]
-        public void JSONConstraintLike()
+        public void JSONConstraintOperators()
         {
             var provider = IndexProvider;
 
@@ -467,7 +467,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 new ObjectIndex("TestCol1", 200),
                 new ObjectIndex("TestCol2", "zxzy"));
 
-            // test single constraint value that should return a single result
+            // test LIKE operator
             int[] ids = provider.Find(ObjectFullName1,
                 @"{ ""TestCol2"" : ""%sd%"", ""Op"" : ""LIKE"" }",
                 indexMetadata);
@@ -476,6 +476,7 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(1, ids[0]);
 
+            // test NOT LIKE operator
             ids = provider.Find(ObjectFullName1,
                 @"{ ""TestCol2"" : ""as%"", ""Op"" : ""NOT LIKE"" }",
                 indexMetadata);
@@ -483,6 +484,117 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.IsNotNull(ids);
             Assert.AreEqual(1, ids.Length);
             Assert.AreEqual(2, ids[0]);
+
+            // test EQUALS operator
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol1"" : 100, ""Op"" : ""="" }",
+                indexMetadata);
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1, ids[0]);
+
+            // test NOT EQUALS operator
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol1"" : 100, ""Op"" : ""<>"" }",
+                indexMetadata);
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(2, ids[0]);
+
+            // test IN operator
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol1"" : [100], ""Op"" : ""IN"" }",
+                indexMetadata);
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1, ids[0]);
+
+            // test NOT IN operator
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol1"" : [100], ""Op"" : ""NOT IN"" }",
+                indexMetadata);
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(2, ids[0]);
+
+            // test LESS THAN operator
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol1"" : 200, ""Op"" : ""<"" }",
+                indexMetadata);
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1, ids[0]);
+
+            // test LESS THAN OR EQUALS operator
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol1"" : 100, ""Op"" : ""<="" }",
+                indexMetadata);
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1, ids[0]);
+
+            // test GREATER THAN operator
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol1"" : 100, ""Op"" : "">"" }",
+                indexMetadata);
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(2, ids[0]);
+
+            // test GREATER THAN OR EQUALS operator
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol1"" : 200, ""Op"" : "">="" }",
+                indexMetadata);
+
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(2, ids[0]);
+        }
+
+        [TestMethod]
+        [TestCategory("MySQL")]
+        public void Exists()
+        {
+            var provider = IndexProvider;
+            var indexMetadata = new ObjectIndexMetadata[]
+            {
+                new ObjectIndexMetadata("TestCol1", ObjectIndexType.Integer),
+                new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15)
+            };
+
+            provider.ProvisionIndex(
+                new ObjectMetadata(NameSpace1, ObjectName1,
+                    indexMetadata));
+
+            provider.UpsertIndexValues(ObjectFullName1, 1,
+                new ObjectIndex("TestCol1", 100),
+                new ObjectIndex("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 2,
+                new ObjectIndex("TestCol1", 105),
+                new ObjectIndex("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 3,
+                new ObjectIndex("TestCol1", 500),
+                new ObjectIndex("TestCol2", "B"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 4,
+                new ObjectIndex("TestCol1", 500),
+                new ObjectIndex("TestCol2", "C"));
+
+
+            Assert.IsTrue(provider.Exists(ObjectFullName1,
+                @"{ ""TestCol1"" : 100, ""Op"" : ""="" }", indexMetadata));
+
+            Assert.IsFalse(provider.Exists(ObjectFullName1,
+                @"{ ""TestCol1"" : 102, ""Op"" : ""="" }", indexMetadata));
         }
     }
 }

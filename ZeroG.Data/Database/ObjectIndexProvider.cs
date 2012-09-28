@@ -164,7 +164,9 @@ namespace ZeroG.Data.Database
             return JSONToSQLConstraint.GenerateSQLConstraint(db, typeMappings, constraint);
         }
 
-        public abstract bool Exists(string objectFullName);
+        public abstract bool ObjectExists(string objectFullName);
+        public abstract bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
+        public abstract int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
         public abstract int[] Find(string objectFullName, params ObjectIndex[] indexes);
         public abstract int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes);
         public abstract int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);

@@ -131,7 +131,7 @@ WHERE {1}";
             return string.Format("[{0}] [{1}]{2} NOT NULL", name, type, length);
         }
 
-        public override bool Exists(string objectFullName)
+        public override bool ObjectExists(string objectFullName)
         {
             bool returnValue = false;
 
@@ -141,6 +141,16 @@ WHERE {1}";
             }
 
             return returnValue;
+        }
+
+        public override bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            throw new NotImplementedException();
         }
 
         public override int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)

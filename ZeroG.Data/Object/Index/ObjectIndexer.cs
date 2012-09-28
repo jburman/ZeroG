@@ -89,7 +89,7 @@ namespace ZeroG.Data.Object.Index
 
         public bool Exists(string objectFullName)
         {
-            return _indexer.Exists(objectFullName);
+            return _indexer.ObjectExists(objectFullName);
         }
 
         internal int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
