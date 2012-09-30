@@ -59,6 +59,13 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void IndexNameNull()
+        {
+            ObjectIndex.Create(null, 5);
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
         public void InvalidCharacterIndexName()
         {
@@ -69,7 +76,7 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(ArgumentException))]
         public void IndexNameTooShort()
         {
-            ObjectIndex.Create("A", 5);
+            ObjectIndex.Create(string.Empty, 5);
         }
 
         [TestMethod]
