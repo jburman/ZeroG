@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZeroG.Data.Database;
 using ZeroG.Data.Object;
+using ZeroG.Data.Object.Index;
 
 namespace ZeroG.Tests.Object
 {
@@ -27,6 +30,29 @@ namespace ZeroG.Tests.Object
                 defaultConfig.ObjectIndexSchemaConnection,
                 defaultConfig.ObjectIndexDataConnection,
                 defaultConfig.MaxObjectDependencies);
+        }
+
+        public static IObjectIndexProvider CreateObjectIndexProvider()
+        {
+            IObjectIndexProvider indexer = null;
+            Type indexerType = null;
+
+            var setting = ConfigurationManager.AppSettings[Config.ObjectIndexProviderConfigKey];
+            if (!string.IsNullOrEmpty(setting))
+            {
+                var objectIndexProviderType = Type.GetType(setting, true);
+
+                if (typeof(IObjectIndexProvider).IsAssignableFrom(objectIndexProviderType))
+                {
+                    indexer = (IObjectIndexProvider)Activator.CreateInstance(objectIndexProviderType);
+                    indexerType = objectIndexProviderType;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Unsupported IObjectIndexProvider type: " + objectIndexProviderType.FullName);
+                }
+            }
+            return (IObjectIndexProvider)Activator.CreateInstance(indexerType);
         }
 
         public static void CleanTestObjects()

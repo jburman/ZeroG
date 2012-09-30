@@ -1,12 +1,14 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Text;
 using ZeroG.Data.Database;
 using ZeroG.Data.Database.Drivers.Object.Provider;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
+using ZeroG.Tests.Object;
 
 namespace ZeroG.Tests.Data.Drivers.MySQL
 {
@@ -43,11 +45,16 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         internal static string ObjectFullName1 = "ZGTestNS.ZGTestObj1";
 
         #region Additional test attributes
-        internal static MySQLObjectIndexProvider IndexProvider
+        private static IObjectIndexProvider _provider;
+        internal static IObjectIndexProvider IndexProvider
         {
             get
             {
-                return new MySQLObjectIndexProvider(DataTestHelper.MySQLSchemaUpdater, DataTestHelper.MySQLDataAccess);
+                if (null == _provider)
+                {
+                    _provider = ObjectTestHelper.CreateObjectIndexProvider();
+                }
+                return _provider;
             }
         }
 
@@ -78,7 +85,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         #endregion
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void ProvisionIndex()
         {
             var provider = IndexProvider;
@@ -100,8 +106,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
-        [ExpectedException(typeof(MySql.Data.MySqlClient.MySqlException))]
         public void UnprovisionTest()
         {
             var provider = IndexProvider;
@@ -130,13 +134,22 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 Assert.Fail("Unexpected exception: " + ex.ToString());
             }
 
-            // should throw
-            provider.Find(ObjectFullName1,
-                ObjectIndex.Create("TestCol1", 100));
+            Assert.IsFalse(provider.ObjectExists(ObjectFullName1));
+
+            try
+            {
+                // should throw
+                provider.Find(ObjectFullName1,
+                    ObjectIndex.Create("TestCol1", 100));
+
+                Assert.IsTrue(false, "Expected exception to be thrown before reaching this line.");
+            }
+            catch (DbException)
+            {
+            }
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void SimpleFind()
         {
             var provider = IndexProvider;
@@ -200,7 +213,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void SimpleFindDataTypes()
         {
             var provider = IndexProvider;
@@ -271,7 +283,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void SimpleFindWithOr()
         {
             var provider = IndexProvider;
@@ -323,7 +334,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void SimpleFindWithLike()
         {
             var provider = IndexProvider;
@@ -375,7 +385,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void JSONConstraintFind()
         {
             var provider = IndexProvider;
@@ -444,7 +453,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void JSONConstraintOperators()
         {
             var provider = IndexProvider;
@@ -559,7 +567,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void Exists()
         {
             var provider = IndexProvider;
@@ -598,7 +605,6 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void Count()
         {
             var provider = IndexProvider;

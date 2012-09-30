@@ -163,7 +163,7 @@ namespace ZeroG.Data.Object.Metadata
                 {
                     if (!ObjectNameValidator.IsValidIndexName(idx.Name))
                     {
-                        throw new ArgumentException("Invalid index name found " + idx.Name + ". It should be 3-30 characters long and contain only alphanumeric characters or underscores.");
+                        throw new ArgumentException("Invalid index name found " + idx.Name + ". It should be 1-30 characters long and contain only alphanumeric characters or underscores.");
                     }
                 }
             }

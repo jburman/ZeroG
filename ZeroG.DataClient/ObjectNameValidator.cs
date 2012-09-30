@@ -32,18 +32,18 @@ namespace ZeroG.Data.Object
         private static Regex _NameSpaceValidator = new Regex("^([a-zA-Z0-9]+([\\._]?[a-zA-Z0-9])*)$", RegexOptions.Compiled);
         public static bool IsValidNameSpace(string nameSpace)
         {
-            return !string.IsNullOrEmpty(nameSpace) && 3 < nameSpace.Length && 30 > nameSpace.Length && _NameSpaceValidator.IsMatch(nameSpace);
+            return !string.IsNullOrEmpty(nameSpace) && 2 < nameSpace.Length && 31 > nameSpace.Length && _NameSpaceValidator.IsMatch(nameSpace);
         }
 
         private static Regex _ObjectNameValidator = new Regex("^([a-zA-Z0-9_]+)$", RegexOptions.Compiled);
         public static bool IsValidObjectName(string objectName)
         {
-            return !string.IsNullOrEmpty(objectName) && 3 < objectName.Length && 30 > objectName.Length && _ObjectNameValidator.IsMatch(objectName);
+            return !string.IsNullOrEmpty(objectName) && 2 < objectName.Length && 31 > objectName.Length && _ObjectNameValidator.IsMatch(objectName);
         }
 
         public static bool IsValidIndexName(string indexName)
         {
-            return !string.IsNullOrEmpty(indexName) && 3 < indexName.Length && 30 > indexName.Length && _ObjectNameValidator.IsMatch(indexName);
+            return !string.IsNullOrEmpty(indexName) && 0 < indexName.Length && 31 > indexName.Length && _ObjectNameValidator.IsMatch(indexName);
         }
     }
 }

@@ -61,7 +61,7 @@ namespace ZeroG.Data.Object
 
             if (!ObjectNameValidator.IsValidIndexName(name))
             {
-                throw new ArgumentException("Invalid index name found " + name + ". It should be 3-30 characters long and contain only alphanumeric characters or underscores.");
+                throw new ArgumentException("Invalid index name found " + name + ". It should be 1-30 characters long and contain only alphanumeric characters or underscores.");
             }
 
             var dataType = DefaultDataType.GetDataType(value);

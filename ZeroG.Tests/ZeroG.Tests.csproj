@@ -49,6 +49,7 @@
       <HintPath>..\References\RazorDB.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.XML" />
   </ItemGroup>
@@ -66,8 +67,8 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Data\DataTestHelper.cs" />
-    <Compile Include="Data\Drivers\MySQL\IndexProviderTest.cs" />
-    <Compile Include="Data\Drivers\MySQL\OpenTest.cs" />
+    <Compile Include="Data\Drivers\IndexProviderTest.cs" />
+    <Compile Include="Data\Drivers\OpenTest.cs" />
     <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
     <Compile Include="Lang\JSON\JSONTokenizerTest.cs" />
     <Compile Include="Object\LocalObjectServiceClientTest.cs" />
@@ -79,7 +80,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Data\Drivers\SQLServer\" />
     <Folder Include="Scripts\" />
   </ItemGroup>
   <ItemGroup>
