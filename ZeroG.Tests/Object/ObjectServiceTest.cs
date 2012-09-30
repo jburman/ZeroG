@@ -272,8 +272,8 @@ namespace ZeroG.Tests.Object
                     Value = val1.ToByteArray(),
                     Indexes = new ObjectIndex[] 
                     { 
-                        new ObjectIndex("IntIndex1", intIndex1),
-                        new ObjectIndex("StrIndex1", strIndex1)
+                        ObjectIndex.Create("IntIndex1", intIndex1),
+                        ObjectIndex.Create("StrIndex1", strIndex1)
                     }
                 });
 
@@ -283,8 +283,8 @@ namespace ZeroG.Tests.Object
                     Value = val2.ToByteArray(),
                     Indexes = new ObjectIndex[] 
                     { 
-                        new ObjectIndex("IntIndex1", intIndex2),
-                        new ObjectIndex("StrIndex1", strIndex2)
+                        ObjectIndex.Create("IntIndex1", intIndex2),
+                        ObjectIndex.Create("StrIndex1", strIndex2)
                     }
                 });
 
@@ -294,15 +294,15 @@ namespace ZeroG.Tests.Object
                     Value = val3.ToByteArray(),
                     Indexes = new ObjectIndex[] 
                     { 
-                        new ObjectIndex("IntIndex1", intIndex3),
-                        new ObjectIndex("StrIndex1", strIndex3)
+                        ObjectIndex.Create("IntIndex1", intIndex3),
+                        ObjectIndex.Create("StrIndex1", strIndex3)
                     }
                 });
 
                 // test a single index lookup using And
                 var findVals = svc.FindWhereEqualsAnd(ns, obj, new ObjectIndex[]
                 {
-                    new ObjectIndex("IntIndex1", 12500)
+                    ObjectIndex.Create("IntIndex1", 12500)
                 }).ToArray();
 
                 Assert.AreEqual(1, findVals.Length);
@@ -311,8 +311,8 @@ namespace ZeroG.Tests.Object
                 // test two index lookups using And
                 findVals = svc.FindWhereEqualsAnd(ns, obj, new ObjectIndex[]
                 {
-                    new ObjectIndex("StrIndex1", "index test val"),
-                    new ObjectIndex("IntIndex1", 12500)
+                    ObjectIndex.Create("StrIndex1", "index test val"),
+                    ObjectIndex.Create("IntIndex1", 12500)
                 }).ToArray();
 
                 Assert.AreEqual(1, findVals.Length);
@@ -321,7 +321,7 @@ namespace ZeroG.Tests.Object
                 // test a single lookup using Or
                 findVals = svc.FindWhereEqualsOr(ns, obj, new ObjectIndex[]
                 {
-                    new ObjectIndex("IntIndex1", 12500)
+                    ObjectIndex.Create("IntIndex1", 12500)
                 }).ToArray();
 
                 Assert.AreEqual(1, findVals.Length);
@@ -330,8 +330,8 @@ namespace ZeroG.Tests.Object
                 // test two index lookups using Or
                 findVals = svc.FindWhereEqualsOr(ns, obj, new ObjectIndex[]
                 {
-                    new ObjectIndex("IntIndex1", 12500),
-                    new ObjectIndex("StrIndex1", "asdf")
+                    ObjectIndex.Create("IntIndex1", 12500),
+                    ObjectIndex.Create("StrIndex1", "asdf")
                 }).ToArray();
 
                 Assert.AreEqual(2, findVals.Length);

@@ -25,6 +25,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace ZeroG.Data.Object
 {
@@ -74,6 +76,76 @@ namespace ZeroG.Data.Object
         public static Type GetSystemType(this ObjectIndexType objectIndexType)
         {
             return _typeMappings[objectIndexType];
+        }
+
+        private static Encoding _utf8 = Encoding.UTF8;
+        public static byte[] ConvertToBinary(this ObjectIndexType objectIndexType, object value)
+        {
+            byte[] returnValue = null;
+
+            switch (objectIndexType)
+            {
+                case ObjectIndexType.Binary:
+                    returnValue = (byte[])value;
+                    break;
+                case ObjectIndexType.String:
+                    returnValue = _utf8.GetBytes((string)value);
+                    break;
+                case ObjectIndexType.Integer:
+                    returnValue = BitConverter.GetBytes((int)value);
+                    break;
+                case ObjectIndexType.Decimal:
+                    using (var buffer = new MemoryStream())
+                    {
+                        using (var writer = new BinaryWriter(buffer))
+                        {
+                            writer.Write((decimal)value);
+                        }
+                        returnValue = buffer.ToArray();
+                    }
+                    break;
+                case ObjectIndexType.DateTime:
+                    returnValue = BitConverter.GetBytes(((DateTime)value).ToBinary());
+                    break;
+                default:
+                    break;
+            }
+
+            return returnValue;
+        }
+
+        public static object ConvertToObject(this ObjectIndexType objectIndexType, byte[] value)
+        {
+            object returnValue = null;
+
+            switch (objectIndexType)
+            {
+                case ObjectIndexType.Binary:
+                    returnValue = value;
+                    break;
+                case ObjectIndexType.String:
+                    returnValue = _utf8.GetString(value);
+                    break;
+                case ObjectIndexType.Integer:
+                    returnValue = BitConverter.ToInt32(value, 0);
+                    break;
+                case ObjectIndexType.Decimal:
+                    using (var buffer = new MemoryStream(value))
+                    {
+                        using (var reader = new BinaryReader(buffer))
+                        {
+                            returnValue = reader.ReadDecimal();
+                        }
+                    }
+                    break;
+                case ObjectIndexType.DateTime:
+                    returnValue =  DateTime.FromBinary(BitConverter.ToInt64(value, 0));
+                    break;
+                default:
+                    break;
+            }
+
+            return returnValue;
         }
     }
 }

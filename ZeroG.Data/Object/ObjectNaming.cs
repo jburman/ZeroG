@@ -30,7 +30,7 @@ using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object
 {
-    internal sealed class ObjectNaming
+    public sealed class ObjectNaming
     {
         public const string DefaultNameSpace = "System.Default";
 
@@ -39,7 +39,7 @@ namespace ZeroG.Data.Object
         private HashSet<string> _validNameSpaces;
         private HashSet<string> _validNames;
 
-        public ObjectNaming(ObjectMetadataStore objectMetadata)
+        internal ObjectNaming(ObjectMetadataStore objectMetadata)
         {
             if (null == objectMetadata)
             {
@@ -82,24 +82,7 @@ namespace ZeroG.Data.Object
             });
         }
 
-        private static Regex _NameSpaceValidator = new Regex("^([a-zA-Z0-9]+([\\._]?[a-zA-Z0-9])*)$", RegexOptions.Compiled);
-        public static bool IsValidNameSpace(string nameSpace)
-        {
-            return !string.IsNullOrEmpty(nameSpace) && 3 < nameSpace.Length && 30 > nameSpace.Length && _NameSpaceValidator.IsMatch(nameSpace);
-        }
-
-        private static Regex _ObjectNameValidator = new Regex("^([a-zA-Z0-9_]+)$", RegexOptions.Compiled);
-        public static bool IsValidObjectName(string objectName)
-        {
-            return !string.IsNullOrEmpty(objectName) && 3 < objectName.Length && 30 > objectName.Length && _ObjectNameValidator.IsMatch(objectName);
-        }
-
-        public static bool IsValidIndexName(string indexName)
-        {
-            return !string.IsNullOrEmpty(indexName) && 3 < indexName.Length && 30 > indexName.Length && _ObjectNameValidator.IsMatch(indexName);
-        }
-
-        public bool NameSpaceExists(string nameSpace)
+        internal bool NameSpaceExists(string nameSpace)
         {
             if (string.IsNullOrEmpty(nameSpace))
             {
@@ -111,7 +94,7 @@ namespace ZeroG.Data.Object
             }
         }
 
-        public bool ObjectNameExists(string nameSpace, string objectName)
+        internal bool ObjectNameExists(string nameSpace, string objectName)
         {
             if (string.IsNullOrEmpty(nameSpace))
             {

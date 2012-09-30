@@ -23,6 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+using System;
 using System.Runtime.Serialization;
 
 namespace ZeroG.Data.Object
@@ -30,28 +31,68 @@ namespace ZeroG.Data.Object
     [DataContract]
     public sealed class ObjectIndex
     {
+        private static ObjectIndexType DefaultDataType = default(ObjectIndexType);
+
+        private object _deserializedValue;
+
+        #region ObjectIndex construction
+
         public ObjectIndex() { }
 
-        public ObjectIndex(string name, object value)
+        private ObjectIndex(string name, byte[] value, object deserializedValue, ObjectIndexType dataType)
         {
             Name = name;
             Value = value;
+            DataType = dataType;
+            _deserializedValue = deserializedValue;
         }
 
-        [DataMember(Order = 1)]
-        public string Name;
-        [DataMember(Order = 2)]
-        public object Value;
-
-        public ObjectIndexType GetDataType()
+        public static ObjectIndex Create(string name, object value)
         {
-            var dataType = default(ObjectIndexType);
-            return dataType.GetDataType(Value);
+            if (null == name)
+            {
+                throw new ArgumentNullException("name");
+            }
+
+            if (null == value)
+            {
+                throw new ArgumentNullException("value");
+            }
+
+            if (!ObjectNameValidator.IsValidIndexName(name))
+            {
+                throw new ArgumentException("Invalid index name found " + name + ". It should be 3-30 characters long and contain only alphanumeric characters or underscores.");
+            }
+
+            var dataType = DefaultDataType.GetDataType(value);
+            if (ObjectIndexType.Unknown == dataType)
+            {
+                throw new ArgumentException("Unsupported Type: " + value.GetType().Name);
+            }
+            return new ObjectIndex(name, dataType.ConvertToBinary(value), value, dataType);
+        }
+
+        #endregion
+
+        [DataMember(Order = 1)]
+        public ObjectIndexType DataType;
+        [DataMember(Order = 2)]
+        public string Name;
+        [DataMember(Order = 3)]
+        public byte[] Value;
+
+        public object GetObjectValue()
+        {
+            if (null == _deserializedValue)
+            {
+                _deserializedValue = DataType.ConvertToObject(Value);
+            }
+            return _deserializedValue;
         }
 
         public override string ToString()
         {
-            return Name + "=" + Value;
+            return Name + "=" + GetObjectValue();
         }
 
         public override int GetHashCode()

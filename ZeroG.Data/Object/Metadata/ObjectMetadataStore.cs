@@ -69,7 +69,7 @@ namespace ZeroG.Data.Object.Metadata
             else
             {
                 // validate characters and form of the namespace
-                if (ObjectNaming.IsValidNameSpace(nameSpace))
+                if (ObjectNameValidator.IsValidNameSpace(nameSpace))
                 {
                     var nsKey = SerializerHelper.Serialize(nameSpace);
 
@@ -151,7 +151,7 @@ namespace ZeroG.Data.Object.Metadata
         public void StoreMetadata(ObjectMetadata metadata)
         {
             // validate format of the object name
-            if (!ObjectNaming.IsValidObjectName(metadata.ObjectName))
+            if (!ObjectNameValidator.IsValidObjectName(metadata.ObjectName))
             {
                 throw new ArgumentException("Invalid object name. It should be 3-30 characters long and contain only alphanumeric characters and underscores.");
             }
@@ -161,7 +161,7 @@ namespace ZeroG.Data.Object.Metadata
                 // validate format of the index names
                 foreach (var idx in metadata.Indexes)
                 {
-                    if (!ObjectNaming.IsValidIndexName(idx.Name))
+                    if (!ObjectNameValidator.IsValidIndexName(idx.Name))
                     {
                         throw new ArgumentException("Invalid index name found " + idx.Name + ". It should be 3-30 characters long and contain only alphanumeric characters or underscores.");
                     }

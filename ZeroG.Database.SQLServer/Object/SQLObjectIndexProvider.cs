@@ -195,7 +195,7 @@ WHERE {1}";
 
                     var idx = indexes[i];
                     var paramName = "p" + i + idx.Name;
-                    var value = idx.Value;
+                    var value = idx.GetObjectValue();
                     if (value is byte[])
                     {
                         string hexStr = DatabaseHelper.ByteToHexString((byte[])value);
@@ -285,7 +285,7 @@ WHERE {1}";
                 for (int i = 0; indexes.Length > i; i++)
                 {
                     var idx = indexes[i];
-                    var param = db.MakeParam(idx.Name + "_param", idx.Value);
+                    var param = db.MakeParam(idx.Name + "_param", idx.GetObjectValue());
                     parameters.Add(param);
                 }
 

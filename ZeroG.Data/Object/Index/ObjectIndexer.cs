@@ -74,7 +74,7 @@ namespace ZeroG.Data.Object.Index
         {
             foreach (var idx in obj.Indexes)
             {
-                var dataType = idx.GetDataType();
+                var dataType = idx.DataType;
                 if (null == obj.Value)
                 {
                     throw new ArgumentNullException("obj.Value", "Index values cannot be null.");

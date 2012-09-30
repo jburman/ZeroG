@@ -75,6 +75,7 @@
     <Compile Include="Object\ObjectServiceTest.cs" />
     <Compile Include="Object\ObjectTestHelper.cs" />
     <Compile Include="Object\ObjectIndexerCacheTest.cs" />
+    <Compile Include="Object\ObjectIndexTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
