@@ -59,7 +59,7 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
         public static readonly string DropTableIfExists = @"IF EXISTS (select * from sysobjects where name='{0}' and xtype='U')
     DROP TABLE [ZeroG].[{0}]";
 
-        public static readonly string Find = @"SELECT [ID] FROM [ZeroG].[{0}]
+        public static readonly string Find = @"SELECT DISTINCT [ID] FROM [ZeroG].[{0}]
 WHERE {1}";
 
         public static string RemoveIndex = @"DELETE FROM [ZeroG].[{0}] WHERE [{1}] IN ({2})";
