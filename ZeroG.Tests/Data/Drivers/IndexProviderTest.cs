@@ -313,7 +313,11 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
 
 
             // test two constraints on the same index that should return a two results
-            int[] ids = provider.Find(ObjectFullName1, ObjectFindLogic.Or, ObjectFindOperator.Equals,
+            int[] ids = provider.Find(ObjectFullName1, new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.Or,
+                    Operator = ObjectFindOperator.Equals
+                },
                 ObjectIndex.Create("TestCol1", 100),
                 ObjectIndex.Create("TestCol1", 105));
 
@@ -323,7 +327,11 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(2, ids[1]);
 
             // test two constraint on separate indexes that should return two results
-            ids = provider.Find(ObjectFullName1, ObjectFindLogic.Or, ObjectFindOperator.Equals,
+            ids = provider.Find(ObjectFullName1, new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.Or,
+                    Operator = ObjectFindOperator.Equals
+                },
                 ObjectIndex.Create("TestCol1", 105),
                 ObjectIndex.Create("TestCol2", "C"));
 
@@ -359,7 +367,11 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 ObjectIndex.Create("TestCol2", "B"));
 
             // should return one result
-            int[] ids = provider.Find(ObjectFullName1, ObjectFindLogic.And, ObjectFindOperator.Like,
+            int[] ids = provider.Find(ObjectFullName1, new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Like
+                },
                 ObjectIndex.Create("TestCol1", 100));
 
             Assert.IsNotNull(ids);
@@ -367,7 +379,11 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids[0]);
 
             // should return one result
-            ids = provider.Find(ObjectFullName1, ObjectFindLogic.Or, ObjectFindOperator.Like,
+            ids = provider.Find(ObjectFullName1, new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.Or,
+                    Operator = ObjectFindOperator.Like
+                },
                 ObjectIndex.Create("TestCol2", "asdf"));
 
             Assert.IsNotNull(ids);
@@ -375,7 +391,11 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(1, ids[0]);
 
             // should return two results
-            ids = provider.Find(ObjectFullName1, ObjectFindLogic.Or, ObjectFindOperator.Like,
+            ids = provider.Find(ObjectFullName1, new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.Or,
+                    Operator = ObjectFindOperator.Like
+                },
                 ObjectIndex.Create("TestCol2", "as%"));
 
             Assert.IsNotNull(ids);
@@ -646,6 +666,93 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
 
             Assert.AreEqual(2, provider.Count(ObjectFullName1,
                 @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", indexMetadata));
+        }
+
+        [TestMethod]
+        public void Limit()
+        {
+            var provider = IndexProvider;
+            var indexMetadata = new ObjectIndexMetadata[]
+            {
+                new ObjectIndexMetadata("TestCol1", ObjectIndexType.Integer),
+                new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15)
+            };
+
+            provider.ProvisionIndex(
+                new ObjectMetadata(NameSpace1, ObjectName1,
+                    indexMetadata));
+
+            provider.UpsertIndexValues(ObjectFullName1, 1,
+                ObjectIndex.Create("TestCol1", 100),
+                ObjectIndex.Create("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 2,
+                ObjectIndex.Create("TestCol1", 105),
+                ObjectIndex.Create("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 3,
+                ObjectIndex.Create("TestCol1", 500),
+                ObjectIndex.Create("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 4,
+                ObjectIndex.Create("TestCol1", 500),
+                ObjectIndex.Create("TestCol2", "B"));
+
+            var ids = provider.Find(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals,
+                    Limit = 0
+                }, ObjectIndex.Create("TestCol2", "A"));
+
+            Assert.AreEqual(3, ids.Length);
+
+            ids = provider.Find(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals,
+                    Limit = 1
+                }, ObjectIndex.Create("TestCol2", "A"));
+
+            Assert.AreEqual(1, ids.Length);
+
+            ids = provider.Find(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals,
+                    Limit = 2
+                }, ObjectIndex.Create("TestCol2", "A"));
+
+            Assert.AreEqual(2, ids.Length);
+
+            ids = provider.Find(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals,
+                    Limit = 10
+                }, ObjectIndex.Create("TestCol2", "A"));
+
+            Assert.AreEqual(3, ids.Length);
+
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 0, indexMetadata);
+            Assert.AreEqual(3, ids.Length);
+
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 1, indexMetadata);
+            Assert.AreEqual(1, ids.Length);
+
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 2, indexMetadata);
+            Assert.AreEqual(2, ids.Length);
+
+            ids = provider.Find(ObjectFullName1,
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 10, indexMetadata);
+            Assert.AreEqual(3, ids.Length);
         }
     }
 }

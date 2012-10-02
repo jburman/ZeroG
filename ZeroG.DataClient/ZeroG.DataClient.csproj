@@ -39,6 +39,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IObjectServiceClient.cs" />
+    <Compile Include="ObjectFindLogic.cs" />
+    <Compile Include="ObjectFindOperator.cs" />
+    <Compile Include="ObjectFindOptions.cs" />
     <Compile Include="ObjectID.cs" />
     <Compile Include="ObjectIndex.cs" />
     <Compile Include="ObjectIndexType.cs" />

@@ -167,9 +167,12 @@ WHERE {1}";
             }
         }
 
-        public override int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)
+        public override int[] Find(string objectFullName, ObjectFindOptions options, params ObjectIndex[] indexes)
         {
             int[] returnValue = null;
+            var logic = options.Logic;
+            var oper = options.Operator;
+
             bool useOr = ObjectFindLogic.Or == logic;
             bool useLike = ObjectFindOperator.Like == oper;
 
@@ -228,10 +231,19 @@ WHERE {1}";
 
         public override int[] Find(string objectFullName, params ObjectIndex[] indexes)
         {
-            return Find(objectFullName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
+            return Find(objectFullName, new ObjectFindOptions()
+            {
+                Logic = ObjectFindLogic.And,
+                Operator = ObjectFindOperator.Equals
+            }, indexes);
         }
 
         public override int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            return Find(objectFullName, constraint, 0, indexes);
+        }
+
+        public override int[] Find(string objectFullName, string constraint, uint limit, ObjectIndexMetadata[] indexes)
         {
             using (var db = OpenData())
             {

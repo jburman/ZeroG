@@ -408,7 +408,13 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var objectIds = _Find(objectFullName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
+            var options = new ObjectFindOptions()
+            {
+                Logic = ObjectFindLogic.And,
+                Operator = ObjectFindOperator.Equals
+            };
+
+            var objectIds = _Find(objectFullName, options, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
@@ -421,7 +427,13 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var objectIds = _Find(objectFullName, ObjectFindLogic.And, ObjectFindOperator.Like, indexes);
+            var options = new ObjectFindOptions()
+            {
+                Logic = ObjectFindLogic.And,
+                Operator = ObjectFindOperator.Like
+            };
+
+            var objectIds = _Find(objectFullName, options, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
@@ -434,7 +446,13 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var objectIds = _Find(objectFullName, ObjectFindLogic.Or, ObjectFindOperator.Equals, indexes);
+            var options = new ObjectFindOptions()
+            {
+                Logic = ObjectFindLogic.Or,
+                Operator = ObjectFindOperator.Equals
+            };
+
+            var objectIds = _Find(objectFullName, options, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
@@ -447,16 +465,22 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var objectIds = _Find(objectFullName, ObjectFindLogic.Or, ObjectFindOperator.Like, indexes);
+            var options = new ObjectFindOptions()
+            {
+                Logic = ObjectFindLogic.Or,
+                Operator = ObjectFindOperator.Like
+            };
+
+            var objectIds = _Find(objectFullName, options, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
             }
         }
 
-        internal int[] _Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
+        internal int[] _Find(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes)
         {
-            return _objectIndexer.Find(objectFullName, logic, oper, indexes);
+            return _objectIndexer.Find(objectFullName, options, indexes);
         }
 
         public void Remove(string nameSpace, string objectName, int id)

@@ -38,6 +38,10 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 {
     internal class SQLStatements
     {
+        public static readonly string NoLimit = "";
+
+        public static readonly string Limit = " LIMIT {0} ";
+
         public static readonly string TableExists = @"SHOW TABLES LIKE '{0}'";
 
         public static readonly string RowsExist = @"SELECT 1 FROM `{0}` WHERE {1}";
@@ -53,7 +57,7 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
         public static readonly string DropTableIfExists = @"DROP TABLE IF EXISTS `{0}`";
 
         public static readonly string Find = @"SELECT `ID` FROM `{0}`
-WHERE {1}";
+WHERE {1}{2}";
 
         public static string RemoveIndex = @"DELETE FROM `{0}` WHERE `{1}` IN ({2})";
 
@@ -154,11 +158,17 @@ WHERE {1}";
             }
         }
 
-        public override int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, params ObjectIndex[] indexes)
+        public override int[] Find(string objectFullName, ObjectFindOptions options, params ObjectIndex[] indexes)
         {
             int[] returnValue = null;
+            var logic = options.Logic;
+            var oper = options.Operator;
+            var limit = options.Limit;
+
             bool useOr = ObjectFindLogic.Or == logic;
             bool useLike = ObjectFindOperator.Like == oper;
+
+            var limitSql = (0 == limit) ? SQLStatements.NoLimit : string.Format(SQLStatements.Limit, limit);
 
             using (var db = OpenData())
             {
@@ -207,7 +217,7 @@ WHERE {1}";
                     }
                 }
 
-                returnValue = db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.ToString()), parameters.ToArray());
+                returnValue = db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.ToString(), limitSql), parameters.ToArray());
             }
 
             return returnValue;
@@ -215,16 +225,27 @@ WHERE {1}";
 
         public override int[] Find(string objectFullName, params ObjectIndex[] indexes)
         {
-            return Find(objectFullName, ObjectFindLogic.And, ObjectFindOperator.Equals, indexes);
+            return Find(objectFullName,
+                new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals
+                }, indexes);
         }
 
         public override int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            return Find(objectFullName, constraint, 0, indexes);
+        }
+
+        public override int[] Find(string objectFullName, string constraint, uint limit, ObjectIndexMetadata[] indexes)
         {
             using (var db = OpenData())
             {
                 var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
                 var tableName = _CreateTableName(db, objectFullName);
-                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL), sqlConstraint.Parameters.ToArray());
+                var limitSql = (0 == limit) ? SQLStatements.NoLimit : string.Format(SQLStatements.Limit, limit);
+                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL, limitSql), sqlConstraint.Parameters.ToArray());
             }
         }
 

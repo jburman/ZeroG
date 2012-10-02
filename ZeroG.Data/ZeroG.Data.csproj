@@ -65,8 +65,6 @@
     <Compile Include="Object\Cache\ObjectIndexerCache.cs" />
     <Compile Include="Object\Config.cs" />
     <Compile Include="Object\Index\IObjectIndexProvider.cs" />
-    <Compile Include="Object\Index\ObjectFindLogic.cs" />
-    <Compile Include="Object\Index\ObjectFindOperator.cs" />
     <Compile Include="Object\Index\ObjectIndexer.cs" />
     <Compile Include="Object\LocalObjectServiceClient.cs" />
     <Compile Include="Object\ObjectIDStore.cs" />

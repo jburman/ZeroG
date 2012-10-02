@@ -92,38 +92,7 @@ namespace ZeroG.Data.Object.Index
             return _indexer.ObjectExists(objectFullName);
         }
 
-        internal int[] Find(string objectFullName, ObjectFindLogic logic, ObjectFindOperator oper, ObjectIndex[] indexes)
-        {
-            int[] returnValue = null;
-
-            if (null != _cache)
-            {
-                var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
-                parameters[0] = objectFullName;
-                parameters[1] = logic;
-                parameters[2] = oper;
-                if (null != indexes)
-                {
-                    for (int i = 0; indexes.Length > i; i++)
-                    {
-                        parameters[i + 3] = indexes[i];
-                    }
-                }
-                returnValue = _cache.Get(parameters);
-                if (null == returnValue)
-                {
-                    returnValue = _indexer.Find(objectFullName, logic, oper, indexes);
-                    _cache.Set(returnValue, parameters);
-                }
-            }
-            else
-            {
-                returnValue = _indexer.Find(objectFullName, logic, oper, indexes);
-            }
-            return returnValue;
-        }
-
-        public int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
+        internal int[] Find(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes)
         {
             int[] returnValue = null;
 
@@ -131,7 +100,7 @@ namespace ZeroG.Data.Object.Index
             {
                 var parameters = new object[2 + ((null == indexes) ? 0 : indexes.Length)];
                 parameters[0] = objectFullName;
-                parameters[1] = constraint;
+                parameters[1] = options;
                 if (null != indexes)
                 {
                     for (int i = 0; indexes.Length > i; i++)
@@ -142,13 +111,49 @@ namespace ZeroG.Data.Object.Index
                 returnValue = _cache.Get(parameters);
                 if (null == returnValue)
                 {
-                    returnValue = _indexer.Find(objectFullName, constraint, indexes);
+                    returnValue = _indexer.Find(objectFullName, options, indexes);
                     _cache.Set(returnValue, parameters);
                 }
             }
             else
             {
-                returnValue = _indexer.Find(objectFullName, constraint, indexes);
+                returnValue = _indexer.Find(objectFullName, options, indexes);
+            }
+            return returnValue;
+        }
+
+        public int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            return Find(objectFullName, constraint, 0, indexes);
+        }
+
+        public int[] Find(string objectFullName, string constraint, uint limit, ObjectIndexMetadata[] indexes)
+        {
+            int[] returnValue = null;
+
+            if (null != _cache)
+            {
+                var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
+                parameters[0] = objectFullName;
+                parameters[1] = constraint;
+                parameters[2] = limit;
+                if (null != indexes)
+                {
+                    for (int i = 0; indexes.Length > i; i++)
+                    {
+                        parameters[i + 3] = indexes[i];
+                    }
+                }
+                returnValue = _cache.Get(parameters);
+                if (null == returnValue)
+                {
+                    returnValue = _indexer.Find(objectFullName, constraint, limit, indexes);
+                    _cache.Set(returnValue, parameters);
+                }
+            }
+            else
+            {
+                returnValue = _indexer.Find(objectFullName, constraint, limit, indexes);
             }
             return returnValue;
         }

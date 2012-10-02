@@ -23,11 +23,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace ZeroG.Data.Object.Index
+namespace ZeroG.Data.Object
 {
-    public enum ObjectFindLogic
+    public enum ObjectFindOperator
     {
-        And,
-        Or
+        Equals,
+        Like
     }
 }

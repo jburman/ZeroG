@@ -23,11 +23,40 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace ZeroG.Data.Object.Index
+namespace ZeroG.Data.Object
 {
-    public enum ObjectFindOperator
+    public struct ObjectFindOptions
     {
-        Equals,
-        Like
+        /// <summary>
+        /// Logical operator to use
+        /// </summary>
+        public ObjectFindLogic Logic;
+        /// <summary>
+        /// Comparison operator to use
+        /// </summary>
+        public ObjectFindOperator Operator;
+        /// <summary>
+        /// Limit to the number of objects to return
+        /// </summary>
+        public uint Limit;
+
+        public override string ToString()
+        {
+            return Logic + ":" + Operator + ":" + Limit;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (null == obj || !(obj is ObjectFindOptions))
+            {
+                return false;
+            }
+            return ToString().Equals(((ObjectFindOptions)obj).ToString());
+        }
+
+        public override int GetHashCode()
+        {
+            return ToString().GetHashCode();
+        }
     }
 }
