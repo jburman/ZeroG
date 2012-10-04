@@ -40,6 +40,12 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
     {
         public static readonly string TableExists = @"select COUNT(*) from sysobjects where name='{0}' and xtype='U'";
 
+        public static readonly string NoOrder = "";
+
+        public static readonly string OrderAsc = " ORDER BY {0} ASC";
+
+        public static readonly string OrderDesc = " ORDER BY {0} DESC";
+
         public static readonly string RowsExist = @"SELECT 1 FROM [ZeroG].[{0}] WHERE {1}";
 
         public static readonly string RowsCount = @"SELECT COUNT(1) FROM [ZeroG].[{0}] WHERE {1}";
@@ -240,10 +246,10 @@ WHERE {1}";
 
         public override int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
-            return Find(objectFullName, constraint, 0, indexes);
+            return Find(objectFullName, constraint, 0, null, indexes);
         }
 
-        public override int[] Find(string objectFullName, string constraint, uint limit, ObjectIndexMetadata[] indexes)
+        public override int[] Find(string objectFullName, string constraint, uint limit, OrderOptions order, ObjectIndexMetadata[] indexes)
         {
             using (var db = OpenData())
             {

@@ -47,6 +47,7 @@
     <Compile Include="ObjectIndexType.cs" />
     <Compile Include="ObjectIndexTypeExtensions.cs" />
     <Compile Include="ObjectNameValidator.cs" />
+    <Compile Include="OrderOptions.cs" />
     <Compile Include="PersistentObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

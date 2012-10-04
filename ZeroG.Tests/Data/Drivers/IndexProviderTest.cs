@@ -739,19 +739,19 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
             Assert.AreEqual(3, ids.Length);
 
             ids = provider.Find(ObjectFullName1,
-                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 0, indexMetadata);
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 0, null, indexMetadata);
             Assert.AreEqual(3, ids.Length);
 
             ids = provider.Find(ObjectFullName1,
-                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 1, indexMetadata);
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 1, null, indexMetadata);
             Assert.AreEqual(1, ids.Length);
 
             ids = provider.Find(ObjectFullName1,
-                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 2, indexMetadata);
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 2, null, indexMetadata);
             Assert.AreEqual(2, ids.Length);
 
             ids = provider.Find(ObjectFullName1,
-                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 10, indexMetadata);
+                @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 10, null, indexMetadata);
             Assert.AreEqual(3, ids.Length);
         }
     }

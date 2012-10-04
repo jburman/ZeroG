@@ -87,6 +87,48 @@ namespace ZeroG.Data.Object.Index
             return true;
         }
 
+        private bool _ValidateIndexNames(ObjectIndexMetadata[] indexes, string[] checkNames)
+        {
+            bool returnValue = true;
+            var namesLen = checkNames.Length;
+            int indexesLen = 0;
+
+            if (null != indexes)
+            {
+                indexesLen = indexes.Length;
+            }
+
+            for (int i = 0; namesLen > i; i++)
+            {
+                var name = checkNames[i];
+                if (!ObjectNameValidator.IsValidIndexName(name))
+                {
+                    returnValue = false;
+                    break;
+                }
+
+                if (null != indexes)
+                {
+                    bool foundName = false;
+                    for (int j = 0; indexesLen > j; j++)
+                    {
+                        if (name.Equals(indexes[i].Name))
+                        {
+                            foundName = true;
+                        }
+                    }
+                    // we did not find the index name
+                    if (!foundName)
+                    {
+                        returnValue = false;
+                        break;
+                    }
+                }
+            }
+
+            return returnValue;
+        }
+
         public bool Exists(string objectFullName)
         {
             return _indexer.ObjectExists(objectFullName);
@@ -111,6 +153,15 @@ namespace ZeroG.Data.Object.Index
                 returnValue = _cache.Get(parameters);
                 if (null == returnValue)
                 {
+                    var order = options.Order;
+                    if (null != order && null != order.Indexes)
+                    {
+                        if (!_ValidateIndexNames(null, order.Indexes))
+                        {
+                            throw new ArgumentException("Invalid index name supplied in OrderOptions.");
+                        }
+                    }
+
                     returnValue = _indexer.Find(objectFullName, options, indexes);
                     _cache.Set(returnValue, parameters);
                 }
@@ -124,19 +175,20 @@ namespace ZeroG.Data.Object.Index
 
         public int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
-            return Find(objectFullName, constraint, 0, indexes);
+            return Find(objectFullName, constraint, 0, null, indexes);
         }
 
-        public int[] Find(string objectFullName, string constraint, uint limit, ObjectIndexMetadata[] indexes)
+        public int[] Find(string objectFullName, string constraint, uint limit, OrderOptions order, ObjectIndexMetadata[] indexes)
         {
             int[] returnValue = null;
 
             if (null != _cache)
             {
-                var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
+                var parameters = new object[4 + ((null == indexes) ? 0 : indexes.Length)];
                 parameters[0] = objectFullName;
                 parameters[1] = constraint;
                 parameters[2] = limit;
+                parameters[3] = order;
                 if (null != indexes)
                 {
                     for (int i = 0; indexes.Length > i; i++)
@@ -147,13 +199,21 @@ namespace ZeroG.Data.Object.Index
                 returnValue = _cache.Get(parameters);
                 if (null == returnValue)
                 {
-                    returnValue = _indexer.Find(objectFullName, constraint, limit, indexes);
+                    if (null != order && null != order.Indexes)
+                    {
+                        if (!_ValidateIndexNames(indexes, order.Indexes))
+                        {
+                            throw new ArgumentException("Invalid index name supplied in OrderOptions.");
+                        }
+                    }
+
+                    returnValue = _indexer.Find(objectFullName, constraint, limit, order, indexes);
                     _cache.Set(returnValue, parameters);
                 }
             }
             else
             {
-                returnValue = _indexer.Find(objectFullName, constraint, limit, indexes);
+                returnValue = _indexer.Find(objectFullName, constraint, limit, order, indexes);
             }
             return returnValue;
         }

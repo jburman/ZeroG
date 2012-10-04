@@ -42,6 +42,12 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 
         public static readonly string Limit = " LIMIT {0} ";
 
+        public static readonly string NoOrder = "";
+
+        public static readonly string OrderAsc = " ORDER BY {0} ASC";
+
+        public static readonly string OrderDesc = " ORDER BY {0} DESC";
+
         public static readonly string TableExists = @"SHOW TABLES LIKE '{0}'";
 
         public static readonly string RowsExist = @"SELECT 1 FROM `{0}` WHERE {1}";
@@ -235,10 +241,10 @@ WHERE {1}{2}";
 
         public override int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
-            return Find(objectFullName, constraint, 0, indexes);
+            return Find(objectFullName, constraint, 0, null, indexes);
         }
 
-        public override int[] Find(string objectFullName, string constraint, uint limit, ObjectIndexMetadata[] indexes)
+        public override int[] Find(string objectFullName, string constraint, uint limit, OrderOptions order, ObjectIndexMetadata[] indexes)
         {
             using (var db = OpenData())
             {

@@ -24,44 +24,36 @@
 #endregion
 
 using System.Runtime.Serialization;
+
 namespace ZeroG.Data.Object
 {
     [DataContract]
-    public struct ObjectFindOptions
+    public class OrderOptions
     {
-        /// <summary>
-        /// Logical operator to use
-        /// </summary>
         [DataMember(Order=1)]
-        public ObjectFindLogic Logic;
-        /// <summary>
-        /// Comparison operator to use
-        /// </summary>
+        public bool Descending;
         [DataMember(Order = 2)]
-        public ObjectFindOperator Operator;
-        /// <summary>
-        /// Limit to the number of objects to return
-        /// </summary>
-        [DataMember(Order = 3)]
-        public uint Limit;
-        /// <summary>
-        /// Specify an order to the results.
-        /// </summary>
-        [DataMember(Order = 4)]
-        public OrderOptions Order;
+        public string[] Indexes;
 
         public override string ToString()
         {
-            return Logic + ":" + Operator + ":" + Limit + ((null != Order)? ":" + Order.ToString() : string.Empty);
+            if (null == Indexes)
+            {
+                return Descending.ToString();
+            }
+            else
+            {
+                return string.Join(",", Indexes) + Descending;
+            }
         }
 
         public override bool Equals(object obj)
         {
-            if (null == obj || !(obj is ObjectFindOptions))
+            if (null == obj || !(obj is OrderOptions))
             {
                 return false;
             }
-            return ToString().Equals(((ObjectFindOptions)obj).ToString());
+            return ((OrderOptions)obj).ToString().Equals(ToString());
         }
 
         public override int GetHashCode()
