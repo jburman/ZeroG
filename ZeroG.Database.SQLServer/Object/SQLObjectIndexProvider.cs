@@ -282,7 +282,7 @@ WHERE {1}{3}";
             }
         }
 
-        public override IDataRecord Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
+        public override IEnumerable<IDataRecord> Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
         {
             return null;
         }

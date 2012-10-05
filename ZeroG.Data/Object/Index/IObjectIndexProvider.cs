@@ -46,7 +46,9 @@ namespace ZeroG.Data.Object.Index
 
         int[] Find(string objectFullName, string constraint, uint limit, OrderOptions order, ObjectIndexMetadata[] indexes);
 
-        IDataRecord Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes);
+        IEnumerable<IDataRecord> Iterate(string objectFullName, ObjectIndexMetadata[] indexes);
+
+        IEnumerable<IDataRecord> Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes);
 
         void ProvisionIndex(ObjectMetadata metadata);
 

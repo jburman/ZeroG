@@ -65,6 +65,8 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
         public static readonly string Find = @"SELECT `ID` FROM `{0}`
 WHERE {1}{2}{3}";
 
+        public static readonly string Iterate = @"SELECT {1} FROM `{0}`{2}{3}{4}";
+
         public static string RemoveIndex = @"DELETE FROM `{0}` WHERE `{1}` IN ({2})";
 
         public static readonly string TruncateTable = "TRUNCATE TABLE `{0}`";
@@ -268,17 +270,58 @@ WHERE {1}{2}{3}";
         {
             using (var db = OpenData())
             {
-                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
                 var tableName = _CreateTableName(db, objectFullName);
+                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
                 var orderBySql = _CreateOrderBySQL(db, order);
                 var limitSql = (0 == limit) ? SQLStatements.NoLimit : string.Format(SQLStatements.Limit, limit);
                 return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL, orderBySql, limitSql), sqlConstraint.Parameters.ToArray());
             }
         }
 
-        public override IDataRecord Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
+        public override IEnumerable<IDataRecord> Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
         {
-            return null;
+            using (var db = OpenData())
+            {
+                var tableName = _CreateTableName(db, objectFullName);
+                var whereSql = string.Empty;
+                IDataParameter[] parameters = null;
+                if (!string.IsNullOrEmpty(constraint))
+                {
+                    var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                    whereSql = " WHERE " + sqlConstraint.SQL;
+                    parameters = sqlConstraint.Parameters.ToArray();
+                }
+                var orderBySql = _CreateOrderBySQL(db, order);
+                var limitSql = (0 == limit) ? SQLStatements.NoLimit : string.Format(SQLStatements.Limit, limit);
+
+                string[] selectNames = null;
+
+                if (null == iterateIndexes || 0 == iterateIndexes.Length)
+                {
+                    selectNames = new string[indexes.Length + 1];
+                    selectNames[0] = db.MakeQuotedName(IDColumn);
+                    for (int i = 0; indexes.Length > i; i++)
+                    {
+                        selectNames[i + 1] = db.MakeQuotedName(indexes[i].Name);
+                    }
+                }
+                else
+                {
+                    selectNames = new string[iterateIndexes.Length];
+                    for (int i = 0; iterateIndexes.Length > i; i++)
+                    {
+                        selectNames[i] = db.MakeQuotedName(iterateIndexes[i]);
+                    }
+                }
+
+                string selectNamesSql = string.Join(",", selectNames);
+
+                var reader = db.ExecuteReader(string.Format(SQLStatements.Iterate, tableName, selectNamesSql, whereSql, orderBySql, limitSql), parameters);
+                while (reader.Read())
+                {
+                    yield return reader;
+                }
+            }
         }
 
         public override void ProvisionIndex(ObjectMetadata metadata)

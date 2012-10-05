@@ -224,9 +224,21 @@ namespace ZeroG.Data.Object.Index
             return returnValue;
         }
 
-        public IDataRecord Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
+        public IEnumerable<IDataRecord> Iterate(string objectFullName, ObjectIndexMetadata[] indexes)
         {
-            return null;
+            return _indexer.Iterate(objectFullName, indexes);
+        }
+
+        public IEnumerable<IDataRecord> Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
+        {
+            _ValidateOrderOptions(indexes, order);
+
+            if (null != iterateIndexes && 0 == iterateIndexes.Length)
+            {
+                _ValidateIndexNames(indexes, iterateIndexes);
+            }
+
+            return _indexer.Iterate(objectFullName, constraint, limit, order, iterateIndexes, indexes);
         }
 
         public void IndexObject(string nameSpace, PersistentObject obj)

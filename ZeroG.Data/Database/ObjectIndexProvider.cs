@@ -170,7 +170,16 @@ namespace ZeroG.Data.Database
         public abstract int[] Find(string objectFullName, params ObjectIndex[] indexes);
         public abstract int[] Find(string objectFullName, ObjectFindOptions options, params ObjectIndex[] indexes);
         public abstract int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
-        public abstract IDataRecord Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes);
+        public virtual IEnumerable<IDataRecord> Iterate(string objectFullName, ObjectIndexMetadata[] indexes)
+        {
+            return Iterate(objectFullName,
+                null,
+                0,
+                null,
+                null,
+                indexes);
+        }
+        public abstract IEnumerable<IDataRecord> Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes);
         public abstract int[] Find(string objectFullName, string constraint, uint limit, OrderOptions order, ObjectIndexMetadata[] indexes);
         public abstract void ProvisionIndex(ObjectMetadata metadata);
         public abstract void UnprovisionIndex(string objectFullName);
