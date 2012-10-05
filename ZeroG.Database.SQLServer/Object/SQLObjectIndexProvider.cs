@@ -69,8 +69,10 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
         public static readonly string DropTableIfExists = @"IF EXISTS (select * from sysobjects where name='{0}' and xtype='U')
     DROP TABLE [ZeroG].[{0}]";
 
-        public static readonly string Find = @"SELECT {2} [ID] FROM [ZeroG].[{0}]
+        public static readonly string Find = @"SELECT {2}[ID] FROM [ZeroG].[{0}]
 WHERE {1}{3}";
+
+        public static readonly string Iterate = @"SELECT {4}{1} FROM [ZeroG].[{0}]{2}{3}";
 
         public static string RemoveIndex = @"DELETE FROM [ZeroG].[{0}] WHERE [{1}] IN ({2})";
 
@@ -284,7 +286,48 @@ WHERE {1}{3}";
 
         public override IEnumerable<IDataRecord> Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
         {
-            return null;
+            using (var db = OpenData())
+            {
+                var tableName = _CreateTableName(db, objectFullName);
+                var whereSql = string.Empty;
+                IDataParameter[] parameters = null;
+                if (!string.IsNullOrEmpty(constraint))
+                {
+                    var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                    whereSql = " WHERE " + sqlConstraint.SQL;
+                    parameters = sqlConstraint.Parameters.ToArray();
+                }
+                var orderBySql = _CreateOrderBySQL(db, order);
+                var topSql = (0 == limit) ? SQLStatements.NoTop : string.Format(SQLStatements.Top, limit);
+
+                string[] selectNames = null;
+
+                if (null == iterateIndexes || 0 == iterateIndexes.Length)
+                {
+                    selectNames = new string[indexes.Length + 1];
+                    selectNames[0] = db.MakeQuotedName(IDColumn);
+                    for (int i = 0; indexes.Length > i; i++)
+                    {
+                        selectNames[i + 1] = db.MakeQuotedName(indexes[i].Name);
+                    }
+                }
+                else
+                {
+                    selectNames = new string[iterateIndexes.Length];
+                    for (int i = 0; iterateIndexes.Length > i; i++)
+                    {
+                        selectNames[i] = db.MakeQuotedName(iterateIndexes[i]);
+                    }
+                }
+
+                string selectNamesSql = string.Join(",", selectNames);
+
+                var reader = db.ExecuteReader(string.Format(SQLStatements.Iterate, tableName, selectNamesSql, whereSql, orderBySql, topSql), parameters);
+                while (reader.Read())
+                {
+                    yield return reader;
+                }
+            }
         }
 
         public override void ProvisionIndex(ObjectMetadata metadata)

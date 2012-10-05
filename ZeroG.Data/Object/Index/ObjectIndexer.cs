@@ -108,6 +108,12 @@ namespace ZeroG.Data.Object.Index
                     break;
                 }
 
+                // All objects have a built int ID index, which is not part of its declared metadata indexes.
+                if (ObjectIndexProvider.IDColumn.Equals(name, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (null != indexes)
                 {
                     bool foundName = false;

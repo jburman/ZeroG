@@ -56,7 +56,7 @@ namespace ZeroG.Data.Database
             }
         }
 
-        protected static string IDColumn
+        public static string IDColumn
         {
             get
             {

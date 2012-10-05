@@ -706,6 +706,8 @@ namespace ZeroG.Tests.Data.Drivers
             {
                 if (records.MoveNext())
                 {
+                    Assert.AreEqual(3, records.Current.FieldCount);
+
                     // ID
                     Assert.AreEqual(1, records.Current[0]);
                     Assert.AreEqual(1, records.Current["ID"]);
@@ -735,6 +737,8 @@ namespace ZeroG.Tests.Data.Drivers
             {
                 if (records.MoveNext())
                 {
+                    Assert.AreEqual(3, records.Current.FieldCount);
+
                     // ID
                     Assert.AreEqual(1, records.Current[0]);
                     Assert.AreEqual(1, records.Current["ID"]);
@@ -770,6 +774,8 @@ namespace ZeroG.Tests.Data.Drivers
             {
                 if (records.MoveNext())
                 {
+                    Assert.AreEqual(3, records.Current.FieldCount);
+
                     // ID
                     Assert.AreEqual(4, records.Current[0]);
                     Assert.AreEqual(4, records.Current["ID"]);
@@ -792,6 +798,59 @@ namespace ZeroG.Tests.Data.Drivers
                     // TestCol2
                     Assert.AreEqual("B", records.Current[2]);
                     Assert.AreEqual("B", records.Current["TestCol2"]);
+                }
+            }
+
+            // iterate only one index
+            using (records = provider.Iterate(ObjectFullName1,
+                 @"{ ""TestCol2"" : ""b"", ""Op"" : ""LIKE"", ""OR"" : { ""TestCol1"" : 105, ""Op"" : ""="" } }", 
+                 0, null, new string[] { "TestCol1" }, indexMetadata).GetEnumerator())
+            {
+                if (records.MoveNext())
+                {
+                    Assert.AreEqual(1, records.Current.FieldCount);
+
+                    // TestCol1
+                    Assert.AreEqual(105, records.Current[0]);
+                    Assert.AreEqual(105, records.Current["TestCol1"]);
+                }
+
+                if (records.MoveNext())
+                {
+                    // TestCol1
+                    Assert.AreEqual(500, records.Current[0]);
+                    Assert.AreEqual(500, records.Current["TestCol1"]);
+                }
+            }
+
+            // iterate only two indexes in order
+            using (records = provider.Iterate(ObjectFullName1,
+                 @"{ ""TestCol2"" : ""b"", ""Op"" : ""LIKE"", ""OR"" : { ""TestCol2"" : ""c"", ""Op"" : ""LIKE"" } }", 2, new OrderOptions()
+                 {
+                     Descending = false,
+                     Indexes = new string[] { "TestCol2" }
+                 }, new string[] { "ID", "TestCol1" }, indexMetadata).GetEnumerator())
+            {
+                if (records.MoveNext())
+                {
+                    Assert.AreEqual(2, records.Current.FieldCount);
+                    
+                    // ID
+                    Assert.AreEqual(3, records.Current[0]);
+                    Assert.AreEqual(3, records.Current["ID"]);
+                    // TestCol1
+                    Assert.AreEqual(500, records.Current[1]);
+                    Assert.AreEqual(500, records.Current["TestCol1"]);
+                }
+
+                if (records.MoveNext())
+                {
+                    // ID
+                    Assert.AreEqual(4, records.Current[0]);
+                    Assert.AreEqual(4, records.Current["ID"]);
+                    // TestCol1
+                    Assert.AreEqual(500, records.Current[1]);
+                    Assert.AreEqual(500, records.Current["TestCol1"]);
                 }
             }
         }
