@@ -57,6 +57,10 @@
       <Project>{DB190F97-AB50-4659-BC56-377457EFDFCE}</Project>
       <Name>ZeroG.Data</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ZeroG.Lang\ZeroG.Lang.csproj">
+      <Project>{71ceb166-19be-45e2-9a38-8342db8c85be}</Project>
+      <Name>ZeroG.Lang</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

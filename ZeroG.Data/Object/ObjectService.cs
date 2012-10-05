@@ -25,9 +25,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Transactions;
+using ZeroG.Data.Object.Backup;
 using ZeroG.Data.Object.Cache;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
@@ -179,6 +181,35 @@ namespace ZeroG.Data.Object
         #endregion
 
         #region Public service methods
+
+        public void BackupNameSpace(string nameSpace, string backupFileName, bool useCompression)
+        {
+            var ns = GetNameSpace(nameSpace);
+            if (null == ns)
+            {
+                throw new ArgumentException("Name space not found: " + nameSpace);
+            }
+
+            using (var writer = new ObjectBackupWriter(backupFileName, useCompression))
+            {
+                writer.WriteStoreVersion(Config.StoreVersion);
+
+                writer.WriteNameSpace(ns);
+
+                foreach (var objName in _objectMetadata.EnumerateObjectNames(nameSpace))
+                {
+                    var md = _objectMetadata.GetMetadata(objName);
+                    
+                    writer.WriteObjectMetadata(md);
+
+                    writer.WriteObjectID(_objectIDStore.GetCurrentID(ObjectNaming.CreateFullObjectKey(objName)));
+
+                    // enumerate object values
+
+                    // enumerate object index values
+                }
+            }
+        }
 
         public void CreateNameSpace(ObjectNameSpaceConfig nameSpaceConfig)
         {

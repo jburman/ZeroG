@@ -173,30 +173,5 @@ namespace ZeroG.Data.Database
             }
             return (DateTime)val;
         }
-
-        public static string ByteToHexString(byte[] bytes)
-        {
-            char[] c = new char[bytes.Length * 2];
-            byte b;
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                b = ((byte)(bytes[i] >> 4));
-                c[i * 2] = (char)(b > 9 ? b + 0x37 : b + 0x30);
-                b = ((byte)(bytes[i] & 0xF));
-                c[i * 2 + 1] = (char)(b > 9 ? b + 0x37 : b + 0x30);
-            }
-            return new string(c);
-        }
-
-        public static byte[] HexStringToByte(string hex)
-        {
-            int len = hex.Length;
-            byte[] bytes = new byte[len / 2];
-            for (int i = 0; len > i; i += 2)
-            {
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-            }
-            return bytes;
-        }
     }
 }

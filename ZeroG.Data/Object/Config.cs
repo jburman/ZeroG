@@ -30,6 +30,8 @@ namespace ZeroG.Data.Object
 {
     public class Config
     {
+        public static readonly string StoreVersion = "1.0";
+
         public static readonly string ObjectIndexProviderConfigKey = "ObjectIndexProvider";
 
         public Config()

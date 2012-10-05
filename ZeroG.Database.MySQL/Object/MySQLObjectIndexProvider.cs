@@ -33,6 +33,7 @@ using ZeroG.Data.Database;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
+using ZeroG.Lang;
 
 namespace ZeroG.Data.Database.Drivers.Object.Provider
 {
@@ -222,7 +223,7 @@ WHERE {1}{2}{3}";
                     var value = idx.GetObjectValue();
                     if (value is byte[])
                     {
-                        string hexStr = DatabaseHelper.ByteToHexString((byte[])value);
+                        string hexStr = BinaryHelper.ByteToHexString((byte[])value);
                         value = hexStr;
                         sqlConstraint.Append(db.MakeQuotedName(idx.Name));
                     }
@@ -371,7 +372,7 @@ WHERE {1}{2}{3}";
                     var value = idx.GetObjectValue();
                     if (value is byte[])
                     {
-                        value = DatabaseHelper.ByteToHexString((byte[])value);
+                        value = BinaryHelper.ByteToHexString((byte[])value);
                     }
                     var param = db.MakeParam(idx.Name + "_param", value);
                     parameters.Add(param);

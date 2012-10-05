@@ -43,6 +43,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinaryHelper.cs" />
     <Compile Include="BSON\BSONTokenizer.cs" />
     <Compile Include="BSON\BSONException.cs" />
     <Compile Include="BSON\BSONWalkingValidator.cs" />

@@ -9,6 +9,7 @@ using ZeroG.Data.Database.Drivers.Object.Provider;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
+using ZeroG.Lang;
 using ZeroG.Tests.Object;
 
 namespace ZeroG.Tests.Data.Drivers
@@ -234,7 +235,7 @@ namespace ZeroG.Tests.Data.Drivers
             Decimal testDec = 156.12M;
             DateTime testDate = new DateTime(2011, 2, 14, 3, 10, 0);
             Guid testGuid = new Guid("76F5FB10BAEF4DE09578B3EB91FF6653");
-            string testBinStr = DatabaseHelper.ByteToHexString(testGuid.ToByteArray());
+            string testBinStr = BinaryHelper.ByteToHexString(testGuid.ToByteArray());
 
             provider.UpsertIndexValues(ObjectFullName1,
                 1000,
