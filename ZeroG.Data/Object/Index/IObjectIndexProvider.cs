@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object.Index
@@ -44,6 +45,8 @@ namespace ZeroG.Data.Object.Index
         int[] Find(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
 
         int[] Find(string objectFullName, string constraint, uint limit, OrderOptions order, ObjectIndexMetadata[] indexes);
+
+        IDataRecord Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes);
 
         void ProvisionIndex(ObjectMetadata metadata);
 

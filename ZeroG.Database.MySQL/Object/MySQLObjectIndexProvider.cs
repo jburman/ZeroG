@@ -62,8 +62,8 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 
         public static readonly string DropTableIfExists = @"DROP TABLE IF EXISTS `{0}`";
 
-        public static readonly string Find = @"SELECT DISTINCT `ID` FROM `{0}`
-WHERE {1}{2}";
+        public static readonly string Find = @"SELECT `ID` FROM `{0}`
+WHERE {1}{2}{3}";
 
         public static string RemoveIndex = @"DELETE FROM `{0}` WHERE `{1}` IN ({2})";
 
@@ -122,6 +122,25 @@ WHERE {1}{2}";
             }
 
             return string.Format("`{0}` {1}{2} NOT NULL", name, type, length);
+        }
+
+        private static string _CreateOrderBySQL(IDatabaseService db, OrderOptions order)
+        {
+            var orderBySql = SQLStatements.NoOrder;
+            if (null != order)
+            {
+                string orderColSql = string.Join(",", order.Indexes.Select(i => db.MakeQuotedName(i)).ToArray());
+
+                if (order.Descending)
+                {
+                    orderBySql = string.Format(SQLStatements.OrderDesc, orderColSql);
+                }
+                else
+                {
+                    orderBySql = string.Format(SQLStatements.OrderAsc, orderColSql);
+                }
+            }
+            return orderBySql;
         }
 
         public override bool ObjectExists(string objectFullName)
@@ -222,8 +241,9 @@ WHERE {1}{2}";
                         parameters.Add(db.MakeParam(paramName, value));
                     }
                 }
+                var orderBySql = _CreateOrderBySQL(db, options.Order);
 
-                returnValue = db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.ToString(), limitSql), parameters.ToArray());
+                returnValue = db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.ToString(), orderBySql, limitSql), parameters.ToArray());
             }
 
             return returnValue;
@@ -250,9 +270,15 @@ WHERE {1}{2}";
             {
                 var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
                 var tableName = _CreateTableName(db, objectFullName);
+                var orderBySql = _CreateOrderBySQL(db, order);
                 var limitSql = (0 == limit) ? SQLStatements.NoLimit : string.Format(SQLStatements.Limit, limit);
-                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL, limitSql), sqlConstraint.Parameters.ToArray());
+                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL, orderBySql, limitSql), sqlConstraint.Parameters.ToArray());
             }
+        }
+
+        public override IDataRecord Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
+        {
+            return null;
         }
 
         public override void ProvisionIndex(ObjectMetadata metadata)

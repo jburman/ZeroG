@@ -10,7 +10,7 @@ using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
 using ZeroG.Tests.Object;
 
-namespace ZeroG.Tests.Data.Drivers.MySQL
+namespace ZeroG.Tests.Data.Drivers
 {
     /// <summary>
     /// Summary description for IndexProviderTest
@@ -754,5 +754,136 @@ namespace ZeroG.Tests.Data.Drivers.MySQL
                 @"{ ""TestCol2"" : ""a"", ""Op"" : ""LIKE"" }", 10, null, indexMetadata);
             Assert.AreEqual(3, ids.Length);
         }
+
+        [TestMethod]
+        public void Order()
+        {
+            var provider = IndexProvider;
+            var indexMetadata = new ObjectIndexMetadata[]
+            {
+                new ObjectIndexMetadata("TestCol1", ObjectIndexType.Integer),
+                new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15)
+            };
+
+            provider.ProvisionIndex(
+                new ObjectMetadata(NameSpace1, ObjectName1,
+                    indexMetadata));
+
+            provider.UpsertIndexValues(ObjectFullName1, 1,
+                ObjectIndex.Create("TestCol1", 100),
+                ObjectIndex.Create("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 2,
+                ObjectIndex.Create("TestCol1", 105),
+                ObjectIndex.Create("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 3,
+                ObjectIndex.Create("TestCol1", 500),
+                ObjectIndex.Create("TestCol2", "B"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 4,
+                ObjectIndex.Create("TestCol1", 500),
+                ObjectIndex.Create("TestCol2", "C"));
+
+            var vals = provider.Find(ObjectFullName1,
+                @"{ ""TestCol2"" : ""A"", ""Op"" : ""="" }",
+                0,
+                new OrderOptions()
+                {
+                    Descending = true,
+                    Indexes = new string[] { "TestCol1" }
+                },
+                indexMetadata);
+
+            Assert.AreEqual(2, vals.Length);
+            Assert.AreEqual(2, vals[0]);
+            Assert.AreEqual(1, vals[1]);
+
+            vals = provider.Find(ObjectFullName1,
+                @"{ ""TestCol2"" : ""A"", ""Op"" : ""="" }",
+                0,
+                new OrderOptions()
+                {
+                    Descending = false,
+                    Indexes = new string[] { "TestCol1" }
+                },
+                indexMetadata);
+
+            Assert.AreEqual(2, vals.Length);
+            Assert.AreEqual(1, vals[0]);
+            Assert.AreEqual(2, vals[1]);
+
+            vals = provider.Find(ObjectFullName1,
+                new ObjectFindOptions() 
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals,
+                    Limit = 0,
+                    Order = new OrderOptions()
+                    {
+                        Descending = true,
+                        Indexes = new string[] { "TestCol1" }
+                    }
+                },
+                ObjectIndex.Create("TestCol2", "A"));
+
+            Assert.AreEqual(2, vals.Length);
+            Assert.AreEqual(2, vals[0]);
+            Assert.AreEqual(1, vals[1]);
+
+            vals = provider.Find(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals,
+                    Limit = 0,
+                    Order = new OrderOptions()
+                    {
+                        Descending = false,
+                        Indexes = new string[] { "TestCol1" }
+                    }
+                },
+                ObjectIndex.Create("TestCol2", "A"));
+
+            Assert.AreEqual(2, vals.Length);
+            Assert.AreEqual(1, vals[0]);
+            Assert.AreEqual(2, vals[1]);
+
+            // Test and Order with Limit
+            vals = provider.Find(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals,
+                    Limit = 1,
+                    Order = new OrderOptions()
+                    {
+                        Descending = true,
+                        Indexes = new string[] { "TestCol1" }
+                    }
+                },
+                ObjectIndex.Create("TestCol2", "A"));
+
+            Assert.AreEqual(1, vals.Length);
+            Assert.AreEqual(2, vals[0]);
+
+            vals = provider.Find(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Logic = ObjectFindLogic.And,
+                    Operator = ObjectFindOperator.Equals,
+                    Limit = 1,
+                    Order = new OrderOptions()
+                    {
+                        Descending = false,
+                        Indexes = new string[] { "TestCol1" }
+                    }
+                },
+                ObjectIndex.Create("TestCol2", "A"));
+
+            Assert.AreEqual(1, vals.Length);
+            Assert.AreEqual(1, vals[0]);
+        }
+
     }
 }

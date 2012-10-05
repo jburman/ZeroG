@@ -46,8 +46,12 @@ namespace ZeroG.Data.Object
             _objectIndexDataConn = ConfigurationManager.AppSettings["ObjectIndexDataConnection"];
             _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
 
-            uint intParse = 5;
+            uint intParse = 0;
             uint.TryParse(ConfigurationManager.AppSettings["MaxObjectDependencies"], out intParse);
+            if(0 == intParse) 
+            {
+                intParse = 5;
+            }
             _maxObjectDependencies = intParse;
         }
 

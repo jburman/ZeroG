@@ -33,5 +33,15 @@ namespace ZeroG.Tests.Data
         {
             return DatabaseService.GetService(SQLServerDataAccess);
         }
+
+        public static IDatabaseService GetDefaultSchemaService()
+        {
+            return DatabaseService.GetService(ObjectIndexProvider.DefaultSchemaConnection);
+        }
+
+        public static IDatabaseService GetDefaultDataService()
+        {
+            return DatabaseService.GetService(ObjectIndexProvider.DefaultDataAccessConnection);
+        }
     }
 }

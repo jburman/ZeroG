@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
 using ZeroG.Data.Database;
 using ZeroG.Data.Object.Cache;
 using ZeroG.Data.Object.Metadata;
@@ -129,6 +130,17 @@ namespace ZeroG.Data.Object.Index
             return returnValue;
         }
 
+        private void _ValidateOrderOptions(ObjectIndexMetadata[] indexes, OrderOptions order)
+        {
+            if (null != order && null != order.Indexes)
+            {
+                if (!_ValidateIndexNames(indexes, order.Indexes))
+                {
+                    throw new ArgumentException("Invalid index name supplied in OrderOptions.");
+                }
+            }
+        }
+
         public bool Exists(string objectFullName)
         {
             return _indexer.ObjectExists(objectFullName);
@@ -199,13 +211,7 @@ namespace ZeroG.Data.Object.Index
                 returnValue = _cache.Get(parameters);
                 if (null == returnValue)
                 {
-                    if (null != order && null != order.Indexes)
-                    {
-                        if (!_ValidateIndexNames(indexes, order.Indexes))
-                        {
-                            throw new ArgumentException("Invalid index name supplied in OrderOptions.");
-                        }
-                    }
+                    _ValidateOrderOptions(indexes, order);
 
                     returnValue = _indexer.Find(objectFullName, constraint, limit, order, indexes);
                     _cache.Set(returnValue, parameters);
@@ -216,6 +222,11 @@ namespace ZeroG.Data.Object.Index
                 returnValue = _indexer.Find(objectFullName, constraint, limit, order, indexes);
             }
             return returnValue;
+        }
+
+        public IDataRecord Iterate(string objectFullName, string constraint, uint limit, OrderOptions order, string[] iterateIndexes, ObjectIndexMetadata[] indexes)
+        {
+            return null;
         }
 
         public void IndexObject(string nameSpace, PersistentObject obj)
