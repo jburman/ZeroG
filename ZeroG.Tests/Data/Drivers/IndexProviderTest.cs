@@ -227,7 +227,7 @@ namespace ZeroG.Tests.Data.Drivers
                         new ObjectIndexMetadata("TextCol", ObjectIndexType.String, 15),
                         new ObjectIndexMetadata("DecCol", ObjectIndexType.Decimal, 7, 2),
                         new ObjectIndexMetadata("DateTimeCol", ObjectIndexType.DateTime),
-                        new ObjectIndexMetadata("BinCol", ObjectIndexType.Binary, 32)
+                        new ObjectIndexMetadata("BinCol", ObjectIndexType.Binary, 16)
                     }));
 
             Int32 testInt = 3447;
@@ -235,7 +235,6 @@ namespace ZeroG.Tests.Data.Drivers
             Decimal testDec = 156.12M;
             DateTime testDate = new DateTime(2011, 2, 14, 3, 10, 0);
             Guid testGuid = new Guid("76F5FB10BAEF4DE09578B3EB91FF6653");
-            string testBinStr = BinaryHelper.ByteToHexString(testGuid.ToByteArray());
 
             provider.UpsertIndexValues(ObjectFullName1,
                 1000,

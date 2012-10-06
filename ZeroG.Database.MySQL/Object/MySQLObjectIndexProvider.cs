@@ -221,16 +221,8 @@ WHERE {1}{2}{3}";
                     var idx = indexes[i];
                     var paramName = "p" + i + idx.Name;
                     var value = idx.GetObjectValue();
-                    if (value is byte[])
-                    {
-                        string hexStr = BinaryHelper.ByteToHexString((byte[])value);
-                        value = hexStr;
-                        sqlConstraint.Append(db.MakeQuotedName(idx.Name));
-                    }
-                    else
-                    {
-                        sqlConstraint.Append(db.MakeQuotedName(idx.Name));
-                    }
+                    sqlConstraint.Append(db.MakeQuotedName(idx.Name));
+
                     if (useLike)
                     {
                         sqlConstraint.Append(' ');
@@ -297,13 +289,22 @@ WHERE {1}{2}{3}";
 
                 string[] selectNames = null;
 
+                // if no iterate indexes are specified, then iterate overall index names from the metadata
                 if (null == iterateIndexes || 0 == iterateIndexes.Length)
                 {
-                    selectNames = new string[indexes.Length + 1];
-                    selectNames[0] = db.MakeQuotedName(IDColumn);
-                    for (int i = 0; indexes.Length > i; i++)
+                    if (null == indexes || 0 == indexes.Length)
                     {
-                        selectNames[i + 1] = db.MakeQuotedName(indexes[i].Name);
+                        // If not iterate indexes or metadataColumns provided, then only select the ID column
+                        selectNames = new string[] { db.MakeQuotedName(IDColumn) };
+                    }
+                    else
+                    {
+                        selectNames = new string[indexes.Length + 1];
+                        selectNames[0] = db.MakeQuotedName(IDColumn);
+                        for (int i = 0; indexes.Length > i; i++)
+                        {
+                            selectNames[i + 1] = db.MakeQuotedName(indexes[i].Name);
+                        }
                     }
                 }
                 else
@@ -370,10 +371,6 @@ WHERE {1}{2}{3}";
                 {
                     var idx = indexes[i];
                     var value = idx.GetObjectValue();
-                    if (value is byte[])
-                    {
-                        value = BinaryHelper.ByteToHexString((byte[])value);
-                    }
                     var param = db.MakeParam(idx.Name + "_param", value);
                     parameters.Add(param);
                 }

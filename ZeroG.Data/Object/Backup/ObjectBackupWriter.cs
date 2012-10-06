@@ -50,6 +50,16 @@ namespace ZeroG.Data.Object.Backup
             _out.WriteLine("OBJECTID: " + id);
         }
 
+        public void WriteObject(ObjectStoreRecord obj)
+        {
+            _out.WriteLine("O: " + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectStoreRecord>(obj)));
+        }
+
+        public void WriteIndex(ObjectIndexRecord idx)
+        {
+            _out.WriteLine("I: " + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectIndexRecord>(idx)));
+        }
+
         #region Dispose implementation
         private bool _disposed;
 

@@ -200,13 +200,26 @@ namespace ZeroG.Data.Object
                 {
                     var md = _objectMetadata.GetMetadata(objName);
                     
+                    // store the object's metadata
                     writer.WriteObjectMetadata(md);
 
+                    // save the current ObjectID
                     writer.WriteObjectID(_objectIDStore.GetCurrentID(ObjectNaming.CreateFullObjectKey(objName)));
 
                     // enumerate object values
+                    foreach (var objRecord in _objectStore.Iterate(objName))
+                    {
+                        writer.WriteObject(objRecord);
+                    }
 
                     // enumerate object index values
+                    if (null != md.Indexes && 0 < md.Indexes.Length)
+                    {
+                        foreach (var idxRecord in _objectIndexer.Iterate(objName, md.Indexes))
+                        {
+                            writer.WriteIndex(ObjectIndexRecord.CreateFromDataRecord(idxRecord));
+                        }
+                    }
                 }
             }
         }

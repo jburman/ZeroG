@@ -73,10 +73,12 @@
     <Compile Include="Object\Metadata\ObjectMetadata.cs" />
     <Compile Include="Object\Metadata\ObjectMetadataStore.cs" />
     <Compile Include="Object\Metadata\ObjectMetadatastoreUpdatedEvent.cs" />
+    <Compile Include="Object\ObjectIndexRecord.cs" />
     <Compile Include="Object\ObjectNameSpaceConfig.cs" />
     <Compile Include="Object\ObjectNaming.cs" />
     <Compile Include="Object\ObjectService.cs" />
     <Compile Include="Object\ObjectStore.cs" />
+    <Compile Include="Object\ObjectStoreRecord.cs" />
     <Compile Include="Object\ObjectVersionChangedEvent.cs" />
     <Compile Include="Object\ObjectVersionStore.cs" />
     <Compile Include="Object\SerializerHelper.cs" />

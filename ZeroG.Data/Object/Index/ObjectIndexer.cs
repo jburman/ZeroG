@@ -91,44 +91,48 @@ namespace ZeroG.Data.Object.Index
         private bool _ValidateIndexNames(ObjectIndexMetadata[] indexes, string[] checkNames)
         {
             bool returnValue = true;
-            var namesLen = checkNames.Length;
-            int indexesLen = 0;
 
-            if (null != indexes)
+            if (null != checkNames)
             {
-                indexesLen = indexes.Length;
-            }
-
-            for (int i = 0; namesLen > i; i++)
-            {
-                var name = checkNames[i];
-                if (!ObjectNameValidator.IsValidIndexName(name))
-                {
-                    returnValue = false;
-                    break;
-                }
-
-                // All objects have a built int ID index, which is not part of its declared metadata indexes.
-                if (ObjectIndexProvider.IDColumn.Equals(name, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
+                var namesLen = checkNames.Length;
+                int indexesLen = 0;
 
                 if (null != indexes)
                 {
-                    bool foundName = false;
-                    for (int j = 0; indexesLen > j; j++)
-                    {
-                        if (name.Equals(indexes[i].Name))
-                        {
-                            foundName = true;
-                        }
-                    }
-                    // we did not find the index name
-                    if (!foundName)
+                    indexesLen = indexes.Length;
+                }
+
+                for (int i = 0; namesLen > i; i++)
+                {
+                    var name = checkNames[i];
+                    if (!ObjectNameValidator.IsValidIndexName(name))
                     {
                         returnValue = false;
                         break;
+                    }
+
+                    // All objects have a built int ID index, which is not part of its declared metadata indexes.
+                    if (ObjectIndexProvider.IDColumn.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (null != indexes)
+                    {
+                        bool foundName = false;
+                        for (int j = 0; indexesLen > j; j++)
+                        {
+                            if (name.Equals(indexes[i].Name))
+                            {
+                                foundName = true;
+                            }
+                        }
+                        // we did not find the index name
+                        if (!foundName)
+                        {
+                            returnValue = false;
+                            break;
+                        }
                     }
                 }
             }

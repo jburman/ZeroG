@@ -232,6 +232,18 @@ namespace ZeroG.Data.Object
             return returnValue;
         }
 
+        public IEnumerable<ObjectStoreRecord> Iterate(string objectFullName)
+        {
+            var store = _EnsureStore(objectFullName);
+            foreach (var entry in store.Enumerate())
+            {
+                var id = SerializerHelper.DeserializeInt32(entry.Key);
+                var value = entry.Value;
+                var secondaryKey = _GetSecondaryKeyFromStoredValue(value);
+                yield return new ObjectStoreRecord(id, secondaryKey, value);
+            }
+        }
+
         public void Remove(string objectFullName, int id)
         {
             var store = _EnsureStore(objectFullName);
