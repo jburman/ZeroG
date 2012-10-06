@@ -4,6 +4,7 @@ using ZeroG.Data.Object;
 using ZeroG.Data.Object.Metadata;
 using System.Text;
 using System.IO;
+using ZeroG.Data.Object.Backup;
 
 namespace ZeroG.Tests.Object
 {
@@ -29,9 +30,10 @@ namespace ZeroG.Tests.Object
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
+                var nsDt = DateTime.Now;
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
-                    "ZeroG Test", "Unit Test", DateTime.Now));
+                    "ZeroG Test", "Unit Test", nsDt));
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj));
@@ -60,6 +62,22 @@ namespace ZeroG.Tests.Object
                 try
                 {
                     svc.BackupNameSpace(ns, tempFile, false);
+
+                    using (var reader = new ObjectBackupReader(tempFile, false))
+                    {
+                        reader.ReadBackup((string version) =>
+                        {
+                            Assert.AreEqual(Config.StoreVersion, version);
+                        },
+                        (ObjectNameSpaceConfig nameSpace) =>
+                        {
+                            Assert.IsNotNull(nameSpace);
+                            Assert.AreEqual(ns, nameSpace.Name);
+                            Assert.AreEqual("ZeroG Test", nameSpace.Owner);
+                            Assert.AreEqual("Unit Test", nameSpace.StoreLocation);
+                            Assert.AreEqual(nsDt, nameSpace.Created);
+                        }, null, null, null, null);
+                    }
                 }
                 finally
                 {

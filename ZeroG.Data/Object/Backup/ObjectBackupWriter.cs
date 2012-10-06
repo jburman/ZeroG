@@ -1,10 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region License, Terms and Conditions
+// Copyright (c) 2012 Jeremy Burman
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+#endregion
+
+using System;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using ZeroG.Data.Database;
 using ZeroG.Data.Object.Metadata;
 using ZeroG.Lang;
 
@@ -12,6 +33,15 @@ namespace ZeroG.Data.Object.Backup
 {
     public class ObjectBackupWriter : IDisposable
     {
+        // backup file line prefixes
+
+        internal static readonly string VersionPrefix = "VERSION: ";
+        internal static readonly string NameSpacePrefix = "NAMESPACE: ";
+        internal static readonly string ObjectMetadataPrefix = "OBJECTMETADATA: ";
+        internal static readonly string ObjectIDPrefix = "ObjectID: ";
+        internal static readonly string ObjectPrefix = "O: ";
+        internal static readonly string IndexPrefix = "I: ";
+
         private bool _compress;
         private StreamWriter _out;
 
@@ -28,36 +58,36 @@ namespace ZeroG.Data.Object.Backup
             {
                 _out = new StreamWriter(fs);
             }
-        } 
+        }
 
         public void WriteStoreVersion(string version)
         {
-            _out.WriteLine("VERSION: " + version);
+            _out.WriteLine(VersionPrefix + version);
         }
 
         public void WriteNameSpace(ObjectNameSpaceConfig nameSpace)
         {
-            _out.WriteLine("NAMESPACE: " + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectNameSpaceConfig>(nameSpace)));
+            _out.WriteLine(NameSpacePrefix + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectNameSpaceConfig>(nameSpace)));
         }
 
         public void WriteObjectMetadata(ObjectMetadata metadata)
         {
-            _out.WriteLine("OBJECTMETADATA: " + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectMetadata>(metadata)));
+            _out.WriteLine(ObjectMetadataPrefix + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectMetadata>(metadata)));
         }
 
         public void WriteObjectID(int id)
         {
-            _out.WriteLine("OBJECTID: " + id);
+            _out.WriteLine(ObjectIDPrefix + id);
         }
 
         public void WriteObject(ObjectStoreRecord obj)
         {
-            _out.WriteLine("O: " + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectStoreRecord>(obj)));
+            _out.WriteLine(ObjectPrefix + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectStoreRecord>(obj)));
         }
 
         public void WriteIndex(ObjectIndexRecord idx)
         {
-            _out.WriteLine("I: " + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectIndexRecord>(idx)));
+            _out.WriteLine(IndexPrefix + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectIndexRecord>(idx)));
         }
 
         #region Dispose implementation
