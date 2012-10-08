@@ -4,6 +4,7 @@ using ZeroG.Data.Object;
 using ZeroG.Data.Object.Metadata;
 using System.Text;
 using System.IO;
+using System.Linq;
 using ZeroG.Data.Object.Backup;
 
 namespace ZeroG.Tests.Object
@@ -496,6 +497,143 @@ namespace ZeroG.Tests.Object
 
                     Assert.AreEqual(2, objectCount);
                     Assert.AreEqual(2, indexCount);
+                }
+                finally
+                {
+                    File.Delete(tempFile);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void BackupAndRestoreWithCompressionWithIndexes()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+                var objFullName1 = ObjectNaming.CreateFullObjectName(ns, obj);
+                var nsDt = DateTime.Now;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", nsDt));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[]
+                        {
+                            new ObjectIndexMetadata("IntCol", ObjectIndexType.Integer),
+                            new ObjectIndexMetadata("TextCol", ObjectIndexType.String, 15),
+                            new ObjectIndexMetadata("DecCol", ObjectIndexType.Decimal, 7, 2),
+                            new ObjectIndexMetadata("DateTimeCol", ObjectIndexType.DateTime),
+                            new ObjectIndexMetadata("BinCol", ObjectIndexType.Binary, 16)
+                        }));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var val3 = new Guid("{38CEFA4D-1BFC-4662-B289-659657BAADD5}");
+
+                var secKey1 = Encoding.UTF8.GetBytes("001");
+                var secKey2 = Encoding.UTF8.GetBytes("002");
+                var secKey3 = Encoding.UTF8.GetBytes("003");
+
+                Int32 testInt = 3447, testInt2 = 100;
+                String testStr = "Test Value", testStr2 = "asdf";
+                Decimal testDec = 156.12M, testDec2 = 1M;
+                DateTime testDate = new DateTime(2011, 2, 14, 3, 10, 0), testDate2 = new DateTime(2015, 1, 1, 0, 0, 1);
+                Guid testGuid = new Guid("76F5FB10BAEF4DE09578B3EB91FF6653"),
+                    testGuid2 = new Guid("00000000000000000000000000000000");
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    SecondaryKey = secKey1,
+                    Indexes = new ObjectIndex[] {
+                        ObjectIndex.Create("IntCol", testInt),
+                        ObjectIndex.Create("TextCol", testStr),
+                        ObjectIndex.Create("DecCol", testDec),
+                        ObjectIndex.Create("DateTimeCol", testDate),
+                        ObjectIndex.Create("BinCol", testGuid.ToByteArray())
+                    }
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    SecondaryKey = secKey2,
+                    Indexes = new ObjectIndex[] {
+                        ObjectIndex.Create("IntCol", testInt2),
+                        ObjectIndex.Create("TextCol", testStr2),
+                        ObjectIndex.Create("DecCol", testDec2),
+                        ObjectIndex.Create("DateTimeCol", testDate2),
+                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray())
+                    }
+                });
+
+                var tempFile = Path.GetTempFileName();
+                try
+                {
+                    svc.BackupNameSpace(ns, tempFile, true);
+
+                    // add another object value - we will verify that it is gone after restoring
+                    var objID3 = svc.Store(ns, new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = val3.ToByteArray(),
+                        SecondaryKey = secKey3,
+                        Indexes = new ObjectIndex[] {
+                        ObjectIndex.Create("IntCol", testInt2),
+                        ObjectIndex.Create("TextCol", testStr2),
+                        ObjectIndex.Create("DecCol", testDec2),
+                        ObjectIndex.Create("DateTimeCol", testDate2),
+                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray())
+                    }
+                    });
+
+                    Assert.AreEqual(3, objID3.ID);
+                    Assert.IsNotNull(svc.Get(ns, obj, 3));
+
+                    svc.Restore(tempFile, true);
+
+                    Assert.IsNull(svc.Get(ns, obj, 3));
+
+                    // re-add - verify that ID counter was reset
+                    objID3 = svc.Store(ns, new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = val3.ToByteArray(),
+                        SecondaryKey = secKey3,
+                        Indexes = new ObjectIndex[] {
+                        ObjectIndex.Create("IntCol", testInt2),
+                        ObjectIndex.Create("TextCol", testStr2),
+                        ObjectIndex.Create("DecCol", testDec2),
+                        ObjectIndex.Create("DateTimeCol", testDate2),
+                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray())
+                    }
+                    });
+
+                    Assert.AreEqual(3, objID3.ID);
+                    Assert.IsNotNull(svc.Get(ns, obj, 3));
+
+                    // check other objects
+
+                    // lookup by ID
+                    var obj2 = svc.Get(ns, obj, 2);
+                    Assert.IsNotNull(obj2);
+                    Assert.AreEqual(val2, new Guid(obj2));
+
+                    // lookup by Secondary Key
+                    obj2 = svc.GetBySecondaryKey(ns, obj, secKey2);
+                    Assert.IsNotNull(obj2);
+                    Assert.AreEqual(val2, new Guid(obj2));
+
+                    // lookup by Index Value
+                    obj2 = svc.FindWhereEqualsAnd(
+                        ns, obj, new ObjectIndex[] { ObjectIndex.Create("TextCol", "asdf") }).FirstOrDefault();
+                    Assert.IsNotNull(obj2);
+                    Assert.AreEqual(val2, new Guid(obj2));
                 }
                 finally
                 {

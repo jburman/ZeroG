@@ -97,6 +97,45 @@ namespace ZeroG.Data.Object.Metadata
             }
         }
 
+        /// <summary>
+        /// Updates an existing name space record. Does not create a new record and will throw an exception if the name space does not exist.
+        /// Use ObjectMetadataStore Exists method to check if a name space exists already.
+        /// </summary>
+        /// <param name="config">The name space configuration.</param>
+        public void UpdateNameSpace(ObjectNameSpaceConfig config)
+        {
+            var nameSpace = config.Name;
+
+            // check reserved namespace
+            if (ObjectNaming.DefaultNameSpace.Equals(nameSpace, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new ArgumentException("The specified name space is reserved.");
+            }
+            else
+            {
+                // validate characters and form of the namespace
+                if (ObjectNameValidator.IsValidNameSpace(nameSpace))
+                {
+                    var nsKey = SerializerHelper.Serialize(nameSpace);
+
+                    // verify that the namespace already exists
+                    if (NameSpaceExists(nameSpace))
+                    {
+                        // overwrite the existing namespace
+                        _nsStore.Set(nsKey, SerializerHelper.Serialize<ObjectNameSpaceConfig>(config));
+                    }
+                    else
+                    {
+                        throw new ArgumentException("The specified name space does not exist: " + nameSpace);
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException("The name space is invalid. Please ensure it contains only alphanumeric characters and periods or underscores.");
+                }
+            }
+        }
+
         public ObjectNameSpaceConfig GetNameSpace(string nameSpace)
         {
             // check reserved namespace
@@ -117,6 +156,22 @@ namespace ZeroG.Data.Object.Metadata
                     return SerializerHelper.Deserialize<ObjectNameSpaceConfig>(data);
                 }
             }
+        }
+
+        public bool NameSpaceExists(string nameSpace)
+        {
+            bool returnValue = false;
+
+            foreach (var storedNameSpace in EnumerateNameSpaces())
+            {
+                if (storedNameSpace.Equals(nameSpace, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    returnValue = true;
+                    break;
+                }
+            }
+
+            return returnValue;
         }
 
         public void RemoveNameSpace(string nameSpace)
@@ -234,19 +289,17 @@ namespace ZeroG.Data.Object.Metadata
 
         public IEnumerable<string> EnumerateObjectNames()
         {
-            var encoding = Encoding.UTF8;
             foreach (var e in _store.Enumerate())
             {
-                yield return encoding.GetString(e.Key);
+                yield return SerializerHelper.DeserializeString(e.Key);
             }
         }
 
         public IEnumerable<string> EnumerateObjectNames(string nameSpace)
         {
-            var encoding = Encoding.UTF8;
             foreach (var e in _store.Enumerate())
             {
-                string objFullName = encoding.GetString(e.Key);
+                string objFullName = SerializerHelper.DeserializeString(e.Key);
                 if (nameSpace.Equals(ObjectNaming.GetNameSpaceFromFullObjectName(objFullName), StringComparison.OrdinalIgnoreCase))
                 {
                     yield return objFullName;
@@ -256,10 +309,9 @@ namespace ZeroG.Data.Object.Metadata
 
         public IEnumerable<string> EnumerateNameSpaces()
         {
-            var encoding = Encoding.UTF8;
             foreach (var e in _nsStore.Enumerate())
             {
-                yield return encoding.GetString(e.Key);
+                yield return SerializerHelper.DeserializeString(e.Key);
             }
         }
 

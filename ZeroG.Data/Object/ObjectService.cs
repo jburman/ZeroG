@@ -58,7 +58,8 @@ namespace ZeroG.Data.Object
             _DefaultTransactionOptions.Timeout = TransactionManager.DefaultTimeout;
         }
 
-        public ObjectService() : this(Config.Default)
+        public ObjectService()
+            : this(Config.Default)
         {
         }
 
@@ -199,7 +200,7 @@ namespace ZeroG.Data.Object
                 foreach (var objName in _objectMetadata.EnumerateObjectNames(nameSpace))
                 {
                     var md = _objectMetadata.GetMetadata(objName);
-                    
+
                     // store the object's metadata
                     writer.WriteObjectMetadata(md);
 
@@ -221,6 +222,72 @@ namespace ZeroG.Data.Object
                         }
                     }
                 }
+            }
+        }
+
+        public void Restore(string backupFileName, bool useCompression)
+        {
+            using (var reader = new ObjectBackupReader(backupFileName, useCompression))
+            {
+                string nameSpace = null;
+                ObjectMetadata objectMetadata = null;
+
+                reader.ReadBackup(
+                    (string storeVersion) =>
+                    {
+                        // ignore version for now
+                    },
+                    (ObjectNameSpaceConfig nameSpaceConfig) =>
+                    {
+                        nameSpace = nameSpaceConfig.Name;
+
+                        if (_objectMetadata.NameSpaceExists(nameSpaceConfig.Name))
+                        {
+                            _objectMetadata.UpdateNameSpace(nameSpaceConfig);
+                        }
+                        else
+                        {
+                            _objectMetadata.CreateNameSpace(nameSpaceConfig);
+                        }
+                    },
+                    (ObjectMetadata metadata) =>
+                    {
+                        // remove all existing data and update the metadata
+                        objectMetadata = metadata;
+
+                        Truncate(objectMetadata.NameSpace, objectMetadata.ObjectName, true);
+
+                        _objectMetadata.StoreMetadata(metadata);
+                    },
+                    (int currentObjectId) =>
+                    {
+                        // reset the Object Store Identity value
+                        _objectIDStore.SetCurrentID(
+                            ObjectNaming.CreateFullObjectKey(objectMetadata.ObjectFullName), currentObjectId);
+                    },
+                    (ObjectStoreRecord obj) =>
+                    {
+                        _objectStore.Set(objectMetadata.NameSpace,
+                            new PersistentObject()
+                            {
+                                Name = objectMetadata.ObjectName,
+                                ID = obj.ID,
+                                SecondaryKey = obj.SecondaryKey,
+                                Value = obj.Value,
+                                Indexes = null // indexes will be applied separately
+                            });
+                    },
+                    (ObjectIndexRecord idx) =>
+                    {
+                        // first value is always the ID column
+                        int objectId = (int)idx.Values[0].GetObjectValue();
+                        var indexes = new ObjectIndex[idx.Values.Length - 1];
+                        Array.Copy(idx.Values, 1, indexes, 0, indexes.Length);
+
+                        _objectIndexer.IndexObject(objectMetadata.ObjectFullName,
+                            objectId,
+                            indexes);
+                    });
             }
         }
 
@@ -322,7 +389,7 @@ namespace ZeroG.Data.Object
                     {
                         if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
                         {
-                            if (_objectIndexer.Exists(objectFullName))
+                            if (_objectIndexer.ObjectExists(objectFullName))
                             {
                                 _objectIndexer.Truncate(objectFullName);
                                 _objectIndexer.UnprovisionIndex(objectFullName);
@@ -383,7 +450,8 @@ namespace ZeroG.Data.Object
                 {
                     if (null != obj.Indexes && 0 < obj.Indexes.Length)
                     {
-                        _objectIndexer.IndexObject(nameSpace, obj);
+                        _objectIndexer.IndexObject(objectFullName, obj.ID,
+                            obj.Indexes);
                     }
 
                     _objectStore.Set(nameSpace, obj);
@@ -535,7 +603,7 @@ namespace ZeroG.Data.Object
 
             using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
             {
-                if (_objectIndexer.Exists(objectFullName))
+                if (_objectIndexer.ObjectExists(objectFullName))
                 {
                     _objectIndexer.RemoveObjectIndex(objectFullName, id);
                 }
@@ -553,7 +621,7 @@ namespace ZeroG.Data.Object
 
             using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
             {
-                if (_objectIndexer.Exists(objectFullName))
+                if (_objectIndexer.ObjectExists(objectFullName))
                 {
                     _objectIndexer.RemoveObjectIndexes(objectFullName, ids);
                 }
@@ -575,7 +643,10 @@ namespace ZeroG.Data.Object
 
             using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
             {
-                _objectIndexer.Truncate(objectFullName);
+                if (_objectIndexer.ObjectExists(objectFullName))
+                {
+                    _objectIndexer.Truncate(objectFullName);
+                }
 
                 _objectStore.Truncate(objectFullName);
 

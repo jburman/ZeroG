@@ -71,14 +71,14 @@ namespace ZeroG.Data.Object.Index
             }
         }
 
-        private bool _ValidateIndexes(string nameSpace, PersistentObject obj)
+        private bool _ValidateIndexes(ObjectIndex[] indexes)
         {
-            foreach (var idx in obj.Indexes)
+            foreach (var idx in indexes)
             {
                 var dataType = idx.DataType;
-                if (null == obj.Value)
+                if (null == idx.Value || 0 == idx.Value.Length)
                 {
-                    throw new ArgumentNullException("obj.Value", "Index values cannot be null.");
+                    throw new ArgumentNullException("idx.Value", "Index values cannot be null.");
                 }
                 else if (ObjectIndexType.Unknown == dataType)
                 {
@@ -151,7 +151,7 @@ namespace ZeroG.Data.Object.Index
             }
         }
 
-        public bool Exists(string objectFullName)
+        public bool ObjectExists(string objectFullName)
         {
             return _indexer.ObjectExists(objectFullName);
         }
@@ -234,6 +234,11 @@ namespace ZeroG.Data.Object.Index
             return returnValue;
         }
 
+        public bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            return _indexer.Exists(objectFullName, constraint, indexes);
+        }
+
         public IEnumerable<IDataRecord> Iterate(string objectFullName, ObjectIndexMetadata[] indexes)
         {
             return _indexer.Iterate(objectFullName, indexes);
@@ -251,11 +256,11 @@ namespace ZeroG.Data.Object.Index
             return _indexer.Iterate(objectFullName, constraint, limit, order, iterateIndexes, indexes);
         }
 
-        public void IndexObject(string nameSpace, PersistentObject obj)
+        public void IndexObject(string objectFullName, int objectId, ObjectIndex[] indexes)
         {
-            if (_ValidateIndexes(nameSpace, obj))
+            if (_ValidateIndexes(indexes))
             {
-                _indexer.UpsertIndexValues(ObjectNaming.CreateFullObjectName(nameSpace, obj.Name), obj.ID, obj.Indexes);
+                _indexer.UpsertIndexValues(objectFullName, objectId, indexes);
             }
         }
 
