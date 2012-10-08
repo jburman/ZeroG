@@ -47,10 +47,10 @@ namespace ZeroG.Data.Object
                 var nextIdRaw = _store.Get(key);
                 if (null != nextIdRaw)
                 {
-                    nextId = BitConverter.ToInt32(nextIdRaw, 0);
+                    nextId = SerializerHelper.DeserializeInt32(nextIdRaw);
                     nextId++;
                 }
-                _store.Set(key, BitConverter.GetBytes(nextId));
+                _store.Set(key, SerializerHelper.Serialize(nextId));
             }
             return nextId;
         }
@@ -64,7 +64,15 @@ namespace ZeroG.Data.Object
             }
             else
             {
-                return BitConverter.ToInt32(val, 0);
+                return SerializerHelper.DeserializeInt32(val);
+            }
+        }
+
+        public void SetCurrentID(byte[] key, int value)
+        {
+            lock (_idLock)
+            {
+                _store.Set(key, SerializerHelper.Serialize(value));
             }
         }
 
@@ -72,7 +80,7 @@ namespace ZeroG.Data.Object
         {
             lock (_idLock)
             {
-                _store.Set(ObjectNaming.CreateFullObjectKey(objectFullName), BitConverter.GetBytes(0));
+                _store.Set(ObjectNaming.CreateFullObjectKey(objectFullName), SerializerHelper.Serialize(0));
             }
         }
 

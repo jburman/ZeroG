@@ -31,6 +31,10 @@ namespace ZeroG.Data.Object
     [DataContract]
     public sealed class ObjectIndexRecord
     {
+        public ObjectIndexRecord()
+        {
+        }
+
         public ObjectIndexRecord(ObjectIndex[] values)
         {
             Values = values;

@@ -50,7 +50,7 @@ namespace ZeroG.Data.Object.Backup
             if (_compress)
             {
                 _in = new StreamReader(
-                    new GZipStream(fs, CompressionMode.Compress));
+                    new GZipStream(fs, CompressionMode.Decompress));
             }
             else
             {
@@ -96,31 +96,98 @@ namespace ZeroG.Data.Object.Backup
             }
         }
 
-        private bool _ReadNameSpace(NameSpaceHandler handler)
+        private bool _ReadNameSpace(NameSpaceHandler handler, string line)
         {
             var returnValue = false;
 
-            var line = _ReadIfNotEOF();
-
-            if (null != line)
+            if (!line.StartsWith(ObjectBackupWriter.NameSpacePrefix))
             {
-                if (!line.StartsWith(ObjectBackupWriter.NameSpacePrefix))
+                throw new IOException("Expected Name Space");
+            }
+            else
+            {
+                if (null != handler)
                 {
-                    throw new IOException("Expected Name Space");
+                    handler(SerializerHelper.Deserialize<ObjectNameSpaceConfig>(
+                        BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.NameSpacePrefix.Length))));
                 }
-                else
-                {
-                    if (null != handler)
-                    {
-                        handler(SerializerHelper.Deserialize<ObjectNameSpaceConfig>(
-                            BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.NameSpacePrefix.Length))));
-                    }
-                    returnValue = true;
-                }
+                returnValue = true;
             }
 
             return returnValue;
         }
+
+        private bool _ReadObjectMetadata(ObjectMetadataHandler handler, string line)
+        {
+            var returnValue = false;
+
+            if (line.StartsWith(ObjectBackupWriter.ObjectMetadataPrefix))
+            {
+                if (null != handler)
+                {
+                    handler(SerializerHelper.Deserialize<ObjectMetadata>(
+                        BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.ObjectMetadataPrefix.Length))));
+                }
+                returnValue = true;
+            }
+
+            return returnValue;
+        }
+
+        private bool _ReadObjectID(ObjectIDHandler handler, string line)
+        {
+            var returnValue = false;
+
+            if (!line.StartsWith(ObjectBackupWriter.ObjectIDPrefix))
+            {
+                throw new IOException("Expected Object ID");
+            }
+            else
+            {
+                if (null != handler)
+                {
+                    handler(int.Parse(line.Substring(ObjectBackupWriter.ObjectIDPrefix.Length)));
+                }
+                returnValue = true;
+            }
+
+            return returnValue;
+        }
+
+        private bool _ReadObject(ObjectHandler handler, string line)
+        {
+            var returnValue = false;
+
+            if (line.StartsWith(ObjectBackupWriter.ObjectPrefix))
+            {
+                if (null != handler)
+                {
+                    handler(SerializerHelper.Deserialize<ObjectStoreRecord>(
+                        BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.ObjectPrefix.Length))));
+                }
+                returnValue = true;
+            }
+
+            return returnValue;
+        }
+
+        private bool _ReadIndex(IndexHandler handler, string line)
+        {
+            var returnValue = false;
+
+            if (line.StartsWith(ObjectBackupWriter.IndexPrefix))
+            {
+                if (null != handler)
+                {
+                    handler(SerializerHelper.Deserialize<ObjectIndexRecord>(
+                        BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.IndexPrefix.Length))));
+                }
+                returnValue = true;
+            }
+
+            return returnValue;
+        }
+
         #endregion
 
         public void ReadBackup(
@@ -133,15 +200,35 @@ namespace ZeroG.Data.Object.Backup
         {
             _ReadStoreVersion(storeVersionRead);
 
-            if (_ReadNameSpace(nameSpaceRead))
+            string line = null;
+
+            while(!_in.EndOfStream) 
             {
-                // if read metadata
+                line = _in.ReadLine();
 
-                // then read objects
-
-                // read indexes
-
-                // ... read metadata ... read name spaces ...
+                if(null != line) 
+                {
+                    if (line.StartsWith(ObjectBackupWriter.NameSpacePrefix))
+                    {
+                        _ReadNameSpace(nameSpaceRead, line);
+                    }
+                    else if (line.StartsWith(ObjectBackupWriter.ObjectMetadataPrefix))
+                    {
+                        _ReadObjectMetadata(objectMetadataRead, line);
+                    }
+                    else if (line.StartsWith(ObjectBackupWriter.ObjectIDPrefix))
+                    {
+                        _ReadObjectID(objectIDRead, line);
+                    }
+                    else if (line.StartsWith(ObjectBackupWriter.ObjectPrefix))
+                    {
+                        _ReadObject(objectRead, line);
+                    }
+                    else if (line.StartsWith(ObjectBackupWriter.IndexPrefix))
+                    {
+                        _ReadIndex(indexRead, line);
+                    }
+                }
             }
         }
 

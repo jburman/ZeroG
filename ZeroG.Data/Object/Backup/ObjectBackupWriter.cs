@@ -107,6 +107,7 @@ namespace ZeroG.Data.Object.Backup
                 {
                     if (null != _out)
                     {
+                        _out.Flush();
                         _out.Dispose();
                     }
                 }

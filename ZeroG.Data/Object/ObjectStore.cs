@@ -238,8 +238,8 @@ namespace ZeroG.Data.Object
             foreach (var entry in store.Enumerate())
             {
                 var id = SerializerHelper.DeserializeInt32(entry.Key);
-                var value = entry.Value;
-                var secondaryKey = _GetSecondaryKeyFromStoredValue(value);
+                var value = _GetValueFromStoredValue(entry.Value);
+                var secondaryKey = _GetSecondaryKeyFromStoredValue(entry.Value);
                 yield return new ObjectStoreRecord(id, secondaryKey, value);
             }
         }

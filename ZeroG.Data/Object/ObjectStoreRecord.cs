@@ -32,6 +32,10 @@ namespace ZeroG.Data.Object
     [DataContract]
     public sealed class ObjectStoreRecord
     {
+        public ObjectStoreRecord()
+        {
+        }
+
         public ObjectStoreRecord(int id, byte[] secondaryKey, byte[] value)
         {
             ID = id;
