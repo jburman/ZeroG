@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 
@@ -102,16 +103,6 @@ namespace ZeroG.Data.Object
                 });
         }
 
-        public ObjectID StoreCompressed(byte[] value)
-        {
-            return Store(null, _Compress(value));
-        }
-
-        public ObjectID StoreCompressed(byte[] secondaryKey, byte[] value)
-        {
-            return Store(secondaryKey, _Compress(value));
-        }
-
         #endregion
 
         #region Public Get methods
@@ -125,17 +116,6 @@ namespace ZeroG.Data.Object
         {
             return _service.GetBySecondaryKey(_nameSpace, _objectName, secondaryKey);
         }
-
-        public byte[] GetCompressed(int objectId)
-        {
-            return _Decompress(_service.Get(_nameSpace, _objectName, objectId));
-        }
-
-        public byte[] GetCompressedBySecondaryKey(byte[] secondaryKey)
-        {
-            return _Decompress(_service.GetBySecondaryKey(_nameSpace, _objectName, secondaryKey));
-        }
-
         #endregion
 
         #region Public Remove methods
@@ -153,6 +133,11 @@ namespace ZeroG.Data.Object
         #endregion
 
         #region Public Find methods
+
+        public IEnumerable<byte[]> Find(string constraint)
+        {
+            return _service.Find(_nameSpace, _objectName, constraint);
+        }
 
         #endregion
     }

@@ -418,6 +418,50 @@ namespace ZeroG.Data.Object
             }
         }
 
+        public void Truncate(string nameSpace, string objectName, bool resetIdentifiers)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+
+            using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
+            {
+                if (_objectIndexer.ObjectExists(objectFullName))
+                {
+                    _objectIndexer.Truncate(objectFullName);
+                }
+
+                _objectStore.Truncate(objectFullName);
+
+                _objectVersions.Update(objectFullName);
+
+                if (resetIdentifiers)
+                {
+                    _objectIDStore.Reset(objectFullName);
+                }
+
+                trans.Complete();
+            }
+        }
+
+        public bool ObjectNameExists(string nameSpace, string objectName)
+        {
+            if (string.IsNullOrEmpty(nameSpace) || string.IsNullOrEmpty(objectName))
+            {
+                return false;
+            }
+            return _objectNaming.NameSpaceExists(nameSpace) & _objectNaming.ObjectNameExists(nameSpace, objectName);
+        }
+
+        public bool NameSpaceExists(string nameSpace)
+        {
+            if (string.IsNullOrEmpty(nameSpace))
+            {
+                return false;
+            }
+            return _objectNaming.NameSpaceExists(nameSpace);
+        }
+
         public ObjectID Store(string nameSpace, PersistentObject obj)
         {
             ObjectID returnValue = null;
@@ -635,49 +679,6 @@ namespace ZeroG.Data.Object
             }
         }
 
-        public void Truncate(string nameSpace, string objectName, bool resetIdentifiers)
-        {
-            _ValidateArguments(nameSpace, objectName);
-
-            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
-            using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
-            {
-                if (_objectIndexer.ObjectExists(objectFullName))
-                {
-                    _objectIndexer.Truncate(objectFullName);
-                }
-
-                _objectStore.Truncate(objectFullName);
-
-                _objectVersions.Update(objectFullName);
-
-                if (resetIdentifiers)
-                {
-                    _objectIDStore.Reset(objectFullName);
-                }
-
-                trans.Complete();
-            }
-        }
-
-        public bool ObjectNameExists(string nameSpace, string objName)
-        {
-            if (string.IsNullOrEmpty(nameSpace) || string.IsNullOrEmpty(objName))
-            {
-                return false;
-            }
-            return _objectNaming.NameSpaceExists(nameSpace) & _objectNaming.ObjectNameExists(nameSpace, objName);
-        }
-
-        public bool NameSpaceExists(string nameSpace)
-        {
-            if (string.IsNullOrEmpty(nameSpace))
-            {
-                return false;
-            }
-            return _objectNaming.NameSpaceExists(nameSpace);
-        }
         #endregion
 
         #region Dispose implementation

@@ -25,7 +25,7 @@
 
 using System.Runtime.Serialization;
 
-namespace ZeroG.Data.Object.Metadata
+namespace ZeroG.Data.Object
 {
     [DataContract]
     public sealed class ObjectMetadata
@@ -65,7 +65,7 @@ namespace ZeroG.Data.Object.Metadata
         {
             get
             {
-                return ObjectNaming.CreateFullObjectName(NameSpace, ObjectName);
+                return ObjectNameFormatter.CreateFullObjectName(NameSpace, ObjectName);
             }
         }
     }

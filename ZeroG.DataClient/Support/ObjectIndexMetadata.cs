@@ -25,9 +25,8 @@
 
 using System;
 using System.Runtime.Serialization;
-using ZeroG.Data.Object.Index;
 
-namespace ZeroG.Data.Object.Metadata
+namespace ZeroG.Data.Object
 {
     [DataContract]
     public sealed class ObjectIndexMetadata

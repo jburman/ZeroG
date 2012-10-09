@@ -31,6 +31,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="IKVM.Reflection">
+      <HintPath>..\References\IKVM.Reflection.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\References\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
@@ -38,18 +44,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IObjectServiceAdminClient.cs" />
     <Compile Include="IObjectServiceClient.cs" />
-    <Compile Include="ObjectFindLogic.cs" />
-    <Compile Include="ObjectFindOperator.cs" />
-    <Compile Include="ObjectFindOptions.cs" />
-    <Compile Include="ObjectID.cs" />
-    <Compile Include="ObjectIndex.cs" />
-    <Compile Include="ObjectIndexType.cs" />
-    <Compile Include="ObjectIndexTypeExtensions.cs" />
-    <Compile Include="ObjectNameValidator.cs" />
-    <Compile Include="OrderOptions.cs" />
-    <Compile Include="PersistentObject.cs" />
+    <Compile Include="Support\ObjectFindLogic.cs" />
+    <Compile Include="Support\ObjectFindOperator.cs" />
+    <Compile Include="Support\ObjectFindOptions.cs" />
+    <Compile Include="Support\ObjectID.cs" />
+    <Compile Include="Support\ObjectIndex.cs" />
+    <Compile Include="Support\ObjectIndexMetadata.cs" />
+    <Compile Include="Support\ObjectIndexType.cs" />
+    <Compile Include="Support\ObjectIndexTypeExtensions.cs" />
+    <Compile Include="Support\ObjectMetadata.cs" />
+    <Compile Include="Support\ObjectNameFormatter.cs" />
+    <Compile Include="Support\ObjectNameSpaceConfig.cs" />
+    <Compile Include="Support\ObjectNameValidator.cs" />
+    <Compile Include="Support\OrderOptions.cs" />
+    <Compile Include="Support\PersistentObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Support\SerializerHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

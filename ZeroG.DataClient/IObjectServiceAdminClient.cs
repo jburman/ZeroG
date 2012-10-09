@@ -23,23 +23,21 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System.Collections.Generic;
 namespace ZeroG.Data.Object
 {
     /// <summary>
-    /// The IObjectServiceClient interface provides a convenience interface for interacting with the ObjectService.
+    /// IObjectServiceAdminClient provides the interface for interacting with the ObjectService's object administration methods.
     /// </summary>
-    public interface IObjectServiceClient
+    public interface IObjectServiceAdminClient
     {
-        ObjectID Store(byte[] value);
-        ObjectID Store(byte[] secondaryKey, byte[] value);
+        void ProvisionObjectStore(ObjectMetadata metadata);
 
-        byte[] Get(int objectId);
-        byte[] GetBySecondaryKey(byte[] secondaryKey);
+        void UnprovisionObjectStore(string objectName);
 
-        void Remove(int id);
-        void Remove(int[] id);
+        ObjectMetadata GetObjectMetadata(string objectName);
 
-        IEnumerable<byte[]> Find(string constraint);
+        bool ObjectNameExists(string objectName);
+
+        void Truncate(string objectName, bool resetIdentifiers);
     }
 }

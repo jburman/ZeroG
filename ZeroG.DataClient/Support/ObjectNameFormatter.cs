@@ -23,23 +23,23 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System.Collections.Generic;
 namespace ZeroG.Data.Object
 {
-    /// <summary>
-    /// The IObjectServiceClient interface provides a convenience interface for interacting with the ObjectService.
-    /// </summary>
-    public interface IObjectServiceClient
+    public class ObjectNameFormatter
     {
-        ObjectID Store(byte[] value);
-        ObjectID Store(byte[] secondaryKey, byte[] value);
+        public static string CreateFullObjectName(string nameSpace, string objectName)
+        {
+            return nameSpace + "." + objectName;
+        }
 
-        byte[] Get(int objectId);
-        byte[] GetBySecondaryKey(byte[] secondaryKey);
+        public static byte[] CreateFullObjectKey(string nameSpace, string objectName)
+        {
+            return SerializerHelper.Serialize(nameSpace + "." + objectName);
+        }
 
-        void Remove(int id);
-        void Remove(int[] id);
-
-        IEnumerable<byte[]> Find(string constraint);
+        public static byte[] CreateFullObjectKey(string objectFullName)
+        {
+            return SerializerHelper.Serialize(objectFullName);
+        }
     }
 }

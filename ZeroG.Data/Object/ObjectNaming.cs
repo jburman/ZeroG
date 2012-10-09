@@ -113,17 +113,17 @@ namespace ZeroG.Data.Object
 
         public static string CreateFullObjectName(string nameSpace, string objectName)
         {
-            return nameSpace + "." + objectName;
+            return ObjectNameFormatter.CreateFullObjectName(nameSpace, objectName);
         }
 
         public static byte[] CreateFullObjectKey(string nameSpace, string objectName)
         {
-            return SerializerHelper.Serialize(nameSpace + "." + objectName);
+            return ObjectNameFormatter.CreateFullObjectKey(nameSpace, objectName);
         }
 
         public static byte[] CreateFullObjectKey(string objectFullName)
         {
-            return SerializerHelper.Serialize(objectFullName);
+            return ObjectNameFormatter.CreateFullObjectKey(objectFullName);
         }
 
         public static string GetNameSpaceFromFullObjectName(string fullObjectName)
