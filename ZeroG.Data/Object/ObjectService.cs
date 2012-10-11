@@ -540,6 +540,11 @@ namespace ZeroG.Data.Object
 
         public IEnumerable<byte[]> Find(string nameSpace, string objectName, string constraint)
         {
+            return Find(nameSpace, objectName, constraint, 0, null);
+        }
+
+        public IEnumerable<byte[]> Find(string nameSpace, string objectName, string constraint, uint limit, OrderOptions order)
+        {
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
@@ -551,92 +556,24 @@ namespace ZeroG.Data.Object
                 throw new InvalidOperationException("Metadata not found for object: " + objectFullName);
             }
 
-            var objectIds = _objectIndexer.Find(objectFullName, constraint, metadata.Indexes);
+            var objectIds = _objectIndexer.Find(objectFullName, constraint, limit, order, metadata.Indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
             }
         }
 
-        public IEnumerable<byte[]> FindWhereEqualsAnd(string nameSpace, string objectName, ObjectIndex[] indexes)
+        public IEnumerable<byte[]> Find(string nameSpace, string objectName, ObjectFindOptions options, ObjectIndex[] indexes)
         {
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
-            var options = new ObjectFindOptions()
-            {
-                Logic = ObjectFindLogic.And,
-                Operator = ObjectFindOperator.Equals
-            };
-
-            var objectIds = _Find(objectFullName, options, indexes);
+            var objectIds = _objectIndexer.Find(objectFullName, options, indexes);
             foreach (var objectId in objectIds)
             {
                 yield return _objectStore.Get(objectFullName, objectId);
             }
-        }
-
-        public IEnumerable<byte[]> FindWhereLikeAnd(string nameSpace, string objectName, ObjectIndex[] indexes)
-        {
-            _ValidateArguments(nameSpace, objectName);
-
-            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
-            var options = new ObjectFindOptions()
-            {
-                Logic = ObjectFindLogic.And,
-                Operator = ObjectFindOperator.Like
-            };
-
-            var objectIds = _Find(objectFullName, options, indexes);
-            foreach (var objectId in objectIds)
-            {
-                yield return _objectStore.Get(objectFullName, objectId);
-            }
-        }
-
-        public IEnumerable<byte[]> FindWhereEqualsOr(string nameSpace, string objectName, ObjectIndex[] indexes)
-        {
-            _ValidateArguments(nameSpace, objectName);
-
-            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
-            var options = new ObjectFindOptions()
-            {
-                Logic = ObjectFindLogic.Or,
-                Operator = ObjectFindOperator.Equals
-            };
-
-            var objectIds = _Find(objectFullName, options, indexes);
-            foreach (var objectId in objectIds)
-            {
-                yield return _objectStore.Get(objectFullName, objectId);
-            }
-        }
-
-        public IEnumerable<byte[]> FindWhereLikeOr(string nameSpace, string objectName, ObjectIndex[] indexes)
-        {
-            _ValidateArguments(nameSpace, objectName);
-
-            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
-            var options = new ObjectFindOptions()
-            {
-                Logic = ObjectFindLogic.Or,
-                Operator = ObjectFindOperator.Like
-            };
-
-            var objectIds = _Find(objectFullName, options, indexes);
-            foreach (var objectId in objectIds)
-            {
-                yield return _objectStore.Get(objectFullName, objectId);
-            }
-        }
-
-        internal int[] _Find(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes)
-        {
-            return _objectIndexer.Find(objectFullName, options, indexes);
         }
 
         public void Remove(string nameSpace, string objectName, int id)

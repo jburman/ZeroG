@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 
 namespace ZeroG.Data.Object
 {
@@ -89,17 +90,28 @@ namespace ZeroG.Data.Object
 
         public ObjectID Store(byte[] value)
         {
-            return Store(null, value);
+            return Store(null, value, null);
         }
 
         public ObjectID Store(byte[] secondaryKey, byte[] value)
+        {
+            return Store(secondaryKey, value, null);
+        }
+
+        public ObjectID Store(byte[] value, ObjectIndex[] indexes)
+        {
+            return Store(null, value, indexes);
+        }
+
+        public ObjectID Store(byte[] secondaryKey, byte[] value, ObjectIndex[] indexes)
         {
             return _service.Store(_nameSpace,
                 new PersistentObject()
                 {
                     Name = _objectName,
                     SecondaryKey = secondaryKey,
-                    Value = value
+                    Value = value,
+                    Indexes = indexes
                 });
         }
 
@@ -134,9 +146,19 @@ namespace ZeroG.Data.Object
 
         #region Public Find methods
 
-        public IEnumerable<byte[]> Find(string constraint)
+        public byte[][] Find(ObjectFindOptions options, ObjectIndex[] indexes)
         {
-            return _service.Find(_nameSpace, _objectName, constraint);
+            return _service.Find(_nameSpace, _objectName, options, indexes).ToArray();
+        }
+
+        public byte[][] Find(string constraint)
+        {
+            return _service.Find(_nameSpace, _objectName, constraint).ToArray();
+        }
+
+        public byte[][] Find(string constraint, uint limit, OrderOptions order)
+        {
+            return _service.Find(_nameSpace, _objectName, constraint, limit, order).ToArray();
         }
 
         #endregion

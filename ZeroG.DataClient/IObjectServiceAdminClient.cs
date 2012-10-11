@@ -30,13 +30,12 @@ namespace ZeroG.Data.Object
     /// </summary>
     public interface IObjectServiceAdminClient
     {
-        void ProvisionObjectStore(ObjectMetadata metadata);
+        bool ObjectNameExists(string objectName);
 
+        void ProvisionObjectStore(ObjectMetadata metadata);
         void UnprovisionObjectStore(string objectName);
 
         ObjectMetadata GetObjectMetadata(string objectName);
-
-        bool ObjectNameExists(string objectName);
 
         void Truncate(string objectName, bool resetIdentifiers);
     }

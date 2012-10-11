@@ -66,6 +66,12 @@ namespace ZeroG.Data.Database.Lang
 
     public class Constraint
     {
+        public Constraint()
+        {
+            Operator = ConstraintOperator.Equals;
+            Logic = ConstraintLogic.And;
+        }
+
         public string Name;
         public object Value;
         public string LastKey;
@@ -306,10 +312,17 @@ namespace ZeroG.Data.Database.Lang
                 if (1 < constraint.Constraints.Count)
                 {
                     sql.Append("(");
-                    foreach (var c in constraint.Constraints)
+                    var constraints = constraint.Constraints;
+                    var constraintsLen = constraints.Count;
+                    for (int i = 0; constraintsLen > i; i++)
                     {
+                        var c = constraints[i];
                         _GenerateSQL(sql, parameters, c);
-                        if (ConstraintLogic.NotSet != c.Logic)
+
+                        // Do not emit a logical operator if it is not specified, or if this is the 
+                        // final item in a series of constraints.
+                        if (ConstraintLogic.NotSet != c.Logic &&
+                            i != constraintsLen - 1)
                         {
                             sql.Append(' ');
                             sql.Append(c.Logic);

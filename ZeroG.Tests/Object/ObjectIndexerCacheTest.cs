@@ -87,7 +87,12 @@ namespace ZeroG.Tests.Object
                 });
 
                 // test a single index lookup using And
-                var findVals = svc.FindWhereEqualsAnd(ns, obj, new ObjectIndex[]
+                var options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+                var findVals = svc.Find(ns, obj, options, new ObjectIndex[]
                 {
                     ObjectIndex.Create("IntIndex1", 12500)
                 }).ToArray();
@@ -96,7 +101,13 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(val2, new Guid(findVals[0]));
 
                 // test two index lookups using And
-                findVals = svc.FindWhereEqualsAnd(ns, obj, new ObjectIndex[]
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
                 {
                     ObjectIndex.Create("StrIndex1", "index test val"),
                     ObjectIndex.Create("IntIndex1", 12500)
@@ -106,7 +117,12 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(val2, new Guid(findVals[0]));
 
                 // test a single lookup using Or
-                findVals = svc.FindWhereEqualsOr(ns, obj, new ObjectIndex[]
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.Or
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
                 {
                     ObjectIndex.Create("IntIndex1", 12500)
                 }).ToArray();
@@ -115,7 +131,12 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(val2, new Guid(findVals[0]));
 
                 // test two index lookups using Or
-                findVals = svc.FindWhereEqualsOr(ns, obj, new ObjectIndex[]
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.Or
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
                 {
                     ObjectIndex.Create("IntIndex1", 12500),
                     ObjectIndex.Create("StrIndex1", "asdf")

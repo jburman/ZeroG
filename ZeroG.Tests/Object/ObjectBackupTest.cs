@@ -630,8 +630,13 @@ namespace ZeroG.Tests.Object
                     Assert.AreEqual(val2, new Guid(obj2));
 
                     // lookup by Index Value
-                    obj2 = svc.FindWhereEqualsAnd(
-                        ns, obj, new ObjectIndex[] { ObjectIndex.Create("TextCol", "asdf") }).FirstOrDefault();
+                    var options = new ObjectFindOptions()
+                    {
+                        Operator = ObjectFindOperator.Equals,
+                        Logic = ObjectFindLogic.And
+                    };
+                    obj2 = svc.Find(
+                        ns, obj, options, new ObjectIndex[] { ObjectIndex.Create("TextCol", "asdf") }).FirstOrDefault();
                     Assert.IsNotNull(obj2);
                     Assert.AreEqual(val2, new Guid(obj2));
                 }

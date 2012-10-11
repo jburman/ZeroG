@@ -33,13 +33,45 @@ namespace ZeroG.Data.Object
     {
         ObjectID Store(byte[] value);
         ObjectID Store(byte[] secondaryKey, byte[] value);
+        ObjectID Store(byte[] value, ObjectIndex[] indexes);
+        ObjectID Store(byte[] secondaryKey, byte[] value, ObjectIndex[] indexes);
 
         byte[] Get(int objectId);
         byte[] GetBySecondaryKey(byte[] secondaryKey);
 
         void Remove(int id);
-        void Remove(int[] id);
+        void Remove(int[] ids);
 
-        IEnumerable<byte[]> Find(string constraint);
+        /// <summary>
+        /// Simplistic interface for finding objects. 
+        /// Allows a logical operator, comparison operator, object limit, and 
+        /// ordering to be specified along with a list of index names and constraint values.
+        /// It is very limited however, as only one logical and comparison operator may be used and not 
+        /// all comparison operators are supported.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="indexes"></param>
+        /// <returns></returns>
+        byte[][] Find(ObjectFindOptions options, ObjectIndex[] indexes);
+
+        /// <summary>
+        /// Allows objects to be found using a constraint string defined in JSON.
+        /// This allows for all logical and comparison operators to be used together to build more powerful
+        /// search capability.
+        /// </summary>
+        /// <param name="constraint"></param>
+        /// <returns></returns>
+        byte[][] Find(string constraint);
+        /// <summary>
+        /// Allows objects to be found using a constraint string defined in JSON.
+        /// Also allows an object limit and ordering to be specified.
+        /// This allows for all logical and comparison operators to be used together to build more powerful
+        /// search capability.
+        /// </summary>
+        /// <param name="constraint"></param>
+        /// <param name="limit"></param>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        byte[][] Find(string constraint, uint limit, OrderOptions order);
     }
 }
