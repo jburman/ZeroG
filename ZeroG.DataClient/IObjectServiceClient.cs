@@ -38,6 +38,9 @@ namespace ZeroG.Data.Object
 
         byte[] Get(int objectId);
         byte[] GetBySecondaryKey(byte[] secondaryKey);
+        byte[][] GetAll();
+
+        int Count();
 
         void Remove(int id);
         void Remove(int[] ids);

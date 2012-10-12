@@ -551,5 +551,107 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(ObjCount, count);
             }
         }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void Count()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+
+                var secKey1 = Encoding.UTF8.GetBytes("001");
+                var secKey2 = Encoding.UTF8.GetBytes("002");
+
+                Assert.AreEqual(0, svc.Count(ns, obj));
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    SecondaryKey = secKey1
+                });
+
+                Assert.AreEqual(1, svc.Count(ns, obj));
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    SecondaryKey = secKey2
+                });
+
+                Assert.AreEqual(2, svc.Count(ns, obj));
+
+                svc.Remove(ns, obj, objID1.ID);
+
+                Assert.AreEqual(1, svc.Count(ns, obj));
+
+                svc.Remove(ns, obj, objID2.ID);
+
+                Assert.AreEqual(0, svc.Count(ns, obj));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void Iterate()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+
+                var secKey1 = Encoding.UTF8.GetBytes("001");
+                var secKey2 = Encoding.UTF8.GetBytes("002");
+
+                Assert.AreEqual(0, svc.Iterate(ns, obj).Count());
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    SecondaryKey = secKey1
+                });
+
+                Assert.AreEqual(1, svc.Iterate(ns, obj).Count());
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    SecondaryKey = secKey2
+                });
+
+                Assert.AreEqual(2, svc.Iterate(ns, obj).Count());
+
+                svc.Remove(ns, obj, objID1.ID);
+
+                Assert.AreEqual(1, svc.Iterate(ns, obj).Count());
+
+                svc.Remove(ns, obj, objID2.ID);
+
+                Assert.AreEqual(0, svc.Iterate(ns, obj).Count());
+            }
+        }
     }
 }

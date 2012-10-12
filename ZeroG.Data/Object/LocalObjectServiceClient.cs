@@ -128,6 +128,16 @@ namespace ZeroG.Data.Object
         {
             return _service.GetBySecondaryKey(_nameSpace, _objectName, secondaryKey);
         }
+
+        public byte[][] GetAll()
+        {
+            return _service.Iterate(_nameSpace, _objectName).Select(rec => rec.Value).ToArray();
+        }
+
+        public int Count()
+        {
+            return _service.Count(_nameSpace, _objectName);
+        }
         #endregion
 
         #region Public Remove methods

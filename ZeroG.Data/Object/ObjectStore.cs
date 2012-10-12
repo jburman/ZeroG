@@ -232,6 +232,18 @@ namespace ZeroG.Data.Object
             return returnValue;
         }
 
+        public int Count(string objectFullName)
+        {
+            var store = _EnsureStore(objectFullName);
+            return store.Enumerate().Count();
+        }
+
+        /// <summary>
+        /// Iterates over each object stored in an ObjectStore and returns its 
+        /// ID, SecondaryKey, and Value
+        /// </summary>
+        /// <param name="objectFullName"></param>
+        /// <returns></returns>
         public IEnumerable<ObjectStoreRecord> Iterate(string objectFullName)
         {
             var store = _EnsureStore(objectFullName);

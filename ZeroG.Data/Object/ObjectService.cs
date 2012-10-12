@@ -538,6 +538,24 @@ namespace ZeroG.Data.Object
             return _objectStore.GetBySecondaryKey(objectFullName, key);
         }
 
+        public IEnumerable<ObjectStoreRecord> Iterate(string nameSpace, string objectName)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+
+            return _objectStore.Iterate(objectFullName);
+        }
+
+        public int Count(string nameSpace, string objectName)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+
+            return _objectStore.Count(objectFullName);
+        }
+
         public IEnumerable<byte[]> Find(string nameSpace, string objectName, string constraint)
         {
             return Find(nameSpace, objectName, constraint, 0, null);
