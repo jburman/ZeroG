@@ -69,6 +69,7 @@
     <Compile Include="Data\DataTestHelper.cs" />
     <Compile Include="Data\Drivers\IndexProviderTest.cs" />
     <Compile Include="Data\Drivers\OpenTest.cs" />
+    <Compile Include="Data\Drivers\BulkInsertTest.cs" />
     <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
     <Compile Include="Lang\JSON\JSONTokenizerTest.cs" />
     <Compile Include="Object\LocalObjectServiceClientTest.cs" />

@@ -44,6 +44,7 @@ namespace ZeroG.Data.Database
         string EscapeValueForLike(string value);
         void ExecuteBulkCopy(DataTable copyData, string copyToTable, Dictionary<string, string> columnMap);
         void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap);
+        void ExecuteBulkInsert(IEnumerable<object[]> insertData, string insertToTable, string[] columns);
         int ExecuteNonQuery(string commandText, params IDataParameter[] parameters);
         int ExecuteNonQuery(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
         T ExecuteScalar<T>(string commandText, T defaultValue, params IDataParameter[] parameters);

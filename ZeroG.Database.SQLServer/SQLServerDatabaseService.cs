@@ -151,6 +151,11 @@ namespace ZeroG.Data.Database.Drivers
             bulkCopy.WriteToServer(copyData);
         }
 
+        public override void ExecuteBulkInsert(IEnumerable<object[]> insertData, string insertToTable, string[] columns)
+        {
+
+        }
+
         public override int ExecuteNonQuery(string commandText, params IDataParameter[] parameters)
         {
             return ExecuteNonQuery(null, commandText, parameters);

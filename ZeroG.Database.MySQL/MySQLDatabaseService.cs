@@ -33,6 +33,7 @@ using System.Data;
 using System.Data.Common;
 using System.Text.RegularExpressions;
 using MySql.Data.MySqlClient;
+using System.IO;
 
 namespace ZeroG.Data.Database.Drivers
 {
@@ -55,7 +56,34 @@ namespace ZeroG.Data.Database.Drivers
         }
 
         #endregion
+        
+        #region Private
+        private static readonly byte[] NullFieldValue = Encoding.UTF8.GetBytes("\\N");
+        private static readonly byte[] FieldDelim = Encoding.UTF8.GetBytes("\t");
+        private static readonly byte[] RowDelim = Encoding.UTF8.GetBytes("\r\n");
 
+        private static void _CreateFileRow(Stream output, object[] row)
+        {
+            if (null != row)
+            {
+                for (int j = 0; row.Length > j; j++)
+                {
+                    var val = row[j];
+                    byte[] fieldVal = NullFieldValue;
+                    if (null != val)
+                    {
+                        fieldVal = FileFieldConverter.ToFileFieldString(val);
+                    }
+
+                    output.Write(fieldVal, 0, fieldVal.Length);
+                    if (j != row.Length - 1)
+                    {
+                        output.Write(FieldDelim, 0, FieldDelim.Length);
+                    }
+                }
+            }
+        }
+        #endregion
 
         #region Public
 
@@ -128,6 +156,38 @@ namespace ZeroG.Data.Database.Drivers
         public override void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
         {
             throw new NotSupportedException("Bulk Copy is not supported by the MySQL Database Server.");
+        }
+
+        public override void ExecuteBulkInsert(IEnumerable<object[]> insertData, string insertToTable, string[] columns)
+        {
+            var filePath = Path.GetTempFileName();
+
+            try
+            {
+                using (var fstream = new FileStream(filePath, FileMode.Create))
+                {
+                    foreach (var dataRow in insertData)
+                    {
+                        _CreateFileRow(fstream, dataRow);
+                        fstream.Write(RowDelim, 0, RowDelim.Length);
+                    }
+                    fstream.Flush();
+                }
+                using (IDbCommand cmd = _PrepareCommand(null, 
+                    string.Format(@"LOAD DATA LOCAL INFILE '{0}' REPLACE INTO TABLE `{1}`
+FIELDS TERMINATED BY '\t' ENCLOSED BY '' ESCAPED BY '\\'
+LINES TERMINATED BY '\r\n' STARTING BY ''",
+                    filePath.Replace("\\", "\\\\"),
+                    insertToTable), 
+                    null))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            finally
+            {
+                File.Delete(filePath);
+            }
         }
 
         public override int ExecuteNonQuery(string commandText, params IDataParameter[] parameters)

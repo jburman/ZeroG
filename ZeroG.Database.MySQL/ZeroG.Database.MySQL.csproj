@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileFieldConverter.cs" />
     <Compile Include="MySQLDatabaseService.cs" />
     <Compile Include="Object\MySQLObjectIndexProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

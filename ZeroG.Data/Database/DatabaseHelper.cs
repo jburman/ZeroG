@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Data;
+using System.IO;
 
 namespace ZeroG.Data.Database
 {
@@ -45,6 +46,44 @@ namespace ZeroG.Data.Database
                 val = val.Replace("\\", "\\\\").Replace("\n", "\\n").Replace("\t", "\\t");
             }
             return val;
+        }
+
+        private static readonly byte BackSlashCharByte = (byte)'\\';
+        private static readonly byte NCharByte = (byte)'n';
+        private static readonly byte TCharByte = (byte)'t';
+
+        public static byte[] EscapeValueForFile(byte[] val)
+        {
+            byte[] returnValue = null;
+            if (null != val)
+            {
+                var buffer = new MemoryStream();
+                for (int i = 0; val.Length > i; i++)
+                {
+                    var b = val[i];
+                    if (b == '\\')
+                    {
+                        buffer.WriteByte(BackSlashCharByte);
+                        buffer.WriteByte(BackSlashCharByte);
+                    }
+                    else if (b == '\n')
+                    {
+                        buffer.WriteByte(BackSlashCharByte);
+                        buffer.WriteByte(NCharByte);
+                    }
+                    else if (b == '\t')
+                    {
+                        buffer.WriteByte(BackSlashCharByte);
+                        buffer.WriteByte(TCharByte);
+                    }
+                    else
+                    {
+                        buffer.WriteByte(b);
+                    }
+                }
+                returnValue = buffer.ToArray();
+            }
+            return returnValue;
         }
 
         public static byte[] GetBytes(IDataRecord reader, string fieldName, byte[] defaultValue)
