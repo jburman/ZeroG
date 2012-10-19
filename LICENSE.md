@@ -1,6 +1,4 @@
-ZeroG is a free collection of .NET and JavaScript software libraries.
-
-Copyright (c) 2010 Jeremy Burman
+Copyright (c) 2012 Jeremy Burman
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
