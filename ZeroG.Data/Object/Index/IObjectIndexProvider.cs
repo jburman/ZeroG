@@ -36,6 +36,13 @@ namespace ZeroG.Data.Object.Index
 
         bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
 
+        /// <summary>
+        /// Counts distinct object IDs stored in the index.
+        /// </summary>
+        /// <param name="objectFullName"></param>
+        /// <returns></returns>
+        int CountObjects(string objectFullName);
+
         int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
 
         int[] Find(string objectFullName, params ObjectIndex[] indexes);
@@ -55,6 +62,8 @@ namespace ZeroG.Data.Object.Index
         void UnprovisionIndex(string objectFullName);
 
         void UpsertIndexValues(string objectFullName, int objectId, params ObjectIndex[] indexes);
+
+        void BulkUpsertIndexValues(string objectFullName, ObjectMetadata metadata, IEnumerable<object[]> indexValues);
 
         void RemoveIndexValue(string objectFullName, int objectId);
 

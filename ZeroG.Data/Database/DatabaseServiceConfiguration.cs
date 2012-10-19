@@ -23,11 +23,36 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace ZeroG.Data.Object.Index
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+
+namespace ZeroG.Data.Database
 {
-    public enum ObjectFindOperator
+    public class DatabaseServiceConfiguration
     {
-        Equals,
-        Like
+        public readonly string Name;
+        public readonly string TypeName;
+        public readonly string ConnectionString;
+        public readonly ICollection<DatabaseServiceConfigurationProperty> Properties;
+
+        public DatabaseServiceConfiguration(string name,
+            string typeName,
+            string connectionString,
+            Dictionary<string, string> additionalProperties)
+        {
+            Name = name;
+            TypeName = typeName;
+            ConnectionString = connectionString;
+            if (null != additionalProperties)
+            {
+                Properties = new ReadOnlyCollection<DatabaseServiceConfigurationProperty>(
+                    additionalProperties.Select(kv => new DatabaseServiceConfigurationProperty(kv.Key, kv.Value)).ToList());
+            }
+            else
+            {
+                Properties = new ReadOnlyCollection<DatabaseServiceConfigurationProperty>(new List<DatabaseServiceConfigurationProperty>());
+            }
+        }
     }
 }

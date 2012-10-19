@@ -4,11 +4,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ZeroG.Data.Database.Lang;
 using System.Data;
 using System.Collections.Generic;
+using ZeroG.Data.Database.Drivers;
+using ZeroG.Data.Database;
 
 namespace ZeroG.Tests.Data.Lang
 {
     [TestClass]
-
     public class GenerateConstraintTest
     {
         public static Guid TestGuidVal = new Guid("{EF9D853C-6054-410D-8293-F2920EB63A90}");
@@ -24,21 +25,39 @@ namespace ZeroG.Tests.Data.Lang
         {
             TearDownConstraintTestTables();
 
-            using (var db = DataTestHelper.GetMySQLSchemaService())
+            using (var db = DataTestHelper.GetDefaultSchemaService())
             {
                 db.Open();
 
-                db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS `ZeroGConstraintTest` (
+                var createTableSQL = @"CREATE TABLE IF NOT EXISTS `ZeroGConstraintTest` (
     `TextCol` VARCHAR(36) NOT NULL,
     `DecimalCol` DECIMAL(7,4) NOT NULL,
     `IntCol` INT NOT NULL,
     `DateCol` DATETIME NOT NULL,
     `BinaryCol` BINARY(36) NOT NULL
     )
-ENGINE = InnoDB DEFAULT CHARSET=utf8;");
+ENGINE = InnoDB DEFAULT CHARSET=utf8;";
 
                 var insertSql = @"INSERT INTO `ZeroGConstraintTest` (`TextCol`, `DecimalCol`,`IntCol`,`DateCol`,`BinaryCol`)
 VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
+
+                if (db is SQLServerDatabaseService)
+                {
+                    createTableSQL = @"IF NOT EXISTS (select * from sysobjects where name='ZeroGConstraintTest' and xtype='U')
+    CREATE TABLE [ZeroG].[ZeroGConstraintTest](
+	[TextCol] [nvarchar](36) NOT NULL,
+	[DecimalCol] [decimal](7, 4) NOT NULL,
+    [IntCol] [int] NOT NULL,
+	[DateCol] [datetime] NOT NULL,
+	[BinaryCol] [binary](16) NOT NULL
+) ON [PRIMARY]";
+
+                    insertSql = @"INSERT INTO [ZeroG].[ZeroGConstraintTest] ([TextCol], [DecimalCol],[IntCol],[DateCol],[BinaryCol])
+VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
+
+                }
+
+                db.ExecuteNonQuery(createTableSQL);
 
                 db.ExecuteNonQuery(insertSql, 
                     db.MakeParam("textCol","ZeroG"),
@@ -66,21 +85,40 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
         [ClassCleanup()]
         public static void TearDownConstraintTestTables()
         {
-            using (var db = DataTestHelper.GetMySQLSchemaService())
+            using (var db = DataTestHelper.GetDefaultSchemaService())
             {
                 db.Open();
 
-                db.ExecuteNonQuery("DROP TABLE IF EXISTS `ZeroGConstraintTest`");
+                if (db is SQLServerDatabaseService)
+                {
+                    db.ExecuteNonQuery(@"IF EXISTS (select * from sysobjects where name='ZeroGConstraintTest' and xtype='U')
+DROP TABLE " + _GetTableName(db));
+                }
+                else
+                {
+                    db.ExecuteNonQuery("DROP TABLE IF EXISTS " + _GetTableName(db));
+                }
+            }
+        }
+
+        private static string _GetTableName(IDatabaseService db)
+        {
+            if (db is SQLServerDatabaseService)
+            {
+                return "[ZeroG].[ZeroGConstraintTest]";
+            }
+            else 
+            {
+                return "`ZeroGConstraintTest`";
             }
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void SingleConstraintTest()
         {
             var json = @"{ ""TextCol"" : ""ZeroG"", ""Op"": ""="" }";
 
-            using (var db = DataTestHelper.GetMySQLDataService())
+            using (var db = DataTestHelper.GetDefaultDataService())
             {
                 db.Open();
 
@@ -100,7 +138,7 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
                 Assert.AreEqual(DbType.String, parameters[0].DbType);
                 Assert.AreEqual("ZeroG", parameters[0].Value);
 
-                var sql = "SELECT TextCol, IntCol FROM `ZeroGConstraintTest` WHERE" +
+                var sql = "SELECT TextCol, IntCol FROM " + _GetTableName(db) + " WHERE" +
                     constraint.SQL;
 
                 var dt = db.GetDataTable(sql, constraint.Parameters.ToArray());
@@ -112,13 +150,12 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void MultiConstraintTest()
         {
             var json = @"{ ""TextCol"" : ""ZeroG"", ""Op"": ""="",
 ""AND"": { ""IntCol"" : 2, ""Op"": ""<""} }";
 
-            using (var db = DataTestHelper.GetMySQLDataService())
+            using (var db = DataTestHelper.GetDefaultDataService())
             {
                 db.Open();
 
@@ -142,7 +179,7 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
                 Assert.AreEqual(DbType.Int32, parameters[1].DbType);
                 Assert.AreEqual(2, parameters[1].Value);
 
-                var sql = "SELECT TextCol, IntCol FROM `ZeroGConstraintTest` WHERE" +
+                var sql = "SELECT TextCol, IntCol FROM " + _GetTableName(db) + " WHERE" +
                     constraint.SQL;
 
                 var dt = db.GetDataTable(sql, constraint.Parameters.ToArray());
@@ -154,13 +191,12 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void GroupedConstraintTest()
         {
             var json = @"{ ""IntCol"" : 1, ""Op"": ""="",
 ""OR"": [{ ""TextCol"" : ""ZeroG"", ""Op"": ""=""}, ""AND"", {""DateCol"" : ""2012-1-30 12:30:00"", ""Op"": ""="" }] }";
 
-            using (var db = DataTestHelper.GetMySQLDataService())
+            using (var db = DataTestHelper.GetDefaultDataService())
             {
                 db.Open();
 
@@ -188,7 +224,7 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
                 Assert.AreEqual(DbType.DateTime, parameters[2].DbType);
                 Assert.AreEqual(TestDateTimeVal1, parameters[2].Value);
 
-                var sql = "SELECT TextCol, IntCol FROM `ZeroGConstraintTest` WHERE" +
+                var sql = "SELECT TextCol, IntCol FROM " + _GetTableName(db) + " WHERE" +
                     constraint.SQL;
 
                 var dt = db.GetDataTable(sql, constraint.Parameters.ToArray());
@@ -200,10 +236,9 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
         }
 
         [TestMethod]
-        [TestCategory("MySQL")]
         public void OperatorsTest()
         {
-            using (var db = DataTestHelper.GetMySQLDataService())
+            using (var db = DataTestHelper.GetDefaultDataService())
             {
                 db.Open();
 

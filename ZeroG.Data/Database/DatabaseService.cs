@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2010 Jeremy Burman
+// Copyright (c) 2012 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -31,22 +31,6 @@ using System.Text.RegularExpressions;
 
 namespace ZeroG.Data.Database
 {
-    public class DatabaseServiceConfiguration
-    {
-        public readonly string Name;
-        public readonly string TypeName;
-        public readonly string ConnectionString;
-
-        public DatabaseServiceConfiguration(string name,
-            string typeName,
-            string connectionString)
-        {
-            Name = name;
-            TypeName = typeName;
-            ConnectionString = connectionString;
-        }
-    }
-
     /// <summary>
     /// Provides a helper layer for interacting with databases.  The DatabaseService is abstract and must 
     /// have a driver loaded for it to be used.  The normal method for loading a driver is via the config file.
@@ -76,6 +60,8 @@ namespace ZeroG.Data.Database
     /// </summary>
     public abstract class DatabaseService : IDatabaseService
     {
+        private static Dictionary<string, Type> _typeCache;
+
         /// <summary>
         /// Timeout for SQL commands defined in seconds.
         /// </summary>
@@ -85,6 +71,11 @@ namespace ZeroG.Data.Database
         private bool _disposed;
 
         #region Constructors/Destructors
+        static DatabaseService()
+        {
+            _typeCache = new Dictionary<string, Type>();
+        }
+
         protected DatabaseService()
         {
             _commandTimeout = 300;
@@ -134,8 +125,17 @@ namespace ZeroG.Data.Database
             Dictionary<string, DatabaseServiceConfiguration> dbConfigs = dbSection.Configs;
             if (dbConfigs.ContainsKey(name))
             {
-                Type type = Type.GetType(dbConfigs[name].TypeName);
-                DatabaseService db = (DatabaseService)Activator.CreateInstance(type);
+                Type dbType = null;
+                if (!_typeCache.ContainsKey(name))
+                {
+                    dbType = Type.GetType(dbConfigs[name].TypeName);
+                    if (null != dbType)
+                    {
+                        _typeCache[name] = dbType;
+                    }
+                }
+                
+                DatabaseService db = (DatabaseService)Activator.CreateInstance(_typeCache[name]);
                 db.Configure(dbConfigs[name]);
                 return db;
             }
@@ -145,11 +145,11 @@ namespace ZeroG.Data.Database
             }
         }
 
-        private static DatabaseService _GetService(string typeName, string connStr)
+        private static DatabaseService _GetService(string typeName, string connStr, Dictionary<string, string> additionalProperties)
         {
             Type type = Type.GetType(typeName);
             DatabaseService db = (DatabaseService)Activator.CreateInstance(type);
-            db.Configure(new DatabaseServiceConfiguration(null, typeName, connStr));
+            db.Configure(new DatabaseServiceConfiguration(null, typeName, connStr, additionalProperties));
             return db;
         }
 
@@ -266,9 +266,9 @@ namespace ZeroG.Data.Database
         public abstract DataTable GetDataTable(string commandText, IDbTransaction trans, params IDataParameter[] parameters);
         public abstract string GetDriverName();
 
-        public static DatabaseService GetService(string typeName, string connStr)
+        public static DatabaseService GetService(string typeName, string connStr, Dictionary<string, string> additionalProperties)
         {
-            return _GetService(typeName, connStr);
+            return _GetService(typeName, connStr, additionalProperties);
         }
 
         public static DatabaseService GetService(string name)

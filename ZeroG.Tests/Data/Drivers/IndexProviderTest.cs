@@ -1072,5 +1072,86 @@ namespace ZeroG.Tests.Data.Drivers
             Assert.AreEqual(1, vals[0]);
         }
 
+
+        [TestMethod]
+        public void BulkUpsert()
+        {
+            var provider = IndexProvider;
+            var metadata = new ObjectMetadata(NameSpace1, ObjectName1,
+                    new ObjectIndexMetadata[]
+                    {
+                        new ObjectIndexMetadata("IntCol", ObjectIndexType.Integer),
+                        new ObjectIndexMetadata("TextCol", ObjectIndexType.String, 15),
+                        new ObjectIndexMetadata("DecCol", ObjectIndexType.Decimal, 7, 2),
+                        new ObjectIndexMetadata("DateTimeCol", ObjectIndexType.DateTime),
+                        new ObjectIndexMetadata("BinCol", ObjectIndexType.Binary, 16)
+                    });
+
+            provider.ProvisionIndex(
+                metadata);
+
+            Int32 testInt = 3447;
+            String testStr = "Test Value";
+            Decimal testDec = 156.12M;
+            DateTime testDate = new DateTime(2011, 2, 14, 3, 10, 0);
+            Guid testGuid = new Guid("76F5FB10BAEF4DE09578B3EB91FF6653");
+
+            provider.BulkUpsertIndexValues(
+                ObjectFullName1, 
+                metadata,
+                new object[][]
+                {
+                    new object[] { 1000, testInt, testStr, testDec, testDate, testGuid.ToByteArray() },
+                    new object[] { 500, 0, "asdf", new Decimal(5.4), DateTime.UtcNow, Guid.NewGuid().ToByteArray() }
+                });
+
+            Assert.AreEqual(2, provider.CountObjects(ObjectFullName1));
+
+            int[] ids = provider.Find(ObjectFullName1, ObjectIndex.Create("ID", 1000));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(ObjectFullName1, ObjectIndex.Create("IntCol", testInt));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(ObjectFullName1, ObjectIndex.Create("TextCol", testStr));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(ObjectFullName1, ObjectIndex.Create("DecCol", testDec));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(ObjectFullName1, ObjectIndex.Create("DateTimeCol", testDate));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            ids = provider.Find(ObjectFullName1, ObjectIndex.Create("BinCol", testGuid.ToByteArray()));
+            Assert.IsNotNull(ids);
+            Assert.AreEqual(1, ids.Length);
+            Assert.AreEqual(1000, ids[0]);
+
+            // test that values are updated
+            provider.BulkUpsertIndexValues(
+                ObjectFullName1,
+                metadata,
+                new object[][]
+                {
+                    new object[] { 1000, testInt, testStr, testDec, testDate, testGuid.ToByteArray() },
+                    new object[] { 500, 5, "asdfupdated", new Decimal(5.7), DateTime.UtcNow, Guid.NewGuid().ToByteArray() }
+                });
+
+            Assert.AreEqual(2, provider.CountObjects(ObjectFullName1));
+            Assert.AreEqual(0, provider.Count(ObjectFullName1, @"{""IntCol"" : 0}", metadata.Indexes));
+            Assert.AreEqual(1, provider.Count(ObjectFullName1, @"{""IntCol"" : 5}", metadata.Indexes));
+            Assert.AreEqual(0, provider.Count(ObjectFullName1, @"{""TextCol"" : ""asdf""}", metadata.Indexes));
+            Assert.AreEqual(1, provider.Count(ObjectFullName1, @"{""TextCol"" : ""asdfupdated""}", metadata.Indexes));
+        }
     }
 }

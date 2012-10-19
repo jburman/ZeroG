@@ -38,6 +38,80 @@ namespace ZeroG.Data.Database
 
         public object Create(object parent, object configContext, XmlNode node)
         {
+            var configs = new Dictionary<string, DatabaseServiceConfiguration>();
+
+            foreach (XmlNode configNode in node.ChildNodes)
+            {
+                if (XmlNodeType.Element == configNode.NodeType)
+                {
+                    string name = null, type = null, connStr = null;
+
+                    XmlAttribute nameAttr = configNode.Attributes["name"];
+                    XmlAttribute typeAttr = configNode.Attributes["type"];
+                    XmlAttribute connStrAttr = configNode.Attributes["connStr"];
+
+                    if(null != nameAttr) 
+                    {
+                        name = nameAttr.Value;
+                    }
+                    if (null != typeAttr)
+                    {
+                        type = typeAttr.Value;
+                    }
+                    if (null != connStrAttr)
+                    {
+                        connStr = connStrAttr.Value;
+                    }
+
+                    if(string.IsNullOrEmpty(name))
+                    {
+                        throw new ArgumentException("Required \"name\" attribute missing from DatabaseServiceSection");
+                    }
+                    if (string.IsNullOrEmpty(type))
+                    {
+                        throw new ArgumentException("Required \"type\" attribute missing from DatabaseServiceSection");
+                    }
+                    if (string.IsNullOrEmpty(connStr))
+                    {
+                        throw new ArgumentException("Required \"connStr\" attribute missing from DatabaseServiceSection");
+                    }
+
+                    // load in any <prop name="" value="" /> nodes and store them in a dictionary
+                    Dictionary<string, string> additionalProperties = null;
+                    if (0 < configNode.ChildNodes.Count)
+                    {
+                        additionalProperties = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                        foreach (XmlNode propNode in configNode.ChildNodes)
+                        {
+                            if (XmlNodeType.Element == propNode.NodeType && propNode.LocalName == "prop")
+                            {
+                                string propName = null, propVal = null;
+
+                                XmlAttribute propNameAttr = propNode.Attributes["name"];
+                                XmlAttribute propValAttr = propNode.Attributes["value"];
+
+                                if (null != propNameAttr)
+                                {
+                                    propName = propNameAttr.Value;
+                                }
+                                if (null != propValAttr)
+                                {
+                                    propVal = propValAttr.Value;
+                                }
+                                
+                                if (!string.IsNullOrEmpty(propName))
+                                {
+                                    additionalProperties.Add(propName, propVal);
+                                }
+                            }
+                        }
+                    }
+
+                    configs.Add(name, new DatabaseServiceConfiguration(name, type, connStr, additionalProperties));
+                }
+            }
+                /*
             Dictionary<string, DatabaseServiceConfiguration> configs = node.ChildNodes.OfType<XmlNode>()
                 .Where(n => XmlNodeType.Element == n.NodeType)
                 .Select(n => new DatabaseServiceConfiguration(
@@ -45,7 +119,7 @@ namespace ZeroG.Data.Database
                     n.Attributes["type"].Value,
                     n.Attributes["connStr"].Value))
                 .ToDictionary(dbConfig => dbConfig.Name, StringComparer.InvariantCultureIgnoreCase);
-
+                */
             return new DatabaseServiceSection(configs);
         }
 

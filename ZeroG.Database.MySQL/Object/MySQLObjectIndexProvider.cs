@@ -55,6 +55,8 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 
         public static readonly string RowsCount = @"SELECT COUNT(1) FROM `{0}` WHERE {1}";
 
+        public static readonly string RowsCountDistinctObjects = @"SELECT COUNT(DISTINCT {0}) FROM `{1}`";
+
         public static readonly string CreateTableIfNotExists = @"CREATE TABLE IF NOT EXISTS `{0}`(
 	    {1}
 	) ENGINE = InnoDB CHARACTER SET utf8 COLLATE utf8_general_ci";
@@ -183,6 +185,15 @@ WHERE {1}{2}{3}";
                 var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
                 var tableName = _CreateTableName(db, objectFullName);
                 return db.ExecuteScalar<int>(string.Format(SQLStatements.RowsCount, tableName, sqlConstraint.SQL), 0, sqlConstraint.Parameters.ToArray());
+            }
+        }
+
+        public override int CountObjects(string objectFullName)
+        {
+            using (var db = OpenData())
+            {
+                var tableName = _CreateTableName(db, objectFullName);
+                return db.ExecuteScalar<int>(string.Format(SQLStatements.RowsCountDistinctObjects, db.MakeQuotedName(IDColumn), tableName), 0);
             }
         }
 
@@ -427,6 +438,26 @@ WHERE {1}{2}{3}";
                 parameters.Add(db.MakeParam("recordId", objectId));
 
                 db.ExecuteNonQuery(sql.ToString(), parameters.ToArray());
+            }
+        }
+
+        public override void BulkUpsertIndexValues(string objectFullName, ObjectMetadata metadata, IEnumerable<object[]> indexValues)
+        {
+            using (var db = OpenData())
+            {
+                var tableName = db.MakeQuotedName(_CreateTableName(db, objectFullName));
+
+                var colNames = new List<string>();
+                colNames.Add(db.MakeQuotedName(IDColumn));
+                foreach (var idx in metadata.Indexes)
+                {
+                    colNames.Add(idx.Name);
+                }
+
+                db.ExecuteBulkInsert(
+                    indexValues,
+                    tableName,
+                    colNames.ToArray());
             }
         }
 

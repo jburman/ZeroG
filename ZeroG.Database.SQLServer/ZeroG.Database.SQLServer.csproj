@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileFieldConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Object\SQLObjectIndexProvider.cs" />
     <Compile Include="SQLServerDatabaseService.cs" />
@@ -51,6 +52,10 @@
     <ProjectReference Include="..\ZeroG.Data\ZeroG.Data.csproj">
       <Project>{DB190F97-AB50-4659-BC56-377457EFDFCE}</Project>
       <Name>ZeroG.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ZeroG.Lang\ZeroG.Lang.csproj">
+      <Project>{71ceb166-19be-45e2-9a38-8342db8c85be}</Project>
+      <Name>ZeroG.Lang</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

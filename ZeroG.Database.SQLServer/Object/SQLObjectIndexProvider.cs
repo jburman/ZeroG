@@ -54,11 +54,18 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 
         public static readonly string RowsCount = @"SELECT COUNT(1) FROM [ZeroG].[{0}] WHERE {1}";
 
+        public static readonly string RowsCountDistinctObjects = @"SELECT COUNT(DISTINCT {0}) FROM [ZeroG].[{1}]";
+
         public static readonly string CreateTableIfNotExists = @"IF NOT EXISTS (select * from sysobjects where name='{0}' and xtype='U')
     CREATE TABLE [ZeroG].[{0}](
 	    {1}
 	CONSTRAINT [PK_{0}] PRIMARY KEY CLUSTERED 
 	    ([ID] ASC)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [{2}]
+	) ON [{2}]";
+
+        public static readonly string CreateStagingTableIfNotExists = @"IF NOT EXISTS (select * from sysobjects where name='{0}' and xtype='U')
+    CREATE TABLE [ZeroG].[{0}](
+	    {1}
 	) ON [{2}]";
 
         public static readonly string CreateIndex = @"IF EXISTS (select * from sysobjects where name='{0}' and xtype='U')
@@ -115,6 +122,11 @@ WHERE {1}{3}";
             return db.EscapeCommandText(objectFullName.Replace('.', '_'));
         }
 
+        private static string _CreateStagingTableName(IDatabaseService db, string objectFullName)
+        {
+            return _CreateTableName(db, objectFullName + "_stage");
+        }
+
         private static string _CreateColumnDef(IDatabaseService db, ObjectIndexMetadata indexMetadata)
         {
             string name = db.EscapeCommandText(indexMetadata.Name);
@@ -166,16 +178,123 @@ WHERE {1}{3}";
             return orderBySql;
         }
 
-        public override bool ObjectExists(string objectFullName)
+        private bool _TableExists(IDatabaseService db, string tableName)
         {
-            bool returnValue = false;
+            return 0 < db.ExecuteScalar<int>(string.Format(SQLStatements.TableExists, tableName), 0);
+        }
 
-            using (var db = OpenSchema())
+        private void _ProvisionIndexStaging(IDatabaseService db, ObjectMetadata metadata)
+        {
+            var tableName = _CreateStagingTableName(db, metadata.ObjectFullName);
+            string idColName = db.MakeQuotedName(IDColumn);
+            string colDefs = idColName + " [int] NOT NULL";
+            string colIndexNames = idColName;
+
+            if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
             {
-                returnValue = 0 < db.ExecuteScalar<int>(string.Format(SQLStatements.TableExists, _CreateTableName(db, objectFullName)), 0);
+                colDefs += "," + string.Join(",", metadata.Indexes.Select(i => _CreateColumnDef(db, i)).ToArray());
+                colIndexNames += "," + string.Join(",", metadata.Indexes.Select(i => db.MakeQuotedName(i.Name)).ToArray());
             }
 
-            return returnValue;
+            var createTableSQL = string.Format(SQLStatements.CreateStagingTableIfNotExists, tableName, colDefs, _FileGroup);
+            db.ExecuteNonQuery(createTableSQL);
+        }
+
+        private void _UnprovisionIndexStaging(IDatabaseService db, string objectFullName)
+        {
+            var tableName = _CreateStagingTableName(db, objectFullName);
+
+            if (_TableExists(db, tableName))
+            {
+                var dropTableSQL = string.Format(SQLStatements.DropTableIfExists, tableName);
+                db.ExecuteNonQuery(dropTableSQL);
+            }
+        }
+
+        private void _StageBulkIndexValues(string objectFullName, ObjectMetadata metadata, IEnumerable<object[]> records)
+        {
+            using (var db = OpenSchema())
+            {
+                var stagingTableName = _CreateStagingTableName(db, objectFullName);
+
+                if (!_TableExists(db, stagingTableName))
+                {
+                    _ProvisionIndexStaging(db, metadata);
+                }
+
+                var colNames = new List<string>();
+                colNames.Add(db.MakeQuotedName(IDColumn));
+                foreach (var idx in metadata.Indexes)
+                {
+                    colNames.Add(db.MakeQuotedName(idx.Name));
+                }
+
+                db.ExecuteBulkInsert(
+                    records,
+                    "[ZeroG]." + db.MakeQuotedName(stagingTableName),
+                    colNames.ToArray());
+            }
+        }
+
+        private void _CleanStageBulkIndexValues(string objectFullName)
+        {
+            using (var db = OpenSchema())
+            {
+                var stagingTableName = _CreateStagingTableName(db, objectFullName);
+
+                if (_TableExists(db, stagingTableName))
+                {
+                    db.ExecuteNonQuery("TRUNCATE TABLE [ZeroG]." + db.MakeQuotedName(stagingTableName));
+                }
+            }
+        }
+
+        private void _MergeBulkIndexValues(string objectFullName, ObjectMetadata metadata)
+        {
+            using (var db = OpenData())
+            {
+                string tableName = _CreateTableName(db, objectFullName);
+                string stagingTableName = _CreateStagingTableName(db, objectFullName);
+
+                var colNameList = new List<string>();
+                var idCol = db.MakeQuotedName(IDColumn);
+                colNameList.Add(idCol);
+                string setStatement = idCol + " = source." + idCol;
+                string valuesStatement = "source." + idCol;
+                foreach (var idx in metadata.Indexes)
+                {
+                    var idxName = db.MakeQuotedName(idx.Name);
+                    colNameList.Add(idxName);
+                    setStatement += "," + idxName + " = source." + idxName;
+                    valuesStatement += ",source." + idxName;
+                }
+
+                var sql = string.Format(@"MERGE [ZeroG].{0} AS target
+    USING (SELECT {1} FROM [ZeroG].{2}) AS source ({1})
+    ON (target.{3} = source.{3})
+    WHEN MATCHED THEN 
+        UPDATE SET {4}
+	WHEN NOT MATCHED THEN	
+	    INSERT ({1})
+	    VALUES ({5});",
+                    db.MakeQuotedName(tableName),                   // 0
+                    string.Join(",", colNameList.ToArray()),        // 1
+                    db.MakeQuotedName(stagingTableName),            // 2
+                    idCol,                                          // 3
+                    setStatement,                                   // 4
+                    valuesStatement                                 // 5
+                    );
+
+                db.ExecuteNonQuery(sql);
+            }
+        }
+
+        public override bool ObjectExists(string objectFullName)
+        {
+            using (var db = OpenSchema())
+            {
+                return _TableExists(db, _CreateTableName(db, objectFullName));
+            }
         }
 
         public override bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
@@ -185,6 +304,15 @@ WHERE {1}{3}";
                 var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
                 var tableName = _CreateTableName(db, objectFullName);
                 return 1 == db.ExecuteScalar<int>(string.Format(SQLStatements.RowsExist, tableName, sqlConstraint.SQL), 0, sqlConstraint.Parameters.ToArray());
+            }
+        }
+
+        public override int CountObjects(string objectFullName)
+        {
+            using (var db = OpenData())
+            {
+                var tableName = _CreateTableName(db, objectFullName);
+                return db.ExecuteScalar<int>(string.Format(SQLStatements.RowsCountDistinctObjects, db.MakeQuotedName(IDColumn), tableName), 0);
             }
         }
 
@@ -361,6 +489,9 @@ WHERE {1}{3}";
 
                 var dropTableSQL = string.Format(SQLStatements.DropTableIfExists, tableName);
                 db.ExecuteNonQuery(dropTableSQL);
+
+                // Remove the staging table as well
+                _UnprovisionIndexStaging(db, objectFullName);
             }
         }
 
@@ -482,6 +613,22 @@ WHEN NOT MATCHED THEN
                 parameters.Add(db.MakeParam("recordId", objectId));
 
                 db.ExecuteNonQuery(sql.ToString(), parameters.ToArray());
+            }
+        }
+
+        public override void BulkUpsertIndexValues(string objectFullName, ObjectMetadata metadata, IEnumerable<object[]> indexValues)
+        {
+            // first, stage the values
+            _StageBulkIndexValues(objectFullName, metadata, indexValues);
+
+            try
+            {
+                // second, merge them into the primary index table
+                _MergeBulkIndexValues(objectFullName, metadata);
+            }
+            finally
+            {
+                _CleanStageBulkIndexValues(objectFullName);
             }
         }
 

@@ -23,11 +23,17 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace ZeroG.Data.Object.Index
+namespace ZeroG.Data.Database
 {
-    public enum ObjectFindLogic
+    public sealed class DatabaseServiceConfigurationProperty
     {
-        And,
-        Or
+        public readonly string Name;
+        public readonly string Value;
+
+        public DatabaseServiceConfigurationProperty(string name, string value)
+        {
+            Name = name;
+            Value = value;
+        }
     }
 }

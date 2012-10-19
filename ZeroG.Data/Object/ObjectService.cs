@@ -231,6 +231,7 @@ namespace ZeroG.Data.Object
             {
                 string nameSpace = null;
                 ObjectMetadata objectMetadata = null;
+                var bulkIndexValues = new List<object[]>();
 
                 reader.ReadBackup(
                     (string storeVersion) =>
@@ -252,6 +253,17 @@ namespace ZeroG.Data.Object
                     },
                     (ObjectMetadata metadata) =>
                     {
+                        // write batched index values if any are queued up
+                        if (0 < bulkIndexValues.Count)
+                        {
+                            _objectIndexer.BulkIndexObject(
+                                objectMetadata.ObjectFullName,
+                                objectMetadata,
+                                bulkIndexValues);
+
+                            bulkIndexValues = new List<object[]>();
+                        }
+
                         // remove all existing data and update the metadata
                         objectMetadata = metadata;
 
@@ -280,13 +292,26 @@ namespace ZeroG.Data.Object
                     (ObjectIndexRecord idx) =>
                     {
                         // first value is always the ID column
-                        int objectId = (int)idx.Values[0].GetObjectValue();
-                        var indexes = new ObjectIndex[idx.Values.Length - 1];
-                        Array.Copy(idx.Values, 1, indexes, 0, indexes.Length);
+                        var idxValues = idx.Values;
+                        var values = new object[idxValues.Length];
+                        for (int i = 0; idxValues.Length > i; i++)
+                        {
+                            values[i] = idxValues[i].GetObjectValue();
+                        }
+                        bulkIndexValues.Add(values);
+                    },
+                    () =>
+                    {
+                        // write batched index values if any are queued up
+                        if(0 < bulkIndexValues.Count) 
+                        {
+                            _objectIndexer.BulkIndexObject(
+                                objectMetadata.ObjectFullName,
+                                objectMetadata,
+                                bulkIndexValues);
 
-                        _objectIndexer.IndexObject(objectMetadata.ObjectFullName,
-                            objectId,
-                            indexes);
+                            bulkIndexValues = new List<object[]>();
+                        }
                     });
             }
         }

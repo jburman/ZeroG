@@ -174,7 +174,7 @@ namespace ZeroG.Data.Database.Drivers
                     fstream.Flush();
                 }
                 using (IDbCommand cmd = _PrepareCommand(null, 
-                    string.Format(@"LOAD DATA LOCAL INFILE '{0}' REPLACE INTO TABLE `{1}`
+                    string.Format(@"LOAD DATA LOCAL INFILE '{0}' REPLACE INTO TABLE {1}
 FIELDS TERMINATED BY '\t' ENCLOSED BY '' ESCAPED BY '\\'
 LINES TERMINATED BY '\r\n' STARTING BY ''",
                     filePath.Replace("\\", "\\\\"),
@@ -363,7 +363,14 @@ LINES TERMINATED BY '\r\n' STARTING BY ''",
 
         public override string MakeQuotedName(string name)
         {
-            return "`" + EscapeCommandText(name) + "`";
+            if (name.Length > 0 && !(name[0] == '`' && name[name.Length - 1] == '`'))
+            {
+                return "`" + EscapeCommandText(name) + "`";
+            }
+            else
+            {
+                return EscapeCommandText(name);
+            }
         }
 
         public override void Open()

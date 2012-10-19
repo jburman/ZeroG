@@ -68,6 +68,7 @@ namespace ZeroG.Tests.Object
 
                     ObjectStoreRecord objStoreRecTest = null;
                     int objectCount = 0, indexCount = 0;
+                    bool completeCalled = false;
 
                     using (var reader = new ObjectBackupReader(tempFile, false))
                     {
@@ -103,7 +104,7 @@ namespace ZeroG.Tests.Object
                         {
                             ++objectCount;
                             Assert.IsNotNull(objRec);
-                            
+
                             if (null == objStoreRecTest)
                             {
                                 objStoreRecTest = objRec;
@@ -119,16 +120,22 @@ namespace ZeroG.Tests.Object
                                 Assert.AreEqual("002", Encoding.UTF8.GetString(objRec.SecondaryKey));
                             }
                         },
-                            // Object Index handler
+                        // Object Index handler
                         (ObjectIndexRecord idxRec) =>
                         {
                             ++indexCount;
                             Assert.IsNotNull(idxRec);
+                        },
+                        // Completed handler
+                        () =>
+                        {
+                            completeCalled = true;
                         });
                     }
 
                     Assert.AreEqual(2, objectCount);
                     Assert.AreEqual(0, indexCount);
+                    Assert.IsTrue(completeCalled);
                 }
                 finally
                 {
@@ -276,7 +283,7 @@ namespace ZeroG.Tests.Object
                             {
                                 objIndexRecTest = idxRec;
                                 Assert.AreEqual(6, idxRec.Values.Length);
-                                
+
                                 Assert.AreEqual(1, idxRec.Values[0].GetObjectValue());
                                 Assert.AreEqual("ID", idxRec.Values[0].Name);
                                 Assert.AreEqual("IntCol", idxRec.Values[1].Name);
@@ -308,7 +315,8 @@ namespace ZeroG.Tests.Object
                                 Assert.AreEqual("BinCol", idxRec.Values[5].Name);
                                 Assert.AreEqual(testGuid2, new Guid(idxRec.Values[5].Value));
                             }
-                        });
+                        },
+                        () => { });
                     }
 
                     Assert.AreEqual(2, objectCount);
@@ -492,7 +500,8 @@ namespace ZeroG.Tests.Object
                                 Assert.AreEqual("BinCol", idxRec.Values[5].Name);
                                 Assert.AreEqual(testGuid2, new Guid(idxRec.Values[5].Value));
                             }
-                        });
+                        },
+                        () => { });
                     }
 
                     Assert.AreEqual(2, objectCount);

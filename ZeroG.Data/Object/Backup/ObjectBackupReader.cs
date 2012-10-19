@@ -33,13 +33,6 @@ namespace ZeroG.Data.Object.Backup
 {
     public class ObjectBackupReader : IDisposable
     {
-        public delegate void StoreVersionHandler(string versionString);
-        public delegate void NameSpaceHandler(ObjectNameSpaceConfig nameSpace);
-        public delegate void ObjectMetadataHandler(ObjectMetadata metadata);
-        public delegate void ObjectIDHandler(int objectId);
-        public delegate void ObjectHandler(ObjectStoreRecord obj);
-        public delegate void IndexHandler(ObjectIndexRecord index);
-
         private bool _compress;
         private StreamReader _in;
 
@@ -80,7 +73,7 @@ namespace ZeroG.Data.Object.Backup
             }
         }
 
-        private void _ReadStoreVersion(StoreVersionHandler handler)
+        private void _ReadStoreVersion(Action<string> handler)
         {
             string line = _ReadAndExpectLine();
             if (null != handler)
@@ -96,7 +89,7 @@ namespace ZeroG.Data.Object.Backup
             }
         }
 
-        private bool _ReadNameSpace(NameSpaceHandler handler, string line)
+        private bool _ReadNameSpace(Action<ObjectNameSpaceConfig> handler, string line)
         {
             var returnValue = false;
 
@@ -117,7 +110,7 @@ namespace ZeroG.Data.Object.Backup
             return returnValue;
         }
 
-        private bool _ReadObjectMetadata(ObjectMetadataHandler handler, string line)
+        private bool _ReadObjectMetadata(Action<ObjectMetadata> handler, string line)
         {
             var returnValue = false;
 
@@ -134,7 +127,7 @@ namespace ZeroG.Data.Object.Backup
             return returnValue;
         }
 
-        private bool _ReadObjectID(ObjectIDHandler handler, string line)
+        private bool _ReadObjectID(Action<int> handler, string line)
         {
             var returnValue = false;
 
@@ -154,7 +147,7 @@ namespace ZeroG.Data.Object.Backup
             return returnValue;
         }
 
-        private bool _ReadObject(ObjectHandler handler, string line)
+        private bool _ReadObject(Action<ObjectStoreRecord> handler, string line)
         {
             var returnValue = false;
 
@@ -171,7 +164,7 @@ namespace ZeroG.Data.Object.Backup
             return returnValue;
         }
 
-        private bool _ReadIndex(IndexHandler handler, string line)
+        private bool _ReadIndex(Action<ObjectIndexRecord> handler, string line)
         {
             var returnValue = false;
 
@@ -191,12 +184,13 @@ namespace ZeroG.Data.Object.Backup
         #endregion
 
         public void ReadBackup(
-            StoreVersionHandler storeVersionRead,
-            NameSpaceHandler nameSpaceRead,
-            ObjectMetadataHandler objectMetadataRead,
-            ObjectIDHandler objectIDRead,
-            ObjectHandler objectRead,
-            IndexHandler indexRead)
+            Action<string> storeVersionRead,
+            Action<ObjectNameSpaceConfig> nameSpaceRead,
+            Action<ObjectMetadata> objectMetadataRead,
+            Action<int> objectIDRead,
+            Action<ObjectStoreRecord> objectRead,
+            Action<ObjectIndexRecord> indexRead,
+            Action completed)
         {
             _ReadStoreVersion(storeVersionRead);
 
@@ -229,6 +223,10 @@ namespace ZeroG.Data.Object.Backup
                         _ReadIndex(indexRead, line);
                     }
                 }
+            }
+            if(null != completed) 
+            {
+                completed();
             }
         }
 

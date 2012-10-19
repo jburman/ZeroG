@@ -37,6 +37,7 @@ namespace ZeroG.Data.Object.Index
     {
         private IObjectIndexProvider _indexer;
         private ObjectIndexerCache _cache;
+        private object _bulkIndexLock;
 
         private static Type _indexerType = null;
 
@@ -47,6 +48,9 @@ namespace ZeroG.Data.Object.Index
 
         public ObjectIndexer()
         {
+            // used to single thread bulk index workloads.
+            _bulkIndexLock = new object();
+
             if (null == _indexerType)
             {
                 var setting = ConfigurationManager.AppSettings[Config.ObjectIndexProviderConfigKey];
@@ -261,6 +265,14 @@ namespace ZeroG.Data.Object.Index
             if (_ValidateIndexes(indexes))
             {
                 _indexer.UpsertIndexValues(objectFullName, objectId, indexes);
+            }
+        }
+
+        public void BulkIndexObject(string objectFullName, ObjectMetadata metadata, IEnumerable<object[]> indexes)
+        {
+            lock (_bulkIndexLock)
+            {
+                _indexer.BulkUpsertIndexValues(objectFullName, metadata, indexes);
             }
         }
 

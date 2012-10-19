@@ -55,6 +55,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Database\DatabaseAsyncResult.cs" />
+    <Compile Include="Database\DatabaseServiceConfiguration.cs" />
+    <Compile Include="Database\DatabaseServiceConfigurationProperty.cs" />
     <Compile Include="Database\DatabaseServiceSection.cs" />
     <Compile Include="Database\DatabaseHelper.cs" />
     <Compile Include="Database\DatabaseService.cs" />

@@ -166,6 +166,7 @@ namespace ZeroG.Data.Database
 
         public abstract bool ObjectExists(string objectFullName);
         public abstract bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
+        public abstract int CountObjects(string objectFullName);
         public abstract int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
         public abstract int[] Find(string objectFullName, params ObjectIndex[] indexes);
         public abstract int[] Find(string objectFullName, ObjectFindOptions options, params ObjectIndex[] indexes);
@@ -184,6 +185,7 @@ namespace ZeroG.Data.Database
         public abstract void ProvisionIndex(ObjectMetadata metadata);
         public abstract void UnprovisionIndex(string objectFullName);
         public abstract void UpsertIndexValues(string objectFullName, int objectId, params ObjectIndex[] indexes);
+        public abstract void BulkUpsertIndexValues(string objectFullName, ObjectMetadata metadata, IEnumerable<object[]> indexValues);
         public abstract void RemoveIndexValue(string objectFullName, int objectId);
         public abstract void RemoveIndexValues(string objectFullName, int[] objectIds);
         public abstract void Truncate(string objectFullName);
