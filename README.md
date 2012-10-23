@@ -18,7 +18,7 @@ There are several major libraries that make up the ZeroG library collection.
 
 ### ZeroG.Lang
 
-Programming language utilities including support for `JSON`, `BSON`, and `binary` value formatting.
+Programming language utilities including support for `JSON` and `BSON` parsing as well as `binary` value formatting.
 
   * Light-weight, high speed JSON/BSON tokenizer, walker, and validator
   * JSON/BSON selector - supports a sub-set of JSONPath to allow values to be extracted from JSON/BSON documents.

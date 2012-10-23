@@ -23,7 +23,7 @@ namespace ZeroG.Tests.Data.Drivers
                     db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS `ZG_BulkInsertTest` (
     `ID` INT NOT NULL PRIMARY KEY,
     `Name` VARCHAR(36) NOT NULL,
-    `DecValue` DECIMAL(8,4) NOT NULL,
+    `DecValue` DECIMAL(9,4) NOT NULL,
     `DTValue` DATETIME NOT NULL,
     `BinValue` BINARY(16) NOT NULL
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;");
@@ -34,7 +34,7 @@ namespace ZeroG.Tests.Data.Drivers
     CREATE TABLE [ZeroG].[ZG_BulkInsertTest](
 	[ID] [int] NOT NULL,
 	[Name] [nvarchar](36) NOT NULL,
-	[DecValue] [decimal](8, 4) NOT NULL,
+	[DecValue] [decimal](9, 4) NOT NULL,
 	[DTValue] [datetime] NOT NULL,
 	[BinValue] [binary](16) NOT NULL,
  CONSTRAINT [PK_ZG_BulkInsertTest] PRIMARY KEY CLUSTERED 
@@ -182,7 +182,7 @@ namespace ZeroG.Tests.Data.Drivers
                 }
 
                 var list = new List<object[]>();
-                var count = 2000;
+                var count = 100000;
                 for (int i = 0; count > i; i++)
                 {
                     list.Add(new object[] { i, "test" + i, (decimal)(i + 0.1), DateTime.Now, new Guid().ToByteArray() });

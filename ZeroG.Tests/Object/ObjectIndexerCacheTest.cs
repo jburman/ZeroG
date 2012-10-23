@@ -290,7 +290,7 @@ namespace ZeroG.Tests.Object
                 stopWatchUncached.Start();
                 for (int i = 0; 10 > i; i++)
                 {
-                    var findVals = svc.Find(ns, obj, @"{ ""IntIndex1"" : 12500, ""Op"" : ""="" }").ToArray();
+                    var findVals = svc.Find(ns, obj, @"{ ""IntIndex1"" : 12500 }").ToArray();
                     Assert.AreEqual(1, findVals.Length);
                     Assert.AreEqual(val2, new Guid(findVals[0]));
                 }
@@ -302,7 +302,7 @@ namespace ZeroG.Tests.Object
                 stopWatchCached.Start();
                 for (int i = 0; 10 > i; i++)
                 {
-                    var findVals = svc.Find(ns, obj, @"{ ""IntIndex1"" : 12500, ""Op"" : ""="" }").ToArray();
+                    var findVals = svc.Find(ns, obj, @"{ ""IntIndex1"" : 12500 }").ToArray();
                     Assert.AreEqual(1, findVals.Length);
                     Assert.AreEqual(val2, new Guid(findVals[0]));
                 }

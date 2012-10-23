@@ -7,6 +7,8 @@ using ZeroG.Data.Object;
 using ZeroG.Data.Object.Metadata;
 using ZeroG.Data.Object.Index;
 using System.IO;
+using ZeroG.Lang;
+using System.Diagnostics;
 
 namespace ZeroG.Tests.Object
 {
@@ -523,6 +525,7 @@ namespace ZeroG.Tests.Object
 
                 int ObjCount = 500;
 
+                // roughly 47k
                 var textBlob = Encoding.UTF8.GetBytes(File.ReadAllText("TestData\\blob.txt"));
 
                 // store objects
@@ -549,6 +552,58 @@ namespace ZeroG.Tests.Object
                 }
 
                 Assert.AreEqual(ObjCount, count);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void StoreAndRetrieveByLargeKey()
+        {
+            var utf8 = Encoding.UTF8;
+            var count = 10000;
+
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                var keyList = new byte[count][];
+
+                for (int i = 0; count > i; i++)
+                {
+                    string keyStr = "";
+
+                    for (int j = 0; 10 > j; j++)
+                    {
+                        keyStr += Guid.NewGuid().ToString("N");
+                    }
+
+                    // creates a 320 byte key, which is fairly large
+                    keyList[i] = utf8.GetBytes(keyStr);
+
+                    svc.Store(
+                        ns,
+                        new PersistentObject()
+                        {
+                            Name = obj,
+                            Value = utf8.GetBytes("<div>test value " + i + "</div>"),
+                            SecondaryKey = keyList[i]
+                        });
+                }
+
+                for (int i = 0; count > i; i++)
+                {
+                    var val = svc.GetBySecondaryKey(ns, obj, keyList[i]);
+
+                    Assert.AreEqual("<div>test value " + i + "</div>",
+                        utf8.GetString(val));
+                }
             }
         }
 
