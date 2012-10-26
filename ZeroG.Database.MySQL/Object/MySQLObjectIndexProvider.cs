@@ -102,6 +102,11 @@ WHERE {1}{2}{3}";
             string name = db.EscapeCommandText(indexMetadata.Name);
             string type = "VARCHAR";
             string length = "(30)";
+            string nullable = " NOT NULL";
+            if (indexMetadata.Nullable)
+            {
+                nullable = " NULL";
+            }
 
             switch (indexMetadata.DataType)
             {
@@ -110,7 +115,7 @@ WHERE {1}{2}{3}";
                     length = "";
                     break;
                 case ObjectIndexType.Binary:
-                    type = "BINARY";
+                    type = "VARBINARY";
                     length = "(" + indexMetadata.Precision + ")";
                     break;
                 case ObjectIndexType.DateTime:
@@ -126,7 +131,7 @@ WHERE {1}{2}{3}";
                     break;
             }
 
-            return string.Format("`{0}` {1}{2} NOT NULL", name, type, length);
+            return string.Format("`{0}` {1}{2} {3}", name, type, length, nullable);
         }
 
         private static string _CreateOrderBySQL(IDatabaseService db, OrderOptions order)
@@ -206,6 +211,7 @@ WHERE {1}{2}{3}";
 
             bool useOr = ObjectFindLogic.Or == logic;
             bool useLike = ObjectFindOperator.Like == oper;
+            bool isNull = ObjectFindOperator.IsNull == oper;
 
             var limitSql = (0 == limit) ? SQLStatements.NoLimit : string.Format(SQLStatements.Limit, limit);
 
@@ -239,6 +245,10 @@ WHERE {1}{2}{3}";
                         sqlConstraint.Append(' ');
                         sqlConstraint.Append(db.MakeLikeParamReference(paramName));
                         parameters.Add(ObjectIndexProvider.MakeLikeParameter(db, paramName, value));
+                    }
+                    else if (isNull)
+                    {
+                        sqlConstraint.Append(" IS NULL");
                     }
                     else
                     {

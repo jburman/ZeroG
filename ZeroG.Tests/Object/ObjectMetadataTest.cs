@@ -154,14 +154,63 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual("Test1", metadata.Indexes[0].Name);
                 Assert.AreEqual(ObjectIndexType.String, metadata.Indexes[0].DataType);
                 Assert.AreEqual(15u, metadata.Indexes[0].Precision);
+                Assert.IsFalse(metadata.Indexes[0].Nullable);
 
                 Assert.AreEqual("Test2", metadata.Indexes[1].Name);
                 Assert.AreEqual(ObjectIndexType.Integer, metadata.Indexes[1].DataType);
+                Assert.IsFalse(metadata.Indexes[1].Nullable);
 
                 Assert.AreEqual("Test3", metadata.Indexes[2].Name);
                 Assert.AreEqual(ObjectIndexType.Decimal, metadata.Indexes[2].DataType);
                 Assert.AreEqual(7u, metadata.Indexes[2].Precision);
                 Assert.AreEqual(3u, metadata.Indexes[2].Scale);
+                Assert.IsFalse(metadata.Indexes[2].Nullable);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void ProvisionObjectStoreWithNullableIndexes()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(NameSpace1, ObjectName1,
+                        new ObjectIndexMetadata[] 
+                        {
+                            new ObjectIndexMetadata("Test1", ObjectIndexType.String, 15, true),
+                            new ObjectIndexMetadata("Test2", ObjectIndexType.Integer, 11, true),
+                            new ObjectIndexMetadata("Test3", ObjectIndexType.Decimal, 7,3, true)
+                        }));
+
+                Assert.IsTrue(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                var metadata = svc.GetObjectMetadata(NameSpace1, ObjectName1);
+                Assert.IsNotNull(metadata);
+
+                Assert.AreEqual(NameSpace1, metadata.NameSpace);
+                Assert.AreEqual(ObjectName1, metadata.ObjectName);
+                Assert.IsNotNull(metadata.Indexes);
+
+                Assert.AreEqual("Test1", metadata.Indexes[0].Name);
+                Assert.AreEqual(ObjectIndexType.String, metadata.Indexes[0].DataType);
+                Assert.AreEqual(15u, metadata.Indexes[0].Precision);
+                Assert.IsTrue(metadata.Indexes[0].Nullable);
+
+                Assert.AreEqual("Test2", metadata.Indexes[1].Name);
+                Assert.AreEqual(ObjectIndexType.Integer, metadata.Indexes[1].DataType);
+                Assert.IsTrue(metadata.Indexes[1].Nullable);
+
+                Assert.AreEqual("Test3", metadata.Indexes[2].Name);
+                Assert.AreEqual(ObjectIndexType.Decimal, metadata.Indexes[2].DataType);
+                Assert.AreEqual(7u, metadata.Indexes[2].Precision);
+                Assert.AreEqual(3u, metadata.Indexes[2].Scale);
+                Assert.IsTrue(metadata.Indexes[2].Nullable);
 
             }
         }

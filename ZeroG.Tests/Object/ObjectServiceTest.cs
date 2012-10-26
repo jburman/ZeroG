@@ -255,7 +255,8 @@ namespace ZeroG.Tests.Object
                         new ObjectIndexMetadata[] 
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
-                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15),
+                            new ObjectIndexMetadata("StrNullIndex1", ObjectIndexType.String, 5, true)
                         }));
 
                 var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
@@ -268,6 +269,8 @@ namespace ZeroG.Tests.Object
                 var strIndex2 = "index test val";
                 var strIndex3 = "zzyyxx";
 
+                var strNullIndexVal = "0011";
+
                 var objID1 = svc.Store(ns, new PersistentObject()
                 {
                     Name = obj,
@@ -275,7 +278,8 @@ namespace ZeroG.Tests.Object
                     Indexes = new ObjectIndex[] 
                     { 
                         ObjectIndex.Create("IntIndex1", intIndex1),
-                        ObjectIndex.Create("StrIndex1", strIndex1)
+                        ObjectIndex.Create("StrIndex1", strIndex1),
+                        ObjectIndex.Create("StrNullIndex1", null)
                     }
                 });
 
@@ -286,7 +290,8 @@ namespace ZeroG.Tests.Object
                     Indexes = new ObjectIndex[] 
                     { 
                         ObjectIndex.Create("IntIndex1", intIndex2),
-                        ObjectIndex.Create("StrIndex1", strIndex2)
+                        ObjectIndex.Create("StrIndex1", strIndex2),
+                        ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
                     }
                 });
 
@@ -297,9 +302,13 @@ namespace ZeroG.Tests.Object
                     Indexes = new ObjectIndex[] 
                     { 
                         ObjectIndex.Create("IntIndex1", intIndex3),
-                        ObjectIndex.Create("StrIndex1", strIndex3)
+                        ObjectIndex.Create("StrIndex1", strIndex3),
+                        ObjectIndex.Create("StrNullIndex1", null)
                     }
                 });
+
+                // count all index values
+                Assert.AreEqual(3, svc.Count(ns, obj));
 
                 // test a single index lookup using And
                 var options = new ObjectFindOptions()
@@ -410,6 +419,49 @@ namespace ZeroG.Tests.Object
 
                 // should not return any values
                 Assert.AreEqual(0, findVals.Length);
+
+                // check nulls
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+
+                findVals = svc.Find(ns, obj, options, 
+                    new ObjectIndex[] 
+                    {
+                        ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
+                    }
+                ).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.IsNull,
+                    Logic = ObjectFindLogic.And
+                };
+
+                findVals = svc.Find(ns, obj, options,
+                    new ObjectIndex[] 
+                    {
+                        ObjectIndex.Create("StrNullIndex1", null)
+                    }
+                ).ToArray();
+
+                Assert.AreEqual(2, findVals.Length);
+                Assert.AreEqual(val1, new Guid(findVals[0]));
+                Assert.AreEqual(val3, new Guid(findVals[1]));
+
+                findVals = svc.Find(ns, obj, @"{""StrNullIndex1"" : [""" + strNullIndexVal + @"""], ""Op"" : ""IN"" }").ToArray();
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                findVals = svc.Find(ns, obj, @"{""StrNullIndex1"" : null, ""Op"" : ""="" }").ToArray();
+                Assert.AreEqual(2, findVals.Length);
+                Assert.AreEqual(val1, new Guid(findVals[0]));
+                Assert.AreEqual(val3, new Guid(findVals[1]));
             }
         }
 
@@ -706,6 +758,239 @@ namespace ZeroG.Tests.Object
                 svc.Remove(ns, obj, objID2.ID);
 
                 Assert.AreEqual(0, svc.Iterate(ns, obj).Count());
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void BulkStore()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[] 
+                        {
+                            new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15),
+                            new ObjectIndexMetadata("StrNullIndex1", ObjectIndexType.String, 5, true)
+                        }));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var val3 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var intIndex1 = 5;
+                var intIndex2 = 12500;
+                var intIndex3 = -100;
+                var strIndex1 = "asdf";
+                var strIndex2 = "index test val";
+                var strIndex3 = "zzyyxx";
+
+                var strNullIndexVal = "0011";
+
+                var objList = new List<PersistentObject>();
+                objList.Add(new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex1),
+                        ObjectIndex.Create("StrIndex1", strIndex1),
+                        ObjectIndex.Create("StrNullIndex1", null)
+                    }
+                });
+                objList.Add(new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex2),
+                        ObjectIndex.Create("StrIndex1", strIndex2),
+                        ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
+                    }
+                });
+                objList.Add(new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val3.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex3),
+                        ObjectIndex.Create("StrIndex1", strIndex3),
+                        ObjectIndex.Create("StrNullIndex1", null)
+                    }
+                });
+
+                var objectIDs = svc.BulkStore(ns, objList);
+                Assert.AreEqual(3, objectIDs.Count());
+
+                var objLookup = svc.Get(ns, obj, objectIDs[0].ID);
+                Assert.IsNotNull(objLookup);
+                Assert.AreEqual(val1, new Guid(objLookup));
+
+                // count all index values
+                Assert.AreEqual(3, svc.Count(ns, obj));
+
+                // test a single index lookup using And
+                var options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+                var findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test two index lookups using And
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "index test val"),
+                    ObjectIndex.Create("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test a single lookup using Or
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.Or
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test two index lookups using Or
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.Or
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500),
+                    ObjectIndex.Create("StrIndex1", "asdf")
+                }).ToArray();
+
+                Assert.AreEqual(2, findVals.Length);
+                var findVal1 = new Guid(findVals[0]);
+                var findVal2 = new Guid(findVals[1]);
+                Assert.IsFalse(findVal1 == findVal2);
+                Assert.IsTrue(findVal1 == val1 || findVal1 == val2);
+                Assert.IsTrue(findVal2 == val1 || findVal2 == val2);
+
+                // test with Like
+                // test a single lookup using And
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Like,
+                    Logic = ObjectFindLogic.And
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "%test%")
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test with Like
+                // test two lookup values using Or
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Like,
+                    Logic = ObjectFindLogic.Or
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "%test%"),
+                    ObjectIndex.Create("StrIndex1", "%xx")
+                }).ToArray();
+
+                Assert.AreEqual(2, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+                Assert.AreEqual(val3, new Guid(findVals[1]));
+
+                // test with Like
+                // test two lookup values using And - should return 0
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Like,
+                    Logic = ObjectFindLogic.And
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "%test%"),
+                    ObjectIndex.Create("StrIndex1", "%zz")
+                }).ToArray();
+
+                // should not return any values
+                Assert.AreEqual(0, findVals.Length);
+
+                // check nulls
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+
+                findVals = svc.Find(ns, obj, options,
+                    new ObjectIndex[] 
+                    {
+                        ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
+                    }
+                ).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.IsNull,
+                    Logic = ObjectFindLogic.And
+                };
+
+                findVals = svc.Find(ns, obj, options,
+                    new ObjectIndex[] 
+                    {
+                        ObjectIndex.Create("StrNullIndex1", null)
+                    }
+                ).ToArray();
+
+                Assert.AreEqual(2, findVals.Length);
+                Assert.AreEqual(val1, new Guid(findVals[0]));
+                Assert.AreEqual(val3, new Guid(findVals[1]));
+
+                findVals = svc.Find(ns, obj, @"{""StrNullIndex1"" : [""" + strNullIndexVal + @"""], ""Op"" : ""IN"" }").ToArray();
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                findVals = svc.Find(ns, obj, @"{""StrNullIndex1"" : null, ""Op"" : ""="" }").ToArray();
+                Assert.AreEqual(2, findVals.Length);
+                Assert.AreEqual(val1, new Guid(findVals[0]));
+                Assert.AreEqual(val3, new Guid(findVals[1]));
             }
         }
     }

@@ -28,6 +28,7 @@ namespace ZeroG.Data.Object
     public enum ObjectFindOperator
     {
         Equals,
-        Like
+        Like,
+        IsNull
     }
 }

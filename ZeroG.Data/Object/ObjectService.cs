@@ -487,6 +487,105 @@ namespace ZeroG.Data.Object
             return _objectNaming.NameSpaceExists(nameSpace);
         }
 
+        public ObjectID[] BulkStore(string nameSpace, IEnumerable<PersistentObject> objects)
+        {
+            var returnValue = new List<ObjectID>();
+
+            // group objects by Object Store name
+            var objectsGrouped = new Dictionary<string, IList<PersistentObject>>();
+            IList<PersistentObject> objectsList = null;
+
+            // holds original object ID values in case a rollback is needed
+            var objectIDrollback = new List<int>();
+
+            foreach (var obj in objects)
+            {
+                // validate here since we're looping through the list already
+                _ValidateArguments(nameSpace, obj);
+
+                if (!objectsGrouped.ContainsKey(obj.Name))
+                {
+                    objectsList = new List<PersistentObject>();
+                    objectsGrouped.Add(obj.Name, objectsList);
+                }
+                objectsList.Add(obj);
+                objectIDrollback.Add(obj.ID);
+            }
+
+            try
+            {
+                using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
+                {
+                    // process each group of objects and batch insert the indexes
+                    foreach (var objectName in objectsGrouped.Keys)
+                    {
+                        var group = objectsGrouped[objectName];
+
+                        var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+                        var objectMetadata = _objectMetadata.GetMetadata(objectFullName);
+                        var indexValues = new List<object[]>();
+
+                        foreach (var obj in group)
+                        {
+                            var startingObjId = obj.ID;
+                            var objNameKey = ObjectNaming.CreateFullObjectKey(objectFullName);
+
+                            var objId = obj.ID;
+                            if (!obj.HasID())
+                            {
+                                objId = _objectIDStore.GetNextID(objNameKey);
+                                obj.ID = objId;
+                            }
+
+                            returnValue.Add(new ObjectID()
+                            {
+                                ID = objId,
+                                SecondaryKey = obj.SecondaryKey
+                            });
+
+                            if (null != obj.Indexes && 0 < obj.Indexes.Length)
+                            {
+                                var indexList = obj.Indexes.Select(i => i.GetObjectValue()).ToList();
+                                // ID is always first index
+                                indexList.Insert(0, obj.ID);
+                                indexValues.Add(indexList.ToArray());
+                            }
+                        }
+                        _objectIndexer.BulkIndexObject(objectFullName, objectMetadata, indexValues);
+                    }
+                    trans.Complete();
+                }
+
+                // store all objects
+
+                foreach (var objectName in objectsGrouped.Keys)
+                {
+                    var group = objectsGrouped[objectName];
+                    var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+                    
+                    foreach (var obj in group)
+                    {
+                        _objectStore.Set(nameSpace, obj);
+                    }
+
+                    _objectVersions.Update(objectFullName);
+                }
+            }
+            catch (Exception)
+            {
+                // rollback in-memory IDs
+                var objList = objects.ToArray();
+                for (int i = 0; objectIDrollback.Count > i; i++)
+                {
+                    objList[i].ID = objectIDrollback[i];
+                }
+
+                throw;
+            }
+
+            return returnValue.ToArray();
+        }
+
         public ObjectID Store(string nameSpace, PersistentObject obj)
         {
             ObjectID returnValue = null;
@@ -547,6 +646,15 @@ namespace ZeroG.Data.Object
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
 
             return _objectStore.Get(objectFullName, id);
+        }
+
+        public int GetNextObjectID(string nameSpace, string objectName)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectFullKey = ObjectNaming.CreateFullObjectKey(nameSpace, objectName);
+
+            return _objectIDStore.GetNextID(objectFullKey);
         }
 
         public byte[] GetBySecondaryKey(string nameSpace, string objectName, byte[] key)

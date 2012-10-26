@@ -132,6 +132,7 @@ WHERE {1}{3}";
             string name = db.EscapeCommandText(indexMetadata.Name);
             string type = "nvarchar";
             string length = "(30)";
+            string nullable = (indexMetadata.Nullable) ? "NULL" : "NOT NULL";
 
             switch (indexMetadata.DataType)
             {
@@ -140,7 +141,7 @@ WHERE {1}{3}";
                     length = "";
                     break;
                 case ObjectIndexType.Binary:
-                    type = "binary";
+                    type = "varbinary";
                     length = "(" + indexMetadata.Precision + ")";
                     break;
                 case ObjectIndexType.DateTime:
@@ -156,7 +157,7 @@ WHERE {1}{3}";
                     break;
             }
 
-            return string.Format("[{0}] [{1}]{2} NOT NULL", name, type, length);
+            return string.Format("[{0}] [{1}]{2} {3}", name, type, length, nullable);
         }
 
         private static string _CreateOrderBySQL(IDatabaseService db, OrderOptions order)
@@ -335,6 +336,7 @@ WHERE {1}{3}";
 
             bool useOr = ObjectFindLogic.Or == logic;
             bool useLike = ObjectFindOperator.Like == oper;
+            bool isNull = ObjectFindOperator.IsNull == oper;
 
             using (var db = OpenData())
             {
@@ -367,6 +369,10 @@ WHERE {1}{3}";
                         sqlConstraint.Append(' ');
                         sqlConstraint.Append(db.MakeLikeParamReference(paramName));
                         parameters.Add(ObjectIndexProvider.MakeLikeParameter(db, paramName, value));
+                    }
+                    else if (isNull)
+                    {
+                        sqlConstraint.Append(" IS NULL");
                     }
                     else
                     {
@@ -505,8 +511,11 @@ WHERE {1}{3}";
                 for (int i = 0; indexes.Length > i; i++)
                 {
                     var idx = indexes[i];
-                    var param = db.MakeParam(idx.Name + "_param", idx.GetObjectValue());
-                    parameters.Add(param);
+                    if (null != idx.Value)
+                    {
+                        var param = db.MakeParam(idx.Name + "_param", idx.GetObjectValue());
+                        parameters.Add(param);
+                    }
                 }
 
                 var sql = new StringBuilder();
@@ -516,14 +525,23 @@ WHERE {1}{3}";
                 sql.Append(@" WITH(HOLDLOCK) AS mergeTo
 USING (VALUES (");
 
-                int paramCount = parameters.Count;
+                int indexCount = indexes.Length;
 
                 // 1. generate set of values for USING VALUES clause
-                if (0 < paramCount)
+                if (0 < indexCount)
                 {
-                    for (int i = 0; paramCount > i; i++)
+                    for (int i = 0; indexCount > i; i++)
                     {
-                        sql.Append(db.MakeParamReference(parameters[i].ParameterName));
+                        var idx = indexes[i];
+                        if (null != idx.Value)
+                        {
+                            sql.Append(db.MakeParamReference(idx.Name + "_param"));
+                            //sql.Append(db.MakeParamReference(parameters[i].ParameterName));
+                        }
+                        else
+                        {
+                            sql.Append("NULL");
+                        }
                         sql.Append(',');
                     }
                     sql.Remove(sql.Length - 1, 1);
@@ -533,9 +551,9 @@ USING (VALUES (");
     AS source (");
 
                 // 2. generate set of field names for USING AS clause
-                if (0 < paramCount)
+                if (0 < indexCount)
                 {
-                    for (int i = 0; paramCount > i; i++)
+                    for (int i = 0; indexCount > i; i++)
                     {
                         var idx = indexes[i];
                         sql.Append(db.MakeQuotedName(idx.Name));
@@ -556,9 +574,9 @@ WHEN MATCHED THEN
     UPDATE
     SET ");
 
-                if (0 < paramCount)
+                if (0 < indexCount)
                 {
-                    for (int i = 0; paramCount > i; i++)
+                    for (int i = 0; indexCount > i; i++)
                     {
                         var idx = indexes[i];
                         sql.Append(db.MakeQuotedName(idx.Name));
@@ -578,9 +596,9 @@ WHEN NOT MATCHED THEN
                 sql.Append(@",");
 
                 // 4. generate set of fields for INSERT clause
-                if (0 < paramCount)
+                if (0 < indexCount)
                 {
-                    for (int i = 0; paramCount > i; i++)
+                    for (int i = 0; indexCount > i; i++)
                     {
                         var idx = indexes[i];
                         sql.Append(db.MakeQuotedName(idx.Name));
@@ -597,9 +615,9 @@ WHEN NOT MATCHED THEN
                 sql.Append(@",");
 
                 // 5. generate set of fields for INSERT VALUES clause
-                if (0 < paramCount)
+                if (0 < indexCount)
                 {
-                    for (int i = 0; paramCount > i; i++)
+                    for (int i = 0; indexCount > i; i++)
                     {
                         var idx = indexes[i];
                         sql.Append("source.");

@@ -15,10 +15,12 @@ namespace ZeroG.Tests.Data.Lang
         public static Guid TestGuidVal = new Guid("{EF9D853C-6054-410D-8293-F2920EB63A90}");
         public static Guid TestGuidVal2 = new Guid("{4227208A-D1DA-4428-B005-EDC825799C4B}");
         public static Guid TestGuidVal3 = new Guid("{1A077C0C-506C-4B7A-B0F3-CA2DADAFE3A5}");
+        public static Guid TestGuidVal4 = new Guid("{3643A5D3-597D-4CA0-A618-273456F9571E}");
 
         public static DateTime TestDateTimeVal1 = new DateTime(2012, 1, 30, 12, 30, 0);
         public static DateTime TestDateTimeVal2 = new DateTime(2000, 7, 1, 23, 0, 59);
         public static DateTime TestDateTimeVal3 = new DateTime(1990, 11, 20, 0, 1, 1);
+        public static DateTime TestDateTimeVal4 = new DateTime(1789, 5, 5, 0, 5, 5);
 
         [ClassInitialize()]
         public static void SetupConstraintTestTables(TestContext testContext)
@@ -30,7 +32,7 @@ namespace ZeroG.Tests.Data.Lang
                 db.Open();
 
                 var createTableSQL = @"CREATE TABLE IF NOT EXISTS `ZeroGConstraintTest` (
-    `TextCol` VARCHAR(36) NOT NULL,
+    `TextCol` VARCHAR(36) NULL,
     `DecimalCol` DECIMAL(7,4) NOT NULL,
     `IntCol` INT NOT NULL,
     `DateCol` DATETIME NOT NULL,
@@ -45,7 +47,7 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
                 {
                     createTableSQL = @"IF NOT EXISTS (select * from sysobjects where name='ZeroGConstraintTest' and xtype='U')
     CREATE TABLE [ZeroG].[ZeroGConstraintTest](
-	[TextCol] [nvarchar](36) NOT NULL,
+	[TextCol] [nvarchar](36) NULL,
 	[DecimalCol] [decimal](7, 4) NOT NULL,
     [IntCol] [int] NOT NULL,
 	[DateCol] [datetime] NOT NULL,
@@ -61,24 +63,31 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
 
                 db.ExecuteNonQuery(insertSql, 
                     db.MakeParam("textCol","ZeroG"),
-                    db.MakeParam("decCol",1.0),
-                    db.MakeParam("intCol",1),
-                    db.MakeParam("dateCol",TestDateTimeVal1),
-                    db.MakeParam("binCol",TestGuidVal.ToByteArray()));
+                    db.MakeParam("decCol", 1.0M),
+                    db.MakeParam("intCol", 1),
+                    db.MakeParam("dateCol", TestDateTimeVal1),
+                    db.MakeParam("binCol", TestGuidVal.ToByteArray()));
 
                 db.ExecuteNonQuery(insertSql,
                     db.MakeParam("textCol", "A"),
-                    db.MakeParam("decCol", 3.2),
+                    db.MakeParam("decCol", 3.2M),
                     db.MakeParam("intCol", 3),
                     db.MakeParam("dateCol", TestDateTimeVal2),
                     db.MakeParam("binCol", TestGuidVal2.ToByteArray()));
 
                 db.ExecuteNonQuery(insertSql,
                     db.MakeParam("textCol", "A"),
-                    db.MakeParam("decCol", 7.33),
+                    db.MakeParam("decCol", 7.33M),
                     db.MakeParam("intCol", 10),
                     db.MakeParam("dateCol", TestDateTimeVal3),
                     db.MakeParam("binCol", TestGuidVal3.ToByteArray()));
+
+                db.ExecuteNonQuery(insertSql,
+                    db.MakeParam("textCol", null),
+                    db.MakeParam("decCol", 12M),
+                    db.MakeParam("intCol", 13),
+                    db.MakeParam("dateCol", TestDateTimeVal4),
+                    db.MakeParam("binCol", TestGuidVal4.ToByteArray()));
             }
         }
 
@@ -150,6 +159,39 @@ DROP TABLE " + _GetTableName(db));
         }
 
         [TestMethod]
+        public void NullConstraintTest()
+        {
+            var json = @"{ ""TextCol"" : null }";
+
+            using (var db = DataTestHelper.GetDefaultDataService())
+            {
+                db.Open();
+
+                var typeMappings = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
+                typeMappings.Add("TextCol", typeof(string));
+
+                var constraint = JSONToSQLConstraint.GenerateSQLConstraint(db, typeMappings, json);
+
+                Assert.IsNotNull(constraint);
+
+                Assert.IsTrue(!string.IsNullOrEmpty(constraint.SQL));
+
+                var parameters = constraint.Parameters.ToArray();
+
+                Assert.AreEqual(0, parameters.Length);
+
+                var sql = "SELECT TextCol, IntCol FROM " + _GetTableName(db) + " WHERE" +
+                    constraint.SQL;
+
+                var dt = db.GetDataTable(sql, constraint.Parameters.ToArray());
+
+                Assert.AreEqual(1, dt.Rows.Count);
+                Assert.AreEqual(DBNull.Value, dt.Rows[0]["TextCol"]);
+                Assert.AreEqual(13, dt.Rows[0]["IntCol"]);
+            }
+        }
+
+        [TestMethod]
         public void MultiConstraintTest()
         {
             var json = @"{ ""TextCol"" : ""ZeroG"", ""Op"": ""="",
@@ -187,6 +229,44 @@ DROP TABLE " + _GetTableName(db));
                 Assert.AreEqual(1, dt.Rows.Count);
                 Assert.AreEqual("ZeroG", dt.Rows[0]["TextCol"]);
                 Assert.AreEqual(1, dt.Rows[0]["IntCol"]);
+            }
+        }
+
+        [TestMethod]
+        public void MultiConstraintWithNullTest()
+        {
+            var json = @"{ ""IntCol"" : 12, ""Op"": "">"",
+""AND"": { ""TextCol"" : null } }";
+
+            using (var db = DataTestHelper.GetDefaultDataService())
+            {
+                db.Open();
+
+                var typeMappings = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
+                typeMappings.Add("TextCol", typeof(string));
+                typeMappings.Add("IntCol", typeof(int));
+
+                var constraint = JSONToSQLConstraint.GenerateSQLConstraint(db, typeMappings, json);
+
+                Assert.IsNotNull(constraint);
+
+                Assert.IsTrue(!string.IsNullOrEmpty(constraint.SQL));
+
+                var parameters = constraint.Parameters.ToArray();
+
+                Assert.AreEqual(1, parameters.Length);
+
+                Assert.AreEqual(DbType.Int32, parameters[0].DbType);
+                Assert.AreEqual(12, parameters[0].Value);
+
+                var sql = "SELECT TextCol, IntCol FROM " + _GetTableName(db) + " WHERE" +
+                    constraint.SQL;
+
+                var dt = db.GetDataTable(sql, constraint.Parameters.ToArray());
+
+                Assert.AreEqual(1, dt.Rows.Count);
+                Assert.AreEqual(DBNull.Value, dt.Rows[0]["TextCol"]);
+                Assert.AreEqual(13, dt.Rows[0]["IntCol"]);
             }
         }
 

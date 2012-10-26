@@ -23,6 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+using System;
 using System.Data;
 using System.Runtime.Serialization;
 
@@ -47,7 +48,12 @@ namespace ZeroG.Data.Object
             var values = new ObjectIndex[len];
             for (int i = 0; len > i; i++)
             {
-                values[i] = ObjectIndex.Create(record.GetName(i), record.GetValue(i));
+                var val = record.GetValue(i);
+                if (val == DBNull.Value)
+                {
+                    val = null;
+                }
+                values[i] = ObjectIndex.Create(record.GetName(i), val);
             }
 
             return new ObjectIndexRecord(values);

@@ -535,7 +535,12 @@ namespace ZeroG.Tests.Object
                             new ObjectIndexMetadata("TextCol", ObjectIndexType.String, 15),
                             new ObjectIndexMetadata("DecCol", ObjectIndexType.Decimal, 7, 2),
                             new ObjectIndexMetadata("DateTimeCol", ObjectIndexType.DateTime),
-                            new ObjectIndexMetadata("BinCol", ObjectIndexType.Binary, 16)
+                            new ObjectIndexMetadata("BinCol", ObjectIndexType.Binary, 16),
+                            new ObjectIndexMetadata("IntColNull", ObjectIndexType.Integer, 0, true),
+                            new ObjectIndexMetadata("TextColNull", ObjectIndexType.String, 15, true),
+                            new ObjectIndexMetadata("DecColNull", ObjectIndexType.Decimal, 7, 2, true),
+                            new ObjectIndexMetadata("DateTimeColNull", ObjectIndexType.DateTime, 0, true),
+                            new ObjectIndexMetadata("BinColNull", ObjectIndexType.Binary, 16, true)
                         }));
 
                 var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
@@ -563,7 +568,12 @@ namespace ZeroG.Tests.Object
                         ObjectIndex.Create("TextCol", testStr),
                         ObjectIndex.Create("DecCol", testDec),
                         ObjectIndex.Create("DateTimeCol", testDate),
-                        ObjectIndex.Create("BinCol", testGuid.ToByteArray())
+                        ObjectIndex.Create("BinCol", testGuid.ToByteArray()),
+                        ObjectIndex.Create("IntColNull", testInt),
+                        ObjectIndex.Create("TextColNull", testStr),
+                        ObjectIndex.Create("DecColNull", testDec),
+                        ObjectIndex.Create("DateTimeColNull", testDate),
+                        ObjectIndex.Create("BinColNull", testGuid.ToByteArray())
                     }
                 });
 
@@ -577,7 +587,12 @@ namespace ZeroG.Tests.Object
                         ObjectIndex.Create("TextCol", testStr2),
                         ObjectIndex.Create("DecCol", testDec2),
                         ObjectIndex.Create("DateTimeCol", testDate2),
-                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray())
+                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray()),
+                        ObjectIndex.Create("IntColNull", null),
+                        ObjectIndex.Create("TextColNull", null),
+                        ObjectIndex.Create("DecColNull", null),
+                        ObjectIndex.Create("DateTimeColNull", null),
+                        ObjectIndex.Create("BinColNull", null)
                     }
                 });
 
@@ -597,7 +612,12 @@ namespace ZeroG.Tests.Object
                         ObjectIndex.Create("TextCol", testStr2),
                         ObjectIndex.Create("DecCol", testDec2),
                         ObjectIndex.Create("DateTimeCol", testDate2),
-                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray())
+                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray()),
+                        ObjectIndex.Create("IntColNull", testInt2),
+                        ObjectIndex.Create("TextColNull", testStr2),
+                        ObjectIndex.Create("DecColNull", testDec2),
+                        ObjectIndex.Create("DateTimeColNull", testDate2),
+                        ObjectIndex.Create("BinColNull", testGuid2.ToByteArray())
                     }
                     });
 
@@ -619,7 +639,12 @@ namespace ZeroG.Tests.Object
                         ObjectIndex.Create("TextCol", testStr2),
                         ObjectIndex.Create("DecCol", testDec2),
                         ObjectIndex.Create("DateTimeCol", testDate2),
-                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray())
+                        ObjectIndex.Create("BinCol", testGuid2.ToByteArray()),
+                        ObjectIndex.Create("IntColNull", testInt2),
+                        ObjectIndex.Create("TextColNull", testStr2),
+                        ObjectIndex.Create("DecColNull", testDec2),
+                        ObjectIndex.Create("DateTimeColNull", testDate2),
+                        ObjectIndex.Create("BinColNull", testGuid2.ToByteArray())
                     }
                     });
 
@@ -646,6 +671,15 @@ namespace ZeroG.Tests.Object
                     };
                     obj2 = svc.Find(
                         ns, obj, options, new ObjectIndex[] { ObjectIndex.Create("TextCol", "asdf") }).FirstOrDefault();
+                    Assert.IsNotNull(obj2);
+                    Assert.AreEqual(val2, new Guid(obj2));
+
+                    options = new ObjectFindOptions()
+                    {
+                        Operator = ObjectFindOperator.IsNull
+                    };
+                    obj2 = svc.Find(
+                        ns, obj, options, new ObjectIndex[] { ObjectIndex.Create("IntColNull", null) }).FirstOrDefault();
                     Assert.IsNotNull(obj2);
                     Assert.AreEqual(val2, new Guid(obj2));
                 }

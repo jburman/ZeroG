@@ -41,7 +41,7 @@ namespace ZeroG.Data.Database.Drivers
     {
         #region Constants
         public const string ParameterQualifier = "@";
-        public const uint DefaultSQLBatchSize = 10;
+        public const uint DefaultSQLBatchSize = 100;
         public const string AttributeClientBulkInsertPath = "ClientBulkInsertPath";
         public const string AttributeServerBulkInsertPath = "ServerBulkInsertPath";
         public const string AttributeSQLBatchSize = "SQLBatchSize";
@@ -229,7 +229,7 @@ namespace ZeroG.Data.Database.Drivers
             int colCount = columns.Length;
             int count = 0;
 
-            var paramNameList = new string[colCount];
+            var insertValueNames = new string[colCount];
 
             string insertTemplate = "INSERT INTO " + insertToTable + " (" + 
                 string.Join(",", columns) +
@@ -240,13 +240,20 @@ namespace ZeroG.Data.Database.Drivers
                 // create each parameter
                 for (int i = 0; colCount > i; i++)
                 {
-                    var paramName = "p" + count + "_" + i;
-                    paramNameList[i] = "@" + paramName;
-                    paramList.Add(MakeParam(paramName, dataRow[i]));
+                    if (null == dataRow[i])
+                    {
+                        insertValueNames[i] = "NULL";
+                    }
+                    else
+                    {
+                        var paramName = "p" + count + "_" + i;
+                        insertValueNames[i] = "@" + paramName;
+                        paramList.Add(MakeParam(paramName, dataRow[i]));
+                    }
                 }
 
                 sqlBatch.Append(
-                    string.Format(insertTemplate, string.Join(",", paramNameList)));
+                    string.Format(insertTemplate, string.Join(",", insertValueNames)));
 
                 if (0 < count && (0 == (count % _sqlBatchSize)))
                 {
@@ -471,7 +478,7 @@ DATAFILETYPE='widechar')",
 
         public override IDbDataParameter MakeParam(string name, object value)
         {
-            return new SqlParameter(name, value);
+            return new SqlParameter(name, (value == null) ? DBNull.Value : value);
         }
 
         public override string MakeParamReference(string paramName)

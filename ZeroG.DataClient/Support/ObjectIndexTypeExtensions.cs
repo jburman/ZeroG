@@ -83,32 +83,35 @@ namespace ZeroG.Data.Object
         {
             byte[] returnValue = null;
 
-            switch (objectIndexType)
+            if (null != value)
             {
-                case ObjectIndexType.Binary:
-                    returnValue = (byte[])value;
-                    break;
-                case ObjectIndexType.String:
-                    returnValue = _utf8.GetBytes((string)value);
-                    break;
-                case ObjectIndexType.Integer:
-                    returnValue = BitConverter.GetBytes((int)value);
-                    break;
-                case ObjectIndexType.Decimal:
-                    using (var buffer = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(buffer))
+                switch (objectIndexType)
+                {
+                    case ObjectIndexType.Binary:
+                        returnValue = (byte[])value;
+                        break;
+                    case ObjectIndexType.String:
+                        returnValue = _utf8.GetBytes((string)value);
+                        break;
+                    case ObjectIndexType.Integer:
+                        returnValue = BitConverter.GetBytes((int)value);
+                        break;
+                    case ObjectIndexType.Decimal:
+                        using (var buffer = new MemoryStream())
                         {
-                            writer.Write((decimal)value);
+                            using (var writer = new BinaryWriter(buffer))
+                            {
+                                writer.Write((decimal)value);
+                            }
+                            returnValue = buffer.ToArray();
                         }
-                        returnValue = buffer.ToArray();
-                    }
-                    break;
-                case ObjectIndexType.DateTime:
-                    returnValue = BitConverter.GetBytes(((DateTime)value).ToBinary());
-                    break;
-                default:
-                    break;
+                        break;
+                    case ObjectIndexType.DateTime:
+                        returnValue = BitConverter.GetBytes(((DateTime)value).ToBinary());
+                        break;
+                    default:
+                        break;
+                }
             }
 
             return returnValue;
@@ -118,31 +121,34 @@ namespace ZeroG.Data.Object
         {
             object returnValue = null;
 
-            switch (objectIndexType)
+            if (null != value)
             {
-                case ObjectIndexType.Binary:
-                    returnValue = value;
-                    break;
-                case ObjectIndexType.String:
-                    returnValue = _utf8.GetString(value);
-                    break;
-                case ObjectIndexType.Integer:
-                    returnValue = BitConverter.ToInt32(value, 0);
-                    break;
-                case ObjectIndexType.Decimal:
-                    using (var buffer = new MemoryStream(value))
-                    {
-                        using (var reader = new BinaryReader(buffer))
+                switch (objectIndexType)
+                {
+                    case ObjectIndexType.Binary:
+                        returnValue = value;
+                        break;
+                    case ObjectIndexType.String:
+                        returnValue = _utf8.GetString(value);
+                        break;
+                    case ObjectIndexType.Integer:
+                        returnValue = BitConverter.ToInt32(value, 0);
+                        break;
+                    case ObjectIndexType.Decimal:
+                        using (var buffer = new MemoryStream(value))
                         {
-                            returnValue = reader.ReadDecimal();
+                            using (var reader = new BinaryReader(buffer))
+                            {
+                                returnValue = reader.ReadDecimal();
+                            }
                         }
-                    }
-                    break;
-                case ObjectIndexType.DateTime:
-                    returnValue =  DateTime.FromBinary(BitConverter.ToInt64(value, 0));
-                    break;
-                default:
-                    break;
+                        break;
+                    case ObjectIndexType.DateTime:
+                        returnValue = DateTime.FromBinary(BitConverter.ToInt64(value, 0));
+                        break;
+                    default:
+                        break;
+                }
             }
 
             return returnValue;

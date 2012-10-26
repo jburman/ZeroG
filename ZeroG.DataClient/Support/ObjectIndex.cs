@@ -49,14 +49,11 @@ namespace ZeroG.Data.Object
 
         public static ObjectIndex Create(string name, object value)
         {
+            ObjectIndex returnValue = null;
+
             if (null == name)
             {
                 throw new ArgumentNullException("name");
-            }
-
-            if (null == value)
-            {
-                throw new ArgumentNullException("value");
             }
 
             if (!ObjectNameValidator.IsValidIndexName(name))
@@ -64,12 +61,22 @@ namespace ZeroG.Data.Object
                 throw new ArgumentException("Invalid index name found " + name + ". It should be 1-30 characters long and contain only alphanumeric characters or underscores.");
             }
 
-            var dataType = DefaultDataType.GetDataType(value);
-            if (ObjectIndexType.Unknown == dataType)
+            if (null != value)
             {
-                throw new ArgumentException("Unsupported Type: " + value.GetType().Name);
+                var dataType = DefaultDataType.GetDataType(value);
+                if (ObjectIndexType.Unknown == dataType)
+                {
+                    throw new ArgumentException("Unsupported Type: " + value.GetType().Name);
+                }
+
+                returnValue = new ObjectIndex(name, dataType.ConvertToBinary(value), value, dataType);
             }
-            return new ObjectIndex(name, dataType.ConvertToBinary(value), value, dataType);
+            else
+            {
+                returnValue = new ObjectIndex(name, null, null, ObjectIndexType.Unknown);
+            }
+
+            return returnValue;
         }
 
         #endregion

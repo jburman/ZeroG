@@ -36,16 +36,26 @@ namespace ZeroG.Data.Object
         }
 
         public ObjectIndexMetadata(string name, ObjectIndexType dataType)
-            : this(name, dataType, 7, 0)
+            : this(name, dataType, 7, 0, false)
         {
         }
 
         public ObjectIndexMetadata(string name, ObjectIndexType dataType, uint precision)
-            : this(name, dataType, precision, 0)
+            : this(name, dataType, precision, 0, false)
+        {
+        }
+
+        public ObjectIndexMetadata(string name, ObjectIndexType dataType, uint precision, bool nullable)
+            : this(name, dataType, precision, 0, nullable)
         {
         }
 
         public ObjectIndexMetadata(string name, ObjectIndexType dataType, uint precision, uint scale)
+            : this(name, dataType, precision, scale, false)
+        {
+        }
+
+        public ObjectIndexMetadata(string name, ObjectIndexType dataType, uint precision, uint scale, bool nullable)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -61,6 +71,7 @@ namespace ZeroG.Data.Object
             DataType = dataType;
             Precision = precision;
             Scale = scale;
+            Nullable = nullable;
         }
 
         [DataMember(Order = 1)]
@@ -71,5 +82,7 @@ namespace ZeroG.Data.Object
         public uint Precision { get; private set; }
         [DataMember(Order = 4)]
         public uint Scale { get; private set; }
+        [DataMember(Order = 5)]
+        public bool Nullable { get; private set; }
     }
 }

@@ -75,23 +75,6 @@ namespace ZeroG.Data.Object.Index
             }
         }
 
-        private bool _ValidateIndexes(ObjectIndex[] indexes)
-        {
-            foreach (var idx in indexes)
-            {
-                var dataType = idx.DataType;
-                if (null == idx.Value || 0 == idx.Value.Length)
-                {
-                    throw new ArgumentNullException("idx.Value", "Index values cannot be null.");
-                }
-                else if (ObjectIndexType.Unknown == dataType)
-                {
-                    throw new ArgumentException("ObjectIndexType is Unknown. Unable to store index value.");
-                }
-            }
-            return true;
-        }
-
         private bool _ValidateIndexNames(ObjectIndexMetadata[] indexes, string[] checkNames)
         {
             bool returnValue = true;
@@ -262,10 +245,7 @@ namespace ZeroG.Data.Object.Index
 
         public void IndexObject(string objectFullName, int objectId, ObjectIndex[] indexes)
         {
-            if (_ValidateIndexes(indexes))
-            {
-                _indexer.UpsertIndexValues(objectFullName, objectId, indexes);
-            }
+            _indexer.UpsertIndexValues(objectFullName, objectId, indexes);
         }
 
         public void BulkIndexObject(string objectFullName, ObjectMetadata metadata, IEnumerable<object[]> indexes)
