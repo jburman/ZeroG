@@ -456,10 +456,12 @@ WHERE {1}{3}";
 
                 string selectNamesSql = string.Join(",", selectNames);
 
-                var reader = db.ExecuteReader(string.Format(SQLStatements.Iterate, tableName, selectNamesSql, whereSql, orderBySql, topSql), parameters);
-                while (reader.Read())
+                using (var reader = db.ExecuteReader(string.Format(SQLStatements.Iterate, tableName, selectNamesSql, whereSql, orderBySql, topSql), parameters))
                 {
-                    yield return reader;
+                    while (reader.Read())
+                    {
+                        yield return reader;
+                    }
                 }
             }
         }

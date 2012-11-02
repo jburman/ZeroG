@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Tests", "..\ZeroG.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.DataClient", "..\ZeroG.DataClient\ZeroG.DataClient.csproj", "{5258843A-203B-4B6F-9958-4CBB795D5496}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Database.SQLite", "..\ZeroG.Database.SQLite\ZeroG.Database.SQLite.csproj", "{04136797-1DCC-48C0-AE7A-FB9F1C791332}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{5258843A-203B-4B6F-9958-4CBB795D5496}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5258843A-203B-4B6F-9958-4CBB795D5496}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5258843A-203B-4B6F-9958-4CBB795D5496}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04136797-1DCC-48C0-AE7A-FB9F1C791332}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04136797-1DCC-48C0-AE7A-FB9F1C791332}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04136797-1DCC-48C0-AE7A-FB9F1C791332}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04136797-1DCC-48C0-AE7A-FB9F1C791332}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

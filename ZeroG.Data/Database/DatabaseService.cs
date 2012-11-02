@@ -173,7 +173,7 @@ namespace ZeroG.Data.Database
         public static readonly Regex StoreProcPattern = new Regex("^([\\[]?[a-zA-Z0-9]+[\\]]?\\.)?[\\[]?sp_",
             RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
 
-        protected IDbCommand _PrepareCommand(IDbTransaction trans, string commandText, IDataParameter[] parameters)
+        protected IDbCommand _PrepareCommand(IDbTransaction trans, string commandText, IEnumerable<IDataParameter> parameters)
         {
             _IsConnAvailable();
             IDbCommand cmd = _dbConn.CreateCommand();
@@ -223,7 +223,14 @@ namespace ZeroG.Data.Database
         {
             get
             {
-                return null == _dbConn || ConnectionState.Closed == _dbConn.State;
+                try
+                {
+                    return null == _dbConn || ConnectionState.Closed == _dbConn.State;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return true;
+                }
             }
         }
 
@@ -243,7 +250,7 @@ namespace ZeroG.Data.Database
         public abstract IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters);
         public abstract IDbDataAdapter CreateDataAdapter(string commandText, IDbTransaction trans, params IDataParameter[] parameters);
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             _Dispose(true);
             GC.SuppressFinalize(this);

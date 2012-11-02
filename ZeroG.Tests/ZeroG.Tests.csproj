@@ -51,6 +51,9 @@
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\References\SQLite35\System.Data.SQLite.dll</HintPath>
+    </Reference>
     <Reference Include="System.XML" />
   </ItemGroup>
   <Choose>
@@ -73,6 +76,7 @@
     <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
     <Compile Include="Lang\JSON\JSONTokenizerTest.cs" />
     <Compile Include="Object\LocalObjectServiceClientTest.cs" />
+    <Compile Include="Object\MultiThreadingTest.cs" />
     <Compile Include="Object\ObjectMetadataTest.cs" />
     <Compile Include="Object\ObjectServiceTest.cs" />
     <Compile Include="Object\ObjectTestHelper.cs" />
@@ -92,6 +96,10 @@
     <ProjectReference Include="..\ZeroG.Database.MySQL\ZeroG.Database.MySQL.csproj">
       <Project>{ff8b8052-6109-4ce7-8de1-92fb0f752349}</Project>
       <Name>ZeroG.Database.MySQL</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ZeroG.Database.SQLite\ZeroG.Database.SQLite.csproj">
+      <Project>{04136797-1dcc-48c0-ae7a-fb9f1c791332}</Project>
+      <Name>ZeroG.Database.SQLite</Name>
     </ProjectReference>
     <ProjectReference Include="..\ZeroG.Database.SQLServer\ZeroG.Database.SQLServer.csproj">
       <Project>{8f055e63-1417-4d8e-b7ed-b3b63d630784}</Project>

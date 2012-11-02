@@ -25,7 +25,7 @@ namespace ZeroG.Tests.Data.Drivers
     `Name` VARCHAR(36) NOT NULL,
     `DecValue` DECIMAL(9,4) NOT NULL,
     `DTValue` DATETIME NOT NULL,
-    `BinValue` BINARY(16) NOT NULL
+    `BinValue` VARBINARY(16) NOT NULL
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;");
                 }
                 else if (db is SQLServerDatabaseService)
@@ -36,12 +36,22 @@ namespace ZeroG.Tests.Data.Drivers
 	[Name] [nvarchar](36) NOT NULL,
 	[DecValue] [decimal](9, 4) NOT NULL,
 	[DTValue] [datetime] NOT NULL,
-	[BinValue] [binary](16) NOT NULL,
+	[BinValue] [varbinary](16) NOT NULL,
  CONSTRAINT [PK_ZG_BulkInsertTest] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]");
+                }
+                else if (db is SQLiteDatabaseService)
+                {
+                    db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS `ZG_BulkInsertTest` (
+    [ID] INT NOT NULL PRIMARY KEY,
+    [Name] VARCHAR(36) NOT NULL,
+    [DecValue] DECIMAL(9,4) NOT NULL,
+    [DTValue] DATETIME NOT NULL,
+    [BinValue] VARBINARY(16) NOT NULL
+)");
                 }
             }
         }
@@ -75,6 +85,10 @@ namespace ZeroG.Tests.Data.Drivers
                     {
                         db.ExecuteNonQuery("DROP TABLE [ZeroG].[ZG_BulkInsertTest]");
                     }
+                }
+                else if (db is SQLiteDatabaseService)
+                {
+                    db.ExecuteNonQuery("DROP TABLE IF EXISTS [ZG_BulkInsertTest]");
                 }
             }
         }
@@ -163,7 +177,7 @@ namespace ZeroG.Tests.Data.Drivers
                 Assert.AreEqual(1, db.ExecuteScalar<int>("SELECT COUNT(*) FROM " + tableName + " WHERE Name = @p",
                     0, db.MakeParam("p", "test\tval\n123")));
 
-                Assert.AreEqual(1, db.ExecuteScalar<int>("SELECT COUNT(*) FROM " + tableName + " WHERE LEFT(BinValue, 8) = @p",
+                Assert.AreEqual(1, db.ExecuteScalar<int>("SELECT COUNT(*) FROM " + tableName + " WHERE BinValue = @p",
                     0, db.MakeParam("p", Encoding.UTF8.GetBytes("aa\tbb\ncc"))));
             }
         }
@@ -188,13 +202,12 @@ namespace ZeroG.Tests.Data.Drivers
                     list.Add(new object[] { i, "test" + i, (decimal)(i + 0.1), DateTime.Now, new Guid().ToByteArray() });
                 }
 
-                db.ExecuteNonQuery("TRUNCATE TABLE " + tableName);
+                db.ExecuteNonQuery("DELETE FROM " + tableName);
 
                 db.ExecuteBulkInsert(
                     list,
                     tableName,
                     new string[] { "ID", "Name", "DecValue", "DTValue", "BinValue" });
-
                 Assert.AreEqual(count, db.ExecuteScalar<int>("SELECT COUNT(*) FROM " + tableName, 0));
             }
         }

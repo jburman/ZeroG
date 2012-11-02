@@ -322,7 +322,10 @@ namespace ZeroG.Data.Object
             {
                 throw new ArgumentNullException("nameSpaceConfig");
             }
-            _objectMetadata.CreateNameSpace(nameSpaceConfig);
+            lock (_objectMetadata)
+            {
+                _objectMetadata.CreateNameSpace(nameSpaceConfig);
+            }
         }
 
         public ObjectNameSpaceConfig GetNameSpace(string nameSpace)
@@ -376,10 +379,17 @@ namespace ZeroG.Data.Object
                     {
                         // This call validates the format of the metadata and will throw and exception
                         // if it is invalid.
-                        _objectMetadata.StoreMetadata(metadata);
+                        lock(_objectMetadata) 
+                        {
+                            _objectMetadata.StoreMetadata(metadata);
+                        }
+                        
                         if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
                         {
-                            _objectIndexer.ProvisionIndex(metadata);
+                            lock (_objectIndexer)
+                            {
+                                _objectIndexer.ProvisionIndex(metadata);
+                            }
                         }
 
                         trans.Complete();

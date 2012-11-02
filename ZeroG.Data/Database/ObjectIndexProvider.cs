@@ -38,8 +38,6 @@ namespace ZeroG.Data.Database
         public static readonly string DefaultSchemaConnection = "ObjectIndexSchema";
         public static readonly string DefaultDataAccessConnection = "ObjectIndexData";
 
-        private IDatabaseService _dbSchema, _dbData;
-
         #region Config settings
         // TODO: make config settings configurable from app.config
 
@@ -136,22 +134,16 @@ namespace ZeroG.Data.Database
 
         protected virtual IDatabaseService OpenSchema()
         {
-            if (null == _dbSchema || _dbSchema.IsClosed)
-            {
-                _dbSchema = DatabaseService.GetService(_databaseServiceSchema);
-                _dbSchema.Open();
-            }
-            return _dbSchema;
+            var db = DatabaseService.GetService(_databaseServiceSchema);
+            db.Open();
+            return db;
         }
 
         protected virtual IDatabaseService OpenData()
         {
-            if (null == _dbData || _dbData.IsClosed)
-            {
-                _dbData = DatabaseService.GetService(_databaseServiceData);
-                _dbData.Open();
-            }
-            return _dbData;
+            var db = DatabaseService.GetService(_databaseServiceData);
+            db.Open();
+            return db;
         }
 
         protected virtual SQLConstraint CreateSQLConstraint(IDatabaseService db, ObjectIndexMetadata[] indexes, string constraint)
@@ -191,14 +183,7 @@ namespace ZeroG.Data.Database
         public abstract void Truncate(string objectFullName);
         public virtual void Close()
         {
-            if (null != _dbSchema)
-            {
-                _dbSchema.Dispose();
-            }
-            if (null != _dbData)
-            {
-                _dbData.Dispose();
-            }
+            
         }
         public virtual void Dispose()
         {

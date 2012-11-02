@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2010 Jeremy Burman
+// Copyright (c) 2012 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -25,81 +25,37 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SQLite;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Configuration;
-using System.Collections.Specialized;
-using System.Data;
-using System.Data.SqlClient;
-using System.Data.Common;
-using System.Text.RegularExpressions;
-using System.IO;
+using System.Transactions;
+using ZeroG.Data.Database;
+using ZeroG.Data.Database.Drivers;
 
 namespace ZeroG.Data.Database.Drivers
 {
-    public sealed class SQLServerDatabaseService : DatabaseService
+    public class SQLiteDatabaseService : DatabaseService
     {
         #region Constants
-        public const string ParameterQualifier = "@";
-        public const uint DefaultSQLBatchSize = 100;
-        public const string AttributeClientBulkInsertPath = "ClientBulkInsertPath";
-        public const string AttributeServerBulkInsertPath = "ServerBulkInsertPath";
-        public const string AttributeSQLBatchSize = "SQLBatchSize";
+        public static readonly string ParameterQualifier = "@";
         #endregion
 
         #region Constructors/Destructors
-        public SQLServerDatabaseService()
-            : this(null) 
+
+        public SQLiteDatabaseService()
+            : base() 
         {
         }
 
-        internal SQLServerDatabaseService(string connStr)
+        internal SQLiteDatabaseService(string connStr)
             : base(connStr)
         {
-            _sqlBatchSize = DefaultSQLBatchSize;
         }
+
         #endregion
-
-        #region Private
-        private string _clientBulkInsertPath, _serverBulkInsertPath;
-        private uint _sqlBatchSize;
-
-        private static readonly byte[] NullFieldValue = Encoding.UTF8.GetBytes("");
-        private static readonly byte[] FieldDelim = Encoding.UTF8.GetBytes("\t");
-        private static readonly byte[] RowDelim = Encoding.UTF8.GetBytes("\r\n");
-
-        private static void _CreateFileRow(Stream output, object[] row, HashSet<string> cleanupCols, string[] columns)
-        {
-            if (null != row)
-            {
-                for (int j = 0; row.Length > j; j++)
-                {
-                    var val = row[j];
-                    byte[] fieldVal = NullFieldValue;
-                    if (null != val)
-                    {
-                        // strings need to have escaped characters restored once the bulk insert is complete
-                        if (val is string)
-                        {
-                            if (!cleanupCols.Contains(columns[j]))
-                            {
-                                cleanupCols.Add(columns[j]);
-                            }
-                        }
-
-                        fieldVal = FileFieldConverter.ToFileFieldString(val);
-                    }
-
-                    output.Write(fieldVal, 0, fieldVal.Length);
-                    if (j != row.Length - 1)
-                    {
-                        output.Write(FieldDelim, 0, FieldDelim.Length);
-                    }
-                }
-            }
-        }
-        #endregion
-
+        
         #region Public
 
         #region Properties
@@ -112,7 +68,7 @@ namespace ZeroG.Data.Database.Drivers
             return _dbConn.BeginTransaction();
         }
 
-        public override IDbTransaction BeginTransaction(IsolationLevel isolation)
+        public override IDbTransaction BeginTransaction(System.Data.IsolationLevel isolation)
         {
             _IsConnAvailable();
             return _dbConn.BeginTransaction(isolation);
@@ -121,30 +77,6 @@ namespace ZeroG.Data.Database.Drivers
         public override void Configure(DatabaseServiceConfiguration config)
         {
             _connString = config.ConnectionString;
-            if (null != config.Properties)
-            {
-                foreach (var prop in config.Properties)
-                {
-                    if (prop.Name == AttributeClientBulkInsertPath)
-                    {
-                        _clientBulkInsertPath = prop.Value;
-                    }
-                    else if (prop.Name == AttributeServerBulkInsertPath)
-                    {
-                        _serverBulkInsertPath = prop.Value;
-                    }
-                    else if (prop.Name == AttributeSQLBatchSize)
-                    {
-                        uint tryVal = 0;
-                        uint.TryParse(prop.Value, out tryVal);
-                        if (0 == tryVal)
-                        {
-                            tryVal = DefaultSQLBatchSize;
-                        }
-                        _sqlBatchSize = tryVal;
-                    }
-                }
-            }
         }
 
         public override IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters)
@@ -154,8 +86,8 @@ namespace ZeroG.Data.Database.Drivers
 
         public override IDbDataAdapter CreateDataAdapter(string commandText, IDbTransaction trans, params IDataParameter[] parameters)
         {
-            SqlCommand cmd = (SqlCommand)_PrepareCommand(trans, commandText, parameters);
-            return new SqlDataAdapter(cmd);
+            SQLiteCommand cmd = (SQLiteCommand)_PrepareCommand(trans, commandText, parameters);
+            return new SQLiteDataAdapter(cmd);
         }
 
         public override string EscapeCommandText(string commandText)
@@ -194,155 +126,56 @@ namespace ZeroG.Data.Database.Drivers
 
         public override void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
         {
-            _IsConnAvailable();
-
-            SqlBulkCopy bulkCopy = null;
-            if (null != transaction)
-            {
-                bulkCopy = new SqlBulkCopy((SqlConnection)_dbConn, SqlBulkCopyOptions.Default, (SqlTransaction)transaction);
-            }
-            else
-            {
-                bulkCopy = new SqlBulkCopy((SqlConnection)_dbConn);
-            }
-
-            if (null != columnMap)
-            {
-                Dictionary<string, string>.KeyCollection keys = columnMap.Keys;
-
-                foreach (string key in keys)
-                {
-                    bulkCopy.ColumnMappings.Add(key, columnMap[key]);
-                }
-            }
-
-            bulkCopy.DestinationTableName = copyToTable;
-
-            bulkCopy.WriteToServer(copyData);
-        }
-
-        private void _BulkInsertFallback(IEnumerable<object[]> insertData, string insertToTable, string[] columns)
-        {
-            var sqlBatch = new StringBuilder();
-            var paramList = new List<IDataParameter>();
-            
-            int colCount = columns.Length;
-            int count = 0;
-
-            var insertValueNames = new string[colCount];
-
-            string insertTemplate = "INSERT INTO " + insertToTable + " (" + 
-                string.Join(",", columns) +
-                ") VALUES ({0});";
-
-            foreach (var dataRow in insertData)
-            {
-                // create each parameter
-                for (int i = 0; colCount > i; i++)
-                {
-                    if (null == dataRow[i])
-                    {
-                        insertValueNames[i] = "NULL";
-                    }
-                    else
-                    {
-                        var paramName = "p" + count + "_" + i;
-                        insertValueNames[i] = "@" + paramName;
-                        paramList.Add(MakeParam(paramName, dataRow[i]));
-                    }
-                }
-
-                sqlBatch.Append(
-                    string.Format(insertTemplate, string.Join(",", insertValueNames)));
-
-                if (0 < count && (0 == (count % _sqlBatchSize)))
-                {
-                    using(var cmd = _PrepareCommand(
-                        null,
-                        sqlBatch.ToString(),
-                        paramList.ToArray()))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    paramList.Clear();
-                    sqlBatch.Length = 0;
-                    count = 0;
-                }
-
-                ++count;
-            }
-
-            if (0 < paramList.Count)
-            {
-                using (var cmd = _PrepareCommand(
-                        null,
-                        sqlBatch.ToString(),
-                        paramList.ToArray()))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-            }
+            throw new NotSupportedException("Bulk Copy is not supported by the SQLite Database Server.");
         }
 
         public override void ExecuteBulkInsert(IEnumerable<object[]> insertData, string insertToTable, string[] columns)
         {
-            // if bulk insert is not configured to allow file transfer between  the client and the server 
-            // then use a slower fallback method
-            if (string.IsNullOrEmpty(_clientBulkInsertPath) || string.IsNullOrEmpty(_serverBulkInsertPath))
+            var trans = BeginTransaction();
+
+            try
             {
-                _BulkInsertFallback(insertData, insertToTable, columns);
+                var parameters = new List<IDataParameter>();
+                var firstRow = insertData.FirstOrDefault();
+                var sql = "INSERT OR REPLACE INTO " + MakeQuotedName(insertToTable) + " (" + string.Join(",", columns.Select(c => MakeQuotedName(c)).ToArray()) + ") VALUES({0})";
+                if (null != firstRow)
+                {
+                    string paramStr = "";
+                    var len = columns.Length;
+                    for (int i = 0; len > i; i++)
+                    {
+                        parameters.Add(MakeParam("p" + i, firstRow[i]));
+                        paramStr = paramStr + MakeParamReference("p" + i);
+                        if (i != len - 1)
+                        {
+                            paramStr = paramStr + ",";
+                        }
+                    }
+                    sql = string.Format(sql, paramStr);
+
+                    using (IDbCommand cmd = _PrepareCommand(trans, sql, parameters))
+                    {
+                        cmd.Prepare();
+
+                        foreach (var row in insertData)
+                        {
+                            for (int i = 0; len > i; i++)
+                            {
+                                parameters[i].Value = row[i];
+                            }
+
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                trans.Commit();
             }
-            else
+            catch
             {
-                var fileName = Guid.NewGuid().ToString("N") + ".txt";
-                var filePath = Path.Combine(_clientBulkInsertPath, fileName);
-                var serverFilePath = Path.Combine(_serverBulkInsertPath, fileName);
-                var cleanupCols = new HashSet<string>();
+                trans.Rollback();
 
-                try
-                {
-                    using (var fstream = File.OpenWrite(filePath))
-                    {
-                        foreach (var dataRow in insertData)
-                        {
-                            _CreateFileRow(fstream, dataRow, cleanupCols, columns);
-                            fstream.Write(RowDelim, 0, RowDelim.Length);
-                        }
-                        fstream.Flush();
-                    }
-                    using (var cmd = _PrepareCommand(null,
-                        string.Format(@"BULK INSERT {0} FROM '{1}'
-WITH (
-FIELDTERMINATOR = '\t',
-DATAFILETYPE='widechar')",
-                        insertToTable,
-                        filePath),
-                        null))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    // new lines and tabs get collapsed during import so they need to replaced with their original values.
-                    if (0 < cleanupCols.Count)
-                    {
-                        var updateSql = string.Format(@"UPDATE {0} SET {1}",
-                            insertToTable,
-                            string.Join(",", cleanupCols.Select(c => string.Format(@"{0} = REPLACE(REPLACE(REPLACE({0}, '\t', CHAR(9)), '\n', CHAR(10)), '\\', '\')", c))
-                                .ToArray()));
-
-                        using (var cmdUpdate = _PrepareCommand(null,
-                            updateSql,
-                            null))
-                        {
-                            cmdUpdate.ExecuteNonQuery();
-                        }
-                    }
-                }
-                finally
-                {
-                    File.Delete(filePath);
-                }
+                throw;
             }
         }
 
@@ -358,7 +191,6 @@ DATAFILETYPE='widechar')",
                 try
                 {
                     return cmd.ExecuteNonQuery();
-
                 }
                 finally
                 {
@@ -384,7 +216,7 @@ DATAFILETYPE='widechar')",
                 }
                 else
                 {
-                    return (T)val;
+                    return (T)Convert.ChangeType(val, typeof(T));
                 }
             }
         }
@@ -416,7 +248,7 @@ DATAFILETYPE='widechar')",
         public override DataTable GetDataTable(string commandText, IDbTransaction trans, params IDataParameter[] parameters)
         {
             DataTable dt = new DataTable();
-            using (SqlDataAdapter sqlAdapter = (SqlDataAdapter)CreateDataAdapter(commandText, trans, parameters))
+            using (SQLiteDataAdapter sqlAdapter = (SQLiteDataAdapter)CreateDataAdapter(commandText, trans, parameters))
             {
                 sqlAdapter.Fill(dt);
             }
@@ -425,7 +257,7 @@ DATAFILETYPE='widechar')",
 
         public override string GetDriverName()
         {
-            return "SQLServer";
+            return "SQLite";
         }
 
         public override KeyValuePair<TKey, TValue>[] GetKeyValuePairs<TKey, TValue>(string commandText, params IDataParameter[] parameters)
@@ -465,7 +297,6 @@ DATAFILETYPE='widechar')",
         {
             using (IDataReader rdr = ExecuteReader(trans, commandText, parameters))
             {
-
                 List<T> vals = new List<T>();
                 while (rdr.Read())
                 {
@@ -478,7 +309,7 @@ DATAFILETYPE='widechar')",
 
         public override IDbDataParameter MakeParam(string name, object value)
         {
-            return new SqlParameter(name, (value == null) ? DBNull.Value : value);
+            return new SQLiteParameter(name, value);
         }
 
         public override string MakeParamReference(string paramName)
@@ -496,7 +327,7 @@ DATAFILETYPE='widechar')",
                     value = EscapeValueForLike(val);
                 }
             }
-            return new SqlParameter(name, value);
+            return new SQLiteParameter(name, value);
         }
 
         public override string MakeLikeParamReference(string paramName)
@@ -506,14 +337,14 @@ DATAFILETYPE='widechar')",
 
         public override IDbDataParameter MakeReturnValueParam()
         {
-            SqlParameter parameter = new SqlParameter("RETURN_VALUE", null);
+            SQLiteParameter parameter = new SQLiteParameter(ParameterQualifier + "RETURN_VALUE", null);
             parameter.Direction = ParameterDirection.ReturnValue;
             return parameter;
         }
 
         public override IDbDataParameter MakeOutputParam(string paramName, DbType type)
         {
-            SqlParameter parameter = new SqlParameter(paramName, null);
+            SQLiteParameter parameter = new SQLiteParameter(ParameterQualifier + paramName, null);
             parameter.Direction = ParameterDirection.Output;
             parameter.DbType = type;
             return parameter;
@@ -521,7 +352,7 @@ DATAFILETYPE='widechar')",
 
         public override string MakeQuotedName(string name)
         {
-            if(name.Length > 0 && !(name[0] == '[' && name[name.Length-1] == ']'))
+            if (name.Length > 0 && !(name[0] == '[' && name[name.Length - 1] == ']'))
             {
                 return "[" + EscapeCommandText(name) + "]";
             }
@@ -529,6 +360,67 @@ DATAFILETYPE='widechar')",
             {
                 return EscapeCommandText(name);
             }
+        }
+
+        private static Dictionary<string, IDbConnection> _transDBs = new Dictionary<string, IDbConnection>();
+
+        private IDbConnection _GetTransactionDB(string connStr)
+        {
+            IDbConnection returnValue = null;
+
+            var trans = Transaction.Current;
+            if (null != trans && (TransactionStatus.Active == trans.TransactionInformation.Status))
+            {
+                var id = trans.TransactionInformation.LocalIdentifier;
+                id = connStr + ":" + id;
+
+                lock (_transDBs)
+                {
+                    if (_transDBs.ContainsKey(id))
+                    {
+                        returnValue = _transDBs[id];
+                    }
+                }
+            }
+
+            return returnValue;
+        }
+
+        private void _StoreTransactionDB(IDbConnection conn, string connStr)
+        {
+            var trans = Transaction.Current;
+            if (null != trans && (TransactionStatus.Active == trans.TransactionInformation.Status))
+            {
+                var id = trans.TransactionInformation.LocalIdentifier;
+                id = connStr + ":" + id;
+                lock (_transDBs)
+                {
+                    _transDBs[id] = conn;
+                }
+
+                trans.TransactionCompleted += (object sender, TransactionEventArgs e) => 
+                {
+                    base.Dispose();
+                };
+            }
+        }
+
+        private bool _IsInTransaction(string connStr)
+        {
+            var returnValue = false;
+
+            var trans = Transaction.Current;
+            if (null != trans && (TransactionStatus.Active == trans.TransactionInformation.Status))
+            {
+                var id = trans.TransactionInformation.LocalIdentifier;
+                id = connStr + ":" + id;
+                lock (_transDBs)
+                {
+                    returnValue = _transDBs.ContainsKey(id);
+                }
+            }
+
+            return returnValue;
         }
 
         public override void Open()
@@ -539,24 +431,37 @@ DATAFILETYPE='widechar')",
             {
                 throw new InvalidOperationException("A connection is already open.");
             }
-            _dbConn = new SqlConnection(_connString);
-            _dbConn.Open();
+
+            _dbConn = _GetTransactionDB(_connString);
+            if (null == _dbConn)
+            {
+                _dbConn = new SQLiteConnection(_connString);
+                _dbConn.Open();
+                _StoreTransactionDB(_dbConn, _connString);
+            }
         }
+
+        public override void Dispose()
+        {
+            if (!_IsInTransaction(_connString))
+            {
+                base.Dispose();
+            }
+        }
+
         #region Async methods
         public override DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters)
         {
-            SqlCommand cmd = (SqlCommand)_PrepareCommand(null, commandText, parameters);
-            return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
+            throw new NotImplementedException();
         }
         public override DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters)
         {
-            SqlCommand cmd = (SqlCommand)_PrepareCommand(null, commandText, parameters);
-            return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
+            throw new NotImplementedException();
+            
         }
         public override IDataReader EndExecuteReader(DatabaseAsyncResult result)
         {
-            var cmd = (SqlCommand)result.Command;
-            return cmd.EndExecuteReader(result.Result);
+            throw new NotImplementedException();
         }
         #endregion
         #endregion // end Methods
@@ -564,4 +469,3 @@ DATAFILETYPE='widechar')",
         #endregion // end Public
     }
 }
-

@@ -29,6 +29,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
+using System.Transactions;
 using ZeroG.Data.Database;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Index;
@@ -49,45 +50,45 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 
         public static readonly string OrderDesc = " ORDER BY {0} DESC";
 
-        public static readonly string TableExists = @"SHOW TABLES LIKE '{0}'";
+        public static readonly string TableExists = @"SELECT COUNT(name) FROM sqlite_master WHERE type='table' AND name='{0}'";
 
-        public static readonly string RowsExist = @"SELECT 1 FROM `{0}` WHERE {1}";
+        public static readonly string RowsExist = @"SELECT 1 FROM [{0}] WHERE {1}";
 
-        public static readonly string RowsCount = @"SELECT COUNT(1) FROM `{0}` WHERE {1}";
+        public static readonly string RowsCount = @"SELECT COUNT(1) FROM [{0}] WHERE {1}";
 
-        public static readonly string RowsCountDistinctObjects = @"SELECT COUNT(DISTINCT {0}) FROM `{1}`";
+        public static readonly string RowsCountDistinctObjects = @"SELECT COUNT(DISTINCT {0}) FROM [{1}]";
 
-        public static readonly string CreateTableIfNotExists = @"CREATE TABLE IF NOT EXISTS `{0}`(
+        public static readonly string CreateTableIfNotExists = @"CREATE TABLE IF NOT EXISTS [{0}](
 	    {1}
-	) ENGINE = InnoDB CHARACTER SET utf8 COLLATE utf8_general_ci";
+	)";
 
-        public static readonly string CreateIndex = @"CREATE INDEX `IDX_{0}` ON `{0}` ({1})";
+        public static readonly string CreateIndex = @"CREATE INDEX [IDX_{0}] ON [{0}] ({1})";
 
-        public static readonly string DropTableIfExists = @"DROP TABLE IF EXISTS `{0}`";
+        public static readonly string DropTableIfExists = @"DROP TABLE IF EXISTS [{0}]";
 
-        public static readonly string Find = @"SELECT `ID` FROM `{0}`
+        public static readonly string Find = @"SELECT [ID] FROM [{0}]
 WHERE {1}{2}{3}";
 
-        public static readonly string Iterate = @"SELECT {1} FROM `{0}`{2}{3}{4}";
+        public static readonly string Iterate = @"SELECT {1} FROM [{0}]{2}{3}{4}";
 
-        public static string RemoveIndex = @"DELETE FROM `{0}` WHERE `{1}` IN ({2})";
+        public static string RemoveIndex = @"DELETE FROM [{0}] WHERE [{1}] IN ({2})";
 
-        public static readonly string TruncateTable = "TRUNCATE TABLE `{0}`";
+        public static readonly string TruncateTable = "DELETE FROM [{0}]";
     }
 
-    public class MySQLObjectIndexProvider : ObjectIndexProvider
+    public class SQLiteObjectIndexProvider : ObjectIndexProvider
     {
-        public MySQLObjectIndexProvider()
+        public SQLiteObjectIndexProvider()
             : base()
         {
         }
 
-        public MySQLObjectIndexProvider(Config config)
+        public SQLiteObjectIndexProvider(Config config)
             : base(config)
         {
         }
 
-        public MySQLObjectIndexProvider(string databaseServiceSchema, string databaseServiceData)
+        public SQLiteObjectIndexProvider(string databaseServiceSchema, string databaseServiceData)
             : base (databaseServiceSchema, databaseServiceData)
         {    
         }
@@ -102,10 +103,10 @@ WHERE {1}{2}{3}";
             string name = db.EscapeCommandText(indexMetadata.Name);
             string type = "VARCHAR";
             string length = "(30)";
-            string nullable = " NOT NULL";
+            string nullable = "NOT NULL";
             if (indexMetadata.Nullable)
             {
-                nullable = " NULL";
+                nullable = "NULL";
             }
 
             switch (indexMetadata.DataType)
@@ -115,7 +116,7 @@ WHERE {1}{2}{3}";
                     length = "";
                     break;
                 case ObjectIndexType.Binary:
-                    type = "VARBINARY";
+                    type = "BINARY";
                     length = "(" + indexMetadata.Precision + ")";
                     break;
                 case ObjectIndexType.DateTime:
@@ -131,7 +132,7 @@ WHERE {1}{2}{3}";
                     break;
             }
 
-            return string.Format("`{0}` {1}{2} {3}", name, type, length, nullable);
+            return string.Format("[{0}] {1}{2} {3}", name, type, length, nullable);
         }
 
         private static string _CreateOrderBySQL(IDatabaseService db, OrderOptions order)
@@ -161,13 +162,7 @@ WHERE {1}{2}{3}";
             {
                 var tableName = _CreateTableName(db, objectFullName);
 
-                using (var reader = db.ExecuteReader(string.Format(SQLStatements.TableExists, tableName)))
-                {
-                    if (reader.Read())
-                    {
-                        returnValue = true;
-                    }
-                }
+                returnValue = 0 != db.ExecuteScalar<int>(string.Format(SQLStatements.TableExists, tableName), 0);
             }
 
             return returnValue;
@@ -211,7 +206,7 @@ WHERE {1}{2}{3}";
 
             bool useOr = ObjectFindLogic.Or == logic;
             bool useLike = ObjectFindOperator.Like == oper;
-            bool isNull = ObjectFindOperator.IsNull == oper;
+            bool useIsNull = ObjectFindOperator.IsNull == oper;
 
             var limitSql = (0 == limit) ? SQLStatements.NoLimit : string.Format(SQLStatements.Limit, limit);
 
@@ -240,15 +235,15 @@ WHERE {1}{2}{3}";
                     var value = idx.GetObjectValue();
                     sqlConstraint.Append(db.MakeQuotedName(idx.Name));
 
-                    if (useLike)
+                    if (useIsNull)
+                    {
+                        sqlConstraint.Append(" IS NULL");
+                    }
+                    else if (useLike)
                     {
                         sqlConstraint.Append(' ');
                         sqlConstraint.Append(db.MakeLikeParamReference(paramName));
                         parameters.Add(ObjectIndexProvider.MakeLikeParameter(db, paramName, value));
-                    }
-                    else if (isNull)
-                    {
-                        sqlConstraint.Append(" IS NULL");
                     }
                     else
                     {
@@ -400,7 +395,7 @@ WHERE {1}{2}{3}";
                 
                 var sql = new StringBuilder();
 
-                sql.Append(@"INSERT INTO ");
+                sql.Append(@"INSERT OR REPLACE INTO ");
                 sql.Append(db.MakeQuotedName(tableName));
                 sql.Append(@" (");
                 sql.Append(db.MakeQuotedName(IDColumn));
@@ -430,10 +425,8 @@ WHERE {1}{2}{3}";
                     }
                 }
                 
-                sql.Append(@")
-    ON DUPLICATE KEY UPDATE
-");
-                
+                sql.Append(@")");
+                /*
                 if(0 < paramCount) 
                 {
                     for(int i = 0; paramCount > i; i++)
@@ -445,7 +438,7 @@ WHERE {1}{2}{3}";
                         sql.Append(',');
                     }
                     sql.Remove(sql.Length - 1,1);
-                }
+                }*/
                 
                 parameters.Add(db.MakeParam("recordId", objectId));
 
@@ -523,12 +516,16 @@ WHERE {1}{2}{3}";
 
         public override void Truncate(string objectFullName)
         {
-            using (var db = OpenSchema())
-            {
-                var tableName = _CreateTableName(db, objectFullName);
-                var sql = string.Format(SQLStatements.TruncateTable, tableName);
-                db.ExecuteNonQuery(sql);
-            }
+            //using (var trans = new TransactionScope())
+            //{
+                using (var db = OpenData())
+                {
+                    var tableName = _CreateTableName(db, objectFullName);
+                    var sql = string.Format(SQLStatements.TruncateTable, tableName);
+                    db.ExecuteNonQuery(sql);
+                }
+                //trans.Complete();
+            //}
         }
 
         public override void Dispose()

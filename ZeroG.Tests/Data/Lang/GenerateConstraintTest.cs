@@ -36,7 +36,7 @@ namespace ZeroG.Tests.Data.Lang
     `DecimalCol` DECIMAL(7,4) NOT NULL,
     `IntCol` INT NOT NULL,
     `DateCol` DATETIME NOT NULL,
-    `BinaryCol` BINARY(36) NOT NULL
+    `BinaryCol` VARBINARY(36) NOT NULL
     )
 ENGINE = InnoDB DEFAULT CHARSET=utf8;";
 
@@ -51,12 +51,25 @@ VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
 	[DecimalCol] [decimal](7, 4) NOT NULL,
     [IntCol] [int] NOT NULL,
 	[DateCol] [datetime] NOT NULL,
-	[BinaryCol] [binary](16) NOT NULL
+	[BinaryCol] [varbinary](16) NOT NULL
 ) ON [PRIMARY]";
 
                     insertSql = @"INSERT INTO [ZeroG].[ZeroGConstraintTest] ([TextCol], [DecimalCol],[IntCol],[DateCol],[BinaryCol])
 VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
 
+                }
+                else if (db is SQLiteDatabaseService)
+                {
+                    createTableSQL = @"CREATE TABLE IF NOT EXISTS `ZeroGConstraintTest` (
+    [TextCol] VARCHAR(36) NULL,
+    [DecimalCol] DECIMAL(7,4) NOT NULL,
+    [IntCol] INT NOT NULL,
+    [DateCol] DATETIME NOT NULL,
+    [BinaryCol] VARBINARY(36) NOT NULL
+    )";
+
+                    insertSql = @"INSERT INTO [ZeroGConstraintTest] ([TextCol], [DecimalCol],[IntCol],[DateCol],[BinaryCol])
+VALUES (@textCol,@decCol,@intCol,@dateCol,@binCol)";
                 }
 
                 db.ExecuteNonQuery(createTableSQL);
