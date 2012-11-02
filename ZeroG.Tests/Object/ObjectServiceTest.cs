@@ -1038,7 +1038,8 @@ namespace ZeroG.Tests.Object
 
                 svc.BulkStore(ns, objList);
 
-                Assert.AreEqual(objCount / 2, svc.Count(ns, obj, @"{""ID"":" + objCount / 2 + @", ""Op"": "">""}"));
+                var vals = svc.Find(ns, obj, @"{""IntIndex1"":10000, ""Op"": "">"", ""And"" : {""IntIndex1"":10101, ""Op"": ""<""}}");
+                Assert.AreEqual(100, vals.Count());
             }
         }
     }
