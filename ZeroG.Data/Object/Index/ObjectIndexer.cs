@@ -143,6 +143,16 @@ namespace ZeroG.Data.Object.Index
             return _indexer.ObjectExists(objectFullName);
         }
 
+        public int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
+        {
+            return _indexer.Count(objectFullName, constraint, indexes);
+        }
+
+        public int CountObjects(string objectFullName)
+        {
+            return _indexer.CountObjects(objectFullName);
+        }
+
         internal int[] Find(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes)
         {
             int[] returnValue = null;

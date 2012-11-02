@@ -993,5 +993,53 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(val3, new Guid(findVals[1]));
             }
         }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void BulkStoreMany()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[] 
+                        {
+                            new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                        }));
+
+                var objCount = 50000;
+
+                var objList = new List<PersistentObject>();
+                var random = new Random();
+                var buf = new byte[100];
+
+                for (int i = 0; objCount > i; i++)
+                {
+                    random.NextBytes(buf);
+
+                    objList.Add(new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = buf,
+                        Indexes = new ObjectIndex[] 
+                        { 
+                            ObjectIndex.Create("IntIndex1", i + 100),
+                            ObjectIndex.Create("StrIndex1", "idx_" + i)
+                        }
+                    });
+                }
+
+                svc.BulkStore(ns, objList);
+
+                Assert.AreEqual(objCount / 2, svc.Count(ns, obj, @"{""ID"":" + objCount / 2 + @", ""Op"": "">""}"));
+            }
+        }
     }
 }
