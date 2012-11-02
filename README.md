@@ -51,6 +51,10 @@ Object Versioning and caching scheme built in.
 
 An implementation of the DatabaseService for MySQL.
 
+### ZeroG.Database.SQLite
+
+An implementation of the DatabaseService for SQLite.
+
 ### ZeroG.Database.SQLServer
 
 An implementation of the DatabaseService for Microsoft SQL Server.
