@@ -1006,6 +1006,7 @@ namespace ZeroG.Tests.Object
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
                     "ZeroG Test", "Unit Test", DateTime.Now));
 
+                // stores the object's metadata and builds the database tables
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
                         new ObjectIndexMetadata[] 
@@ -1020,6 +1021,7 @@ namespace ZeroG.Tests.Object
                 var random = new Random();
                 var buf = new byte[100];
 
+                // generate a list of objects to store
                 for (int i = 0; objCount > i; i++)
                 {
                     random.NextBytes(buf);
@@ -1036,8 +1038,10 @@ namespace ZeroG.Tests.Object
                     });
                 }
 
+                // store and index the objects
                 svc.BulkStore(ns, objList);
 
+                // query 100 objects from the index
                 var vals = svc.Find(ns, obj, @"{""IntIndex1"":10000, ""Op"": "">"", ""And"" : {""IntIndex1"":10101, ""Op"": ""<""}}");
                 Assert.AreEqual(100, vals.Count());
             }
