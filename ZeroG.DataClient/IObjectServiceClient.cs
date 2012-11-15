@@ -35,6 +35,9 @@ namespace ZeroG.Data.Object
         ObjectID Store(byte[] secondaryKey, byte[] value);
         ObjectID Store(byte[] value, ObjectIndex[] indexes);
         ObjectID Store(byte[] secondaryKey, byte[] value, ObjectIndex[] indexes);
+        ObjectID Store(int id, byte[] secondaryKey, byte[] value, ObjectIndex[] indexes);
+
+        int NextID();
 
         byte[] Get(int objectId);
         byte[] GetBySecondaryKey(byte[] secondaryKey);

@@ -222,7 +222,14 @@ namespace ZeroG.Data.Database.Lang
 
             if (null == constraint.Value && null == constraint.ArrayValues)
             {
-                sql.Append(" IS NULL");
+                if (ConstraintOperator.NotEquals == constraint.Operator)
+                {
+                    sql.Append(" IS NOT NULL");
+                }
+                else
+                {
+                    sql.Append(" IS NULL");
+                }
             }
             else
             {

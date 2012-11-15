@@ -759,6 +759,7 @@ namespace ZeroG.Data.Object
                     _objectIndexer.RemoveObjectIndex(objectFullName, id);
                 }
                 _objectStore.Remove(objectFullName, id);
+                _objectVersions.Update(objectFullName);
 
                 trans.Complete();
             }

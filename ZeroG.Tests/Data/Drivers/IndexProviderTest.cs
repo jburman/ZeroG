@@ -1153,5 +1153,42 @@ namespace ZeroG.Tests.Data.Drivers
             Assert.AreEqual(0, provider.Count(ObjectFullName1, @"{""TextCol"" : ""asdf""}", metadata.Indexes));
             Assert.AreEqual(1, provider.Count(ObjectFullName1, @"{""TextCol"" : ""asdfupdated""}", metadata.Indexes));
         }
+
+        [TestMethod]
+        public void TopByFind()
+        {
+            var provider = IndexProvider;
+            var indexMetadata = new ObjectIndexMetadata[]
+            {
+                new ObjectIndexMetadata("TestCol1", ObjectIndexType.Integer),
+                new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15, true)
+            };
+
+            provider.ProvisionIndex(
+                new ObjectMetadata(NameSpace1, ObjectName1,
+                    indexMetadata));
+
+            provider.UpsertIndexValues(ObjectFullName1, 1,
+                ObjectIndex.Create("TestCol1", 100),
+                ObjectIndex.Create("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 2,
+                ObjectIndex.Create("TestCol1", 105),
+                ObjectIndex.Create("TestCol2", null));
+
+            var result = provider.Find(ObjectFullName1, new ObjectFindOptions()
+            {
+                Limit = 1,
+                Order = new OrderOptions()
+                {
+                    Descending = true,
+                    Indexes = new string[] { "TestCol1" }
+                }
+            });
+
+            Assert.AreEqual(1, result.Length);
+
+            Assert.AreEqual(2, result[0]);
+        }
     }
 }

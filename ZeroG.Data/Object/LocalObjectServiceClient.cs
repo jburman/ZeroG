@@ -115,6 +115,24 @@ namespace ZeroG.Data.Object
                 });
         }
 
+        public ObjectID Store(int objectId, byte[] secondaryKey, byte[] value, ObjectIndex[] indexes)
+        {
+            return _service.Store(_nameSpace,
+                new PersistentObject()
+                {
+                    Name = _objectName,
+                    ID = objectId,
+                    SecondaryKey = secondaryKey,
+                    Value = value,
+                    Indexes = indexes
+                });
+        }
+
+        public int NextID()
+        {
+            return _service.GetNextObjectID(_nameSpace, _objectName);
+        }
+
         #endregion
 
         #region Public Get methods

@@ -125,7 +125,7 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [TestCategory("Core")]
-        public void StoreAndRemove()
+        public void StoreAndRemoveNoIndexes()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
             {
@@ -158,6 +158,8 @@ namespace ZeroG.Tests.Object
                     SecondaryKey = secKey2
                 });
 
+                Assert.AreEqual(2, svc.Count(ns, obj));
+
                 // retrieve by object ID
                 var retval1 = svc.Get(ns, obj, objID1.ID);
                 var retval2 = svc.Get(ns, obj, objID2.ID);
@@ -180,6 +182,102 @@ namespace ZeroG.Tests.Object
 
                 // remove a value and make sure it can't be retrieved
                 svc.Remove(ns, obj, objID1.ID);
+
+                Assert.AreEqual(1, svc.Count(ns, obj));
+
+                // retrieve by object ID
+                retval1 = svc.Get(ns, obj, objID1.ID);
+                retval2 = svc.Get(ns, obj, objID2.ID);
+
+                Assert.IsNull(retval1);
+                Assert.IsNotNull(retval2);
+
+                Assert.AreEqual(val2, new Guid(retval2));
+
+                // retrieve by unique ID
+                secretval1 = svc.GetBySecondaryKey(ns, obj, objID1.SecondaryKey);
+                secretval2 = svc.GetBySecondaryKey(ns, obj, objID2.SecondaryKey);
+
+                Assert.IsNull(secretval1);
+                Assert.IsNotNull(secretval2);
+
+                Assert.AreEqual(val2, new Guid(secretval2));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void StoreAndRemoveWithIndexes()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[]
+                        {
+                            new ObjectIndexMetadata("Test", ObjectIndexType.String, 5)
+                        }));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+
+                var secKey1 = Encoding.UTF8.GetBytes("001");
+                var secKey2 = Encoding.UTF8.GetBytes("002");
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    SecondaryKey = secKey1,
+                    Indexes = new ObjectIndex[]
+                    {
+                        ObjectIndex.Create("Test", "asdf")
+                    }
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    SecondaryKey = secKey2,
+                    Indexes = new ObjectIndex[]
+                    {
+                        ObjectIndex.Create("Test", "2")
+                    }
+                });
+
+                Assert.AreEqual(2, svc.Count(ns, obj));
+
+                // retrieve by object ID
+                var retval1 = svc.Get(ns, obj, objID1.ID);
+                var retval2 = svc.Get(ns, obj, objID2.ID);
+
+                Assert.IsNotNull(retval1);
+                Assert.IsNotNull(retval2);
+
+                Assert.AreEqual(val1, new Guid(retval1));
+                Assert.AreEqual(val2, new Guid(retval2));
+
+                // retrieve by unique ID
+                var secretval1 = svc.GetBySecondaryKey(ns, obj, objID1.SecondaryKey);
+                var secretval2 = svc.GetBySecondaryKey(ns, obj, objID2.SecondaryKey);
+
+                Assert.IsNotNull(secretval1);
+                Assert.IsNotNull(secretval2);
+
+                Assert.AreEqual(val1, new Guid(secretval1));
+                Assert.AreEqual(val2, new Guid(secretval2));
+
+                // remove a value and make sure it can't be retrieved
+                svc.Remove(ns, obj, objID1.ID);
+
+                Assert.AreEqual(1, svc.Count(ns, obj));
 
                 // retrieve by object ID
                 retval1 = svc.Get(ns, obj, objID1.ID);

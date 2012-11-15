@@ -77,7 +77,7 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
     DROP TABLE [ZeroG].[{0}]";
 
         public static readonly string Find = @"SELECT {2}[ID] FROM [ZeroG].[{0}]
-WHERE {1}{3}";
+{1}{3}";
 
         public static readonly string Iterate = @"SELECT {4}{1} FROM [ZeroG].[{0}]{2}{3}";
 
@@ -336,40 +336,53 @@ WHEN NOT MATCHED THEN
 
                 var parameters = new List<IDbDataParameter>();
                 var sqlConstraint = new StringBuilder();
-                for (int i = 0; indexes.Length > i; i++)
+                if (null != indexes && 0 < indexes.Length)
                 {
-                    if (0 < i)
+                    // initialize the where clause
+                    sqlConstraint.Append("WHERE ");
+
+                    for (int i = 0; indexes.Length > i; i++)
                     {
-                        if (useOr)
+                        var idx = indexes[i];
+
+                        // skip over null objects
+                        if (null == idx)
                         {
-                            sqlConstraint.Append(" OR ");
+                            continue;
+                        }
+
+                        if (0 < i)
+                        {
+                            if (useOr)
+                            {
+                                sqlConstraint.Append(" OR ");
+                            }
+                            else
+                            {
+                                sqlConstraint.Append(" AND ");
+                            }
+                        }
+
+                        var paramName = "p" + i + idx.Name;
+                        var value = idx.GetObjectValue();
+                        sqlConstraint.Append(db.MakeQuotedName(idx.Name));
+
+                        if (useLike)
+                        {
+                            sqlConstraint.Append(' ');
+                            sqlConstraint.Append(db.MakeLikeParamReference(paramName));
+                            parameters.Add(ObjectIndexProvider.MakeLikeParameter(db, paramName, value));
+                        }
+                        else if (isNull)
+                        {
+                            sqlConstraint.Append(" IS NULL");
                         }
                         else
                         {
-                            sqlConstraint.Append(" AND ");
+                            sqlConstraint.Append(" = ");
+                            sqlConstraint.Append(db.MakeParamReference(paramName));
+                            parameters.Add(db.MakeParam(paramName, value));
                         }
-                    }
-
-                    var idx = indexes[i];
-                    var paramName = "p" + i + idx.Name;
-                    var value = idx.GetObjectValue();
-                    sqlConstraint.Append(db.MakeQuotedName(idx.Name));
-
-                    if (useLike)
-                    {
-                        sqlConstraint.Append(' ');
-                        sqlConstraint.Append(db.MakeLikeParamReference(paramName));
-                        parameters.Add(ObjectIndexProvider.MakeLikeParameter(db, paramName, value));
-                    }
-                    else if (isNull)
-                    {
-                        sqlConstraint.Append(" IS NULL");
-                    }
-                    else
-                    {
-                        sqlConstraint.Append(" = ");
-                        sqlConstraint.Append(db.MakeParamReference(paramName));
-                        parameters.Add(db.MakeParam(paramName, value));
                     }
                 }
 
@@ -399,13 +412,18 @@ WHEN NOT MATCHED THEN
         {
             using (var db = OpenData())
             {
-                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var compiledConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var sqlConstraint = compiledConstraint.SQL;
+                if (!string.IsNullOrEmpty(sqlConstraint))
+                {
+                    sqlConstraint = "WHERE " + sqlConstraint;
+                }
                 var tableName = _CreateTableName(db, objectFullName);
                 var topSql = (0 == limit) ? SQLStatements.NoTop : string.Format(SQLStatements.Top, limit);
 
                 var orderBySql = _CreateOrderBySQL(db, order);
 
-                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL, topSql, orderBySql), sqlConstraint.Parameters.ToArray());
+                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint, topSql, orderBySql), compiledConstraint.Parameters.ToArray());
             }
         }
 

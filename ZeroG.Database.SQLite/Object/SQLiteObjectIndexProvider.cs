@@ -67,7 +67,7 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
         public static readonly string DropTableIfExists = @"DROP TABLE IF EXISTS [{0}]";
 
         public static readonly string Find = @"SELECT [ID] FROM [{0}]
-WHERE {1}{2}{3}";
+{1}{2}{3}";
 
         public static readonly string Iterate = @"SELECT {1} FROM [{0}]{2}{3}{4}";
 
@@ -216,40 +216,53 @@ WHERE {1}{2}{3}";
 
                 var parameters = new List<IDbDataParameter>();
                 var sqlConstraint = new StringBuilder();
-                for (int i = 0; indexes.Length > i; i++)
+                if (null != indexes && 0 < indexes.Length)
                 {
-                    if (0 < i)
+                    // initialize the where clause
+                    sqlConstraint.Append("WHERE ");
+
+                    for (int i = 0; indexes.Length > i; i++)
                     {
-                        if (useOr)
+                        var idx = indexes[i];
+
+                        // skip over null objects
+                        if (null == idx)
                         {
-                            sqlConstraint.Append(" OR ");
+                            continue;
+                        }
+
+                        if (0 < i)
+                        {
+                            if (useOr)
+                            {
+                                sqlConstraint.Append(" OR ");
+                            }
+                            else
+                            {
+                                sqlConstraint.Append(" AND ");
+                            }
+                        }
+
+                        var paramName = "p" + i + idx.Name;
+                        var value = idx.GetObjectValue();
+                        sqlConstraint.Append(db.MakeQuotedName(idx.Name));
+
+                        if (useIsNull)
+                        {
+                            sqlConstraint.Append(" IS NULL");
+                        }
+                        else if (useLike)
+                        {
+                            sqlConstraint.Append(' ');
+                            sqlConstraint.Append(db.MakeLikeParamReference(paramName));
+                            parameters.Add(ObjectIndexProvider.MakeLikeParameter(db, paramName, value));
                         }
                         else
                         {
-                            sqlConstraint.Append(" AND ");
+                            sqlConstraint.Append(" = ");
+                            sqlConstraint.Append(db.MakeParamReference(paramName));
+                            parameters.Add(db.MakeParam(paramName, value));
                         }
-                    }
-
-                    var idx = indexes[i];
-                    var paramName = "p" + i + idx.Name;
-                    var value = idx.GetObjectValue();
-                    sqlConstraint.Append(db.MakeQuotedName(idx.Name));
-
-                    if (useIsNull)
-                    {
-                        sqlConstraint.Append(" IS NULL");
-                    }
-                    else if (useLike)
-                    {
-                        sqlConstraint.Append(' ');
-                        sqlConstraint.Append(db.MakeLikeParamReference(paramName));
-                        parameters.Add(ObjectIndexProvider.MakeLikeParameter(db, paramName, value));
-                    }
-                    else
-                    {
-                        sqlConstraint.Append(" = ");
-                        sqlConstraint.Append(db.MakeParamReference(paramName));
-                        parameters.Add(db.MakeParam(paramName, value));
                     }
                 }
                 var orderBySql = _CreateOrderBySQL(db, options.Order);
@@ -280,10 +293,15 @@ WHERE {1}{2}{3}";
             using (var db = OpenData())
             {
                 var tableName = _CreateTableName(db, objectFullName);
-                var sqlConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var compiledConstraint = CreateSQLConstraint(db, indexes, constraint);
+                var sqlConstraint = compiledConstraint.SQL;
+                if (!string.IsNullOrEmpty(sqlConstraint))
+                {
+                    sqlConstraint = "WHERE " + sqlConstraint;
+                }
                 var orderBySql = _CreateOrderBySQL(db, order);
                 var limitSql = (0 == limit) ? SQLStatements.NoLimit : string.Format(SQLStatements.Limit, limit);
-                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint.SQL, orderBySql, limitSql), sqlConstraint.Parameters.ToArray());
+                return db.GetValues<int>(string.Format(SQLStatements.Find, tableName, sqlConstraint, orderBySql, limitSql), compiledConstraint.Parameters.ToArray());
             }
         }
 
@@ -426,20 +444,7 @@ WHERE {1}{2}{3}";
                 }
                 
                 sql.Append(@")");
-                /*
-                if(0 < paramCount) 
-                {
-                    for(int i = 0; paramCount > i; i++)
-                    {
-                        var idx = indexes[i];
-                        sql.Append(db.MakeQuotedName(idx.Name));
-                        sql.Append(" = ");
-                        sql.Append(db.MakeParamReference(parameters[i].ParameterName));
-                        sql.Append(',');
-                    }
-                    sql.Remove(sql.Length - 1,1);
-                }*/
-                
+
                 parameters.Add(db.MakeParam("recordId", objectId));
 
                 db.ExecuteNonQuery(sql.ToString(), parameters.ToArray());
