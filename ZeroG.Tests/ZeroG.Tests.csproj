@@ -75,6 +75,7 @@
     <Compile Include="Data\Drivers\BulkInsertTest.cs" />
     <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
     <Compile Include="Lang\JSON\JSONTokenizerTest.cs" />
+    <Compile Include="Object\ConfigTest.cs" />
     <Compile Include="Object\LocalObjectServiceClientTest.cs" />
     <Compile Include="Object\MultiThreadingTest.cs" />
     <Compile Include="Object\ObjectMetadataTest.cs" />
@@ -90,7 +91,9 @@
     <Folder Include="Scripts\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ZeroG.Database.MySQL\ZeroG.Database.MySQL.csproj">
