@@ -50,7 +50,7 @@ namespace ZeroG.Data.Database.Drivers
         }
 
         internal SQLiteDatabaseService(string connStr)
-            : base(connStr)
+            : base(_SubConnStr(connStr))
         {
         }
 
@@ -59,9 +59,44 @@ namespace ZeroG.Data.Database.Drivers
         #region Public
 
         #region Properties
+        public string CurrentConnectionString
+        {
+            get
+            {
+                return _connString;
+            }
+        }
         #endregion // end Properties
 
         #region Methods
+
+        private static string _appDir;
+
+        /// <summary>
+        /// Processes substitution strings in the connection string.
+        /// Supported substitutions are:
+        /// {AppDir} - this is replaced with the application's current directy.
+        /// </summary>
+        /// <param name="connStr"></param>
+        private static string _SubConnStr(string connStr)
+        {
+            if (!string.IsNullOrEmpty(connStr))
+            {
+                var index = -1;
+                if (-1 != (index = connStr.IndexOf("{appdir}", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var sub = connStr.Substring(index, "{appdir}".Length);
+
+                    if (null == _appDir)
+                    {
+                        _appDir = AppDomain.CurrentDomain.BaseDirectory;
+                    }
+                    connStr = connStr.Replace(sub, _appDir);
+                }
+            }
+            return connStr;
+        }
+
         public override IDbTransaction BeginTransaction()
         {
             _IsConnAvailable();
@@ -76,7 +111,7 @@ namespace ZeroG.Data.Database.Drivers
 
         public override void Configure(DatabaseServiceConfiguration config)
         {
-            _connString = config.ConnectionString;
+            _connString = _SubConnStr(config.ConnectionString);
         }
 
         public override IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters)
