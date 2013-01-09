@@ -62,7 +62,7 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
 	    {1}
 	)";
 
-        public static readonly string CreateIndex = @"CREATE INDEX [IDX_{0}] ON [{0}] ({1})";
+        public static readonly string CreateIndex = @"CREATE INDEX IF NOT EXISTS [IDX_{0}] ON [{0}] ({1})";
 
         public static readonly string DropTableIfExists = @"DROP TABLE IF EXISTS [{0}]";
 
