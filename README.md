@@ -32,20 +32,25 @@ for storing and indexing objects.
   * `DatabaseService` simplifies working with databases by providing a generic interface along with convenience methods.
   * `ObjectService` provides a hybrid Key/Value store and Indexer. The Indexer currently utilizes any relational database for which there is a ZeroG.Data interface.
 
+NOTE: The ObjectService relies heavily on [RazorDB](https://github.com/gnoso/razordb), which is an open source, .NET based Key/Value store.
+
 The ObjectService provides a hybrid approach between a Key/Value store and relational database. The intention 
 is to try to capture the speed of a NoSQL approach but retain the capability to perform certain operations 
 efficiently. The ObjectService is mainly optimized for reading data as fast as possible and hence it has an 
 Object Versioning and caching scheme built in.
 
+Key Capabilities
+
   * Build "Object Stores" on the fly that hold object metadata, object values, and indexes.
   * Store Objects in a high-speed Key/Value store.
-  * Index the Objects with arbitrary index values.
+  * Index the Objects with arbitrary index values by utilizing existing RDMS drivers.
   * Query indexed objects using a JSON-based constraint language.
-  * Provides a JSON to SQL compiler.
+  * Utilize a JSON to SQL compiler.
   * SQL tables are generated on the fly to hold index values.
-  * Index query caching.
-  * Backup/Restore
-  * Bulk insert
+  * Index query caching optimizes usage of key/value store.
+  * Bulk insert and index thousands of objects efficiently.
+  * Backup objects and index values into a single compressed file with a portable data format.
+  * Restore objects and index values from a single file.
 
 ### ZeroG.Database.MySQL
 
