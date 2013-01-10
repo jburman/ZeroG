@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <style type="text/css">
+        .section {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h1>View Existing Activity</h1>
+        <ul>
+            <li>View recent activity: <a href="api/activity" target="_blank">api/activity</a></li>
+            <li>View the 10 most recent News activities: <a href="api/activity?type=News&count=10" target="_blank">api/activity?type=News&count=10</a></li>
+            <li>View activity by ID: <a href="api/activity/50" target="_blank">api/activity/50</a></li>
+        </ul>
+    </div>
+    <div class="section">
+        <h1>Add Activity</h1>
+        <form action="api/activity" method="POST" enctype="application/x-www-form-urlencoded">
+            <p>Title <input type="text" name="Title" value="Demo Title from Form" /></p>
+            <p>Link <input type="text" name="Link" value="http://www.foo.com" /></p>
+            <p>Type <select name="Type"><option value="News" selected>News</option><option value="Article">Article</option></select></p>
+            <p>Text <input type="text" name="Text" value="This activity was POSTed from an HTML form." /></p>
+            <p>Image <input type="text" name="Image" value="image.png" /></p>
+            <p>Expires <input type="text" name="ExpiresUTC" value="1/1/2015" /></p>
+            <p><input type="submit" value="Add" /></p>
+        </form>
+    </div>
+</body>
+</html>
