@@ -32,6 +32,6 @@ namespace ZeroG.Data.Object.Cache
         public string ObjectFullName;
         public bool IsDirty;
         public uint Version;
-        public Dictionary<uint, ObjectIndexerCacheEntry> ObjectIDs;
+        public Dictionary<uint, ObjectIndexerCacheEntry> Queries;
     }
 }

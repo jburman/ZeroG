@@ -42,7 +42,7 @@ namespace ZeroG.Data.Object.Cache
         private ReaderWriterLockSlim _cacheLock;
         private ObjectMetadataStore _metadata;
         private ObjectVersionStore _versions;
-        private uint _qeriesInCache;
+        private uint _totalQueriesInCache;
         private uint _totalObjectIDsInCache;
 
         internal ObjectIndexerCache(ObjectMetadataStore metadata, ObjectVersionStore versions)
@@ -51,7 +51,7 @@ namespace ZeroG.Data.Object.Cache
             _cacheLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
             _metadata = metadata;
             _versions = versions;
-            _qeriesInCache = 0;
+            _totalQueriesInCache = 0;
             _totalObjectIDsInCache = 0;
 
             metadata.ObjectMetadataAdded += _ObjectMetadataAdded;
@@ -73,7 +73,7 @@ namespace ZeroG.Data.Object.Cache
                 try
                 {
                     _cache.Clear();
-                    _qeriesInCache = 0;
+                    _totalQueriesInCache = 0;
                     _totalObjectIDsInCache = 0;
                 }
                 finally
@@ -121,7 +121,7 @@ namespace ZeroG.Data.Object.Cache
             {
                 ObjectFullName = objectFullName,
                 Version = _versions.Current(objectFullName),
-                ObjectIDs = new Dictionary<uint, ObjectIndexerCacheEntry>(),
+                Queries = new Dictionary<uint, ObjectIndexerCacheEntry>(),
                 IsDirty = false
             };
             return record;
@@ -142,11 +142,11 @@ namespace ZeroG.Data.Object.Cache
 
                         // update the cache totals
                         uint totalObjectIDsRemoved = 0;
-                        foreach (var entry in record.ObjectIDs)
+                        foreach (var entry in record.Queries)
                         {
                             totalObjectIDsRemoved += entry.Value.ObjectIDCount;
                         }
-                        _qeriesInCache = (uint)Math.Max(0, _qeriesInCache - record.ObjectIDs.Count);
+                        _totalQueriesInCache = (uint)Math.Max(0, _totalQueriesInCache - record.Queries.Count);
                         _totalObjectIDsInCache = (uint)Math.Max(0, _totalObjectIDsInCache - totalObjectIDsRemoved);
                     }
 
@@ -156,11 +156,11 @@ namespace ZeroG.Data.Object.Cache
 
                         // update the cache totals
                         uint totalObjectIDsRemoved = 0;
-                        foreach (var entry in replace.ObjectIDs)
+                        foreach (var entry in replace.Queries)
                         {
                             totalObjectIDsRemoved += (uint)entry.Value.ObjectIDCount;
                         }
-                        _qeriesInCache = (uint)(_qeriesInCache + replace.ObjectIDs.Count);
+                        _totalQueriesInCache = (uint)(_totalQueriesInCache + replace.Queries.Count);
                         _totalObjectIDsInCache = _totalObjectIDsInCache + totalObjectIDsRemoved;
                     }
                 }
@@ -253,7 +253,7 @@ namespace ZeroG.Data.Object.Cache
                                 var hash = ConstructHash(parameters);
                                 if (0 != hash)
                                 {
-                                    var objIds = entry.ObjectIDs;
+                                    var objIds = entry.Queries;
                                     // try to get from cache
                                     if (objIds.ContainsKey(hash))
                                     {
@@ -304,7 +304,7 @@ namespace ZeroG.Data.Object.Cache
                         }
 
                         var hash = ConstructHash(parameters);
-                        entry.ObjectIDs[hash] = new ObjectIndexerCacheEntry(hash, objectIds);
+                        entry.Queries[hash] = new ObjectIndexerCacheEntry(hash, objectIds);
                     }
                     finally
                     {
@@ -348,7 +348,7 @@ namespace ZeroG.Data.Object.Cache
         #region ICleanableCache implementation
         public uint TotalQueries
         {
-            get { return _totalObjectIDsInCache; }
+            get { return _totalQueriesInCache; }
         }
 
         public uint TotalObjectIDs
@@ -364,7 +364,7 @@ namespace ZeroG.Data.Object.Cache
                 {
                     foreach (var cacheEntry in _cache)
                     {
-                        Dictionary<uint, ObjectIndexerCacheEntry> queries = cacheEntry.Value.ObjectIDs;
+                        Dictionary<uint, ObjectIndexerCacheEntry> queries = cacheEntry.Value.Queries;
                         foreach (KeyValuePair<uint, ObjectIndexerCacheEntry> query in queries)
                         {
                             yield return query.Value;
