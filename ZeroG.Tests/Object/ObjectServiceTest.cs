@@ -9,6 +9,7 @@ using ZeroG.Data.Object.Index;
 using System.IO;
 using ZeroG.Lang;
 using System.Diagnostics;
+using System.Threading;
 
 namespace ZeroG.Tests.Object
 {
@@ -579,6 +580,7 @@ namespace ZeroG.Tests.Object
                     new ObjectMetadata(ns, obj));
 
                 int ObjCount = 100000;
+                int[] ids = new int[ObjCount];
 
                 var val1 = new Guid("{8AD7F9E4-B2B8-4511-B520-08914B999044}").ToByteArray();
 
@@ -592,10 +594,13 @@ namespace ZeroG.Tests.Object
                         Value = val1
                     };
                     svc.Store(ns, storeObj);
+                    ids[i] = i;
                 }
 
                 // retrieve objects
                 int count = 0;
+                
+                
                 for (int i = 0; ObjCount > i; i++)
                 {
                     var getObj = svc.Get(ns, obj, i);
@@ -604,7 +609,6 @@ namespace ZeroG.Tests.Object
                         ++count;
                     }
                 }
-
                 Assert.AreEqual(ObjCount, count);
             }
         }
@@ -673,7 +677,7 @@ namespace ZeroG.Tests.Object
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj));
 
-                int ObjCount = 500;
+                int ObjCount = 1000;
 
                 // roughly 47k
                 var textBlob = Encoding.UTF8.GetBytes(File.ReadAllText("TestData\\blob.txt"));
@@ -1142,6 +1146,91 @@ namespace ZeroG.Tests.Object
                 // query 100 objects from the index
                 var vals = svc.Find(ns, obj, @"{""IntIndex1"":10000, ""Op"": "">"", ""And"" : {""IntIndex1"":10101, ""Op"": ""<""}}");
                 Assert.AreEqual(100, vals.Count());
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void UpdateIndexes()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[]
+                        {
+                            new ObjectIndexMetadata("Test", ObjectIndexType.String, 5)
+                        }));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    Indexes = new ObjectIndex[]
+                    {
+                        ObjectIndex.Create("Test", "asdf")
+                    }
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    Indexes = new ObjectIndex[]
+                    {
+                        ObjectIndex.Create("Test", "2")
+                    }
+                });
+
+                Assert.AreEqual(2, svc.Count(ns, obj));
+
+                // Find by index
+                var retval1 = svc.Find(ns, obj, "{\"Test\":\"asdf\"}").FirstOrDefault();
+                var retval2 = svc.Find(ns, obj, "{\"Test\":\"2\"}").FirstOrDefault();
+                // This is a test value - should return null
+                var retval3 = svc.Find(ns, obj, "{\"Test\":\"3\"}").FirstOrDefault();
+
+                Assert.IsNotNull(retval1);
+                Assert.IsNotNull(retval2);
+                Assert.IsNull(retval3);
+
+                Assert.AreEqual(val1, new Guid(retval1));
+                Assert.AreEqual(val2, new Guid(retval2));
+
+                // Update index and re-fetch
+                svc.UpdateIndexes(ns, obj, objID2.ID,
+                    new ObjectIndex[] { ObjectIndex.Create("Test", "3") });
+                
+                Assert.AreEqual(2, svc.Count(ns, obj));
+
+                retval1 = svc.Find(ns, obj, "{\"Test\":\"asdf\"}").FirstOrDefault();
+                // verify that old value is gone
+                retval2 = svc.Find(ns, obj, "{\"Test\":\"2\"}").FirstOrDefault();
+                retval3 = svc.Find(ns, obj, "{\"Test\":\"3\"}").FirstOrDefault();
+
+                Assert.IsNotNull(retval1);
+                Assert.IsNull(retval2); // should now be null
+                Assert.IsNotNull(retval3);
+
+                Assert.AreEqual(val1, new Guid(retval1));
+                Assert.AreEqual(val2, new Guid(retval3));
+
+                // remove object who's index was changed to make sure it goes away
+                svc.Remove(ns, obj, objID2.ID);
+
+                Assert.AreEqual(1, svc.Count(ns, obj));
+
+                retval3 = svc.Find(ns, obj, "{\"Test\":\"3\"}").FirstOrDefault();
+                Assert.IsNull(retval3);
             }
         }
     }

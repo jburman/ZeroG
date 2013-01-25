@@ -76,6 +76,7 @@ namespace ZeroG.Data.Object
             if (config.IndexCacheEnabled)
             {
                 _indexerCache = new ObjectIndexerCache(_objectMetadata, _objectVersions);
+                _assignments.Add(_indexerCache);
             }
 
             _objectStore = new ObjectStore(config, _objectMetadata);
@@ -303,7 +304,7 @@ namespace ZeroG.Data.Object
                     () =>
                     {
                         // write batched index values if any are queued up
-                        if(0 < bulkIndexValues.Count) 
+                        if (0 < bulkIndexValues.Count)
                         {
                             _objectIndexer.BulkIndexObject(
                                 objectMetadata.ObjectFullName,
@@ -379,11 +380,11 @@ namespace ZeroG.Data.Object
                     {
                         // This call validates the format of the metadata and will throw and exception
                         // if it is invalid.
-                        lock(_objectMetadata) 
+                        lock (_objectMetadata)
                         {
                             _objectMetadata.StoreMetadata(metadata);
                         }
-                        
+
                         if (null != metadata.Indexes && 0 < metadata.Indexes.Length)
                         {
                             lock (_objectIndexer)
@@ -572,7 +573,7 @@ namespace ZeroG.Data.Object
                 {
                     var group = objectsGrouped[objectName];
                     var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-                    
+
                     foreach (var obj in group)
                     {
                         _objectStore.Set(nameSpace, obj);
@@ -596,6 +597,15 @@ namespace ZeroG.Data.Object
             return returnValue.ToArray();
         }
 
+        /// <summary>
+        /// Stores an object value and its indexes in the Object Store.
+        /// If an ID has not be specified, then one will be auto-generated from a 
+        /// sequential ID list that belongs to the Object Store.
+        /// Specify a SecondaryKey to enable the object to be looked up using that value.
+        /// </summary>
+        /// <param name="nameSpace"></param>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public ObjectID Store(string nameSpace, PersistentObject obj)
         {
             ObjectID returnValue = null;
@@ -603,11 +613,8 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, obj);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, obj.Name);
-
             var startingObjId = obj.ID;
-
             var objNameKey = ObjectNaming.CreateFullObjectKey(objectFullName);
-
             var objId = obj.ID;
 
             if (!obj.HasID())
@@ -642,11 +649,35 @@ namespace ZeroG.Data.Object
             {
                 // rollback in memory changes
                 obj.ID = startingObjId;
-
                 throw;
             }
 
             return returnValue;
+        }
+
+        /// <summary>
+        /// Updates the index values for a single Object.
+        /// </summary>
+        /// <param name="nameSpace"></param>
+        /// <param name="objectName"></param>
+        /// <param name="objectId"></param>
+        /// <param name="indexes"></param>
+        public void UpdateIndexes(string nameSpace, string objectName, int objectId, ObjectIndex[] indexes) 
+        {
+            _ValidateArguments(nameSpace, objectName);
+            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+
+            using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
+            {
+                if (null != indexes && 0 < indexes.Length)
+                {
+                    _objectIndexer.IndexObject(objectFullName, objectId,
+                        indexes);
+                    _objectVersions.Update(objectFullName);
+                }
+                
+                trans.Complete();
+            }
         }
 
         public byte[] Get(string nameSpace, string objectName, int id)
@@ -654,7 +685,6 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
             return _objectStore.Get(objectFullName, id);
         }
 
@@ -663,7 +693,6 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullKey = ObjectNaming.CreateFullObjectKey(nameSpace, objectName);
-
             return _objectIDStore.GetNextID(objectFullKey);
         }
 
@@ -686,7 +715,6 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
             return _objectStore.Iterate(objectFullName);
         }
 
@@ -695,7 +723,6 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
             return _objectStore.Count(objectFullName);
         }
 
@@ -704,7 +731,6 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
             return _objectIndexer.Count(objectFullName, constraint, _objectMetadata.GetMetadata(objectFullName).Indexes);
         }
 
@@ -718,7 +744,6 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
             var metadata = _objectMetadata.GetMetadata(objectFullName);
 
             if (null == metadata)
@@ -738,7 +763,6 @@ namespace ZeroG.Data.Object
             _ValidateArguments(nameSpace, objectName);
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
-
             var objectIds = _objectIndexer.Find(objectFullName, options, indexes);
             foreach (var objectId in objectIds)
             {
@@ -819,7 +843,6 @@ namespace ZeroG.Data.Object
 
                 _disposed = true;
             }
-
         }
         #endregion
     }

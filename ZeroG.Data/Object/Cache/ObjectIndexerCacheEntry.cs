@@ -23,15 +23,42 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System.Collections.Generic;
-
 namespace ZeroG.Data.Object.Cache
 {
-    internal class ObjectIndexerCacheRecord
+    internal class ObjectIndexerCacheEntry : ICacheEntry
     {
-        public string ObjectFullName;
-        public bool IsDirty;
-        public uint Version;
-        public Dictionary<uint, ObjectIndexerCacheEntry> ObjectIDs;
+        private uint _counter;
+
+        public ObjectIndexerCacheEntry(uint hash, int[] objectIds)
+        {
+            _counter = 0;
+            Hash = hash;
+            ObjectIDs = objectIds;
+        }
+
+        internal uint Hash;
+        internal int[] ObjectIDs;
+
+        public uint CacheKey
+        {
+            get { return Hash; }
+        }
+
+        public uint Counter
+        {
+            get
+            {
+                return _counter;
+            }
+            set
+            {
+                _counter = value;
+            }
+        }
+
+        public uint ObjectIDCount
+        {
+            get { return (uint)ObjectIDs.Length; }
+        }
     }
 }

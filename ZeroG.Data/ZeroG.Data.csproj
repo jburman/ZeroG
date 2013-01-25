@@ -65,6 +65,10 @@
     <Compile Include="Database\ObjectIndexProvider.cs" />
     <Compile Include="Object\Backup\ObjectBackupReader.cs" />
     <Compile Include="Object\Backup\ObjectBackupWriter.cs" />
+    <Compile Include="Object\Cache\ICacheCleaner.cs" />
+    <Compile Include="Object\Cache\ICacheEntry.cs" />
+    <Compile Include="Object\Cache\ICleanableCache.cs" />
+    <Compile Include="Object\Cache\ObjectIndexerCacheEntry.cs" />
     <Compile Include="Object\Cache\ObjectIndexerCacheRecord.cs" />
     <Compile Include="Object\Cache\ObjectIndexerCache.cs" />
     <Compile Include="Object\Config.cs" />

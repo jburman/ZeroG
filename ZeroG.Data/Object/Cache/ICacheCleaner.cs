@@ -23,15 +23,13 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System.Collections.Generic;
+using System;
 
 namespace ZeroG.Data.Object.Cache
 {
-    internal class ObjectIndexerCacheRecord
+    public interface ICacheCleaner : IDisposable
     {
-        public string ObjectFullName;
-        public bool IsDirty;
-        public uint Version;
-        public Dictionary<uint, ObjectIndexerCacheEntry> ObjectIDs;
+        bool NeedsCleaning();
+        bool Update();
     }
 }

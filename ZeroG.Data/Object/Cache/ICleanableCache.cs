@@ -27,11 +27,10 @@ using System.Collections.Generic;
 
 namespace ZeroG.Data.Object.Cache
 {
-    internal class ObjectIndexerCacheRecord
+    public interface ICleanableCache
     {
-        public string ObjectFullName;
-        public bool IsDirty;
-        public uint Version;
-        public Dictionary<uint, ObjectIndexerCacheEntry> ObjectIDs;
+        uint TotalQueries { get; }
+        uint TotalObjectIDs { get; }
+        IEnumerable<ICacheEntry> EnumerateCache();
     }
 }

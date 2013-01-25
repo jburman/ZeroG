@@ -25,23 +25,34 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
 using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object.Cache
 {
-    public class ObjectIndexerCache
+    public class ObjectIndexerCache : IDisposable, ICleanableCache
     {
-        internal static readonly int MaxCacheKeyLen = 500;
+        internal const int MaxCacheKeyLen = 500;
+
+        private const int ReadLockTimeout = 2000;
+        private const int WriteLockTimeout = 4000;
 
         private Dictionary<string, ObjectIndexerCacheRecord> _cache;
+        private ReaderWriterLockSlim _cacheLock;
         private ObjectMetadataStore _metadata;
         private ObjectVersionStore _versions;
+        private uint _qeriesInCache;
+        private uint _totalObjectIDsInCache;
 
         internal ObjectIndexerCache(ObjectMetadataStore metadata, ObjectVersionStore versions)
         {
             _cache = new Dictionary<string, ObjectIndexerCacheRecord>(StringComparer.OrdinalIgnoreCase);
+            _cacheLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
             _metadata = metadata;
             _versions = versions;
+            _qeriesInCache = 0;
+            _totalObjectIDsInCache = 0;
 
             metadata.ObjectMetadataAdded += _ObjectMetadataAdded;
             metadata.ObjectMetadataRemoved += _ObjectMetadataRemoved;
@@ -57,18 +68,49 @@ namespace ZeroG.Data.Object.Cache
         /// </summary>
         private void _ResetCache()
         {
-            _cache.Clear();
+            if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
+            {
+                try
+                {
+                    _cache.Clear();
+                    _qeriesInCache = 0;
+                    _totalObjectIDsInCache = 0;
+                }
+                finally
+                {
+                    _cacheLock.ExitWriteLock();
+                }
+            }
+            else
+            {
+                throw new TimeoutException("Unable to acquire write lock on ObjectIndexerCache. It may contain unreliable information and should be recreated.");
+            }
         }
 
         private void _ObjectVersionChanged(string value, uint newVersion)
         {
-            if (_cache.ContainsKey(value))
+            if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
             {
-                var entry = _cache[value];
-                if (newVersion != entry.Version)
+                try
                 {
-                    entry.IsDirty = true;
+                    if (_cache.ContainsKey(value))
+                    {
+                        var entry = _cache[value];
+                        if (newVersion != entry.Version)
+                        {
+                            entry.IsDirty = true;
+                        }
+                    }
                 }
+                finally
+                {
+                    _cacheLock.ExitReadLock();
+                }
+            }
+            else
+            {
+                // this is an act of desparation to make sure that dirty values won't be read
+                _ResetCache();
             }
         }
 
@@ -79,16 +121,64 @@ namespace ZeroG.Data.Object.Cache
             {
                 ObjectFullName = objectFullName,
                 Version = _versions.Current(objectFullName),
-                Count = 0,
-                ObjectIDs = new Dictionary<uint, int[]>(),
+                ObjectIDs = new Dictionary<uint, ObjectIndexerCacheEntry>(),
                 IsDirty = false
             };
             return record;
         }
 
+        private void _ReplaceObjectInCache(string objectFullName, ObjectIndexerCacheRecord replace)
+        {
+            if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
+            {
+                try
+                {
+                    if (_cache.ContainsKey(objectFullName))
+                    {
+                        ObjectIndexerCacheRecord record = _cache[objectFullName];
+
+                        // remove existing record and  update totals
+                        _cache.Remove(objectFullName);
+
+                        // update the cache totals
+                        uint totalObjectIDsRemoved = 0;
+                        foreach (var entry in record.ObjectIDs)
+                        {
+                            totalObjectIDsRemoved += entry.Value.ObjectIDCount;
+                        }
+                        _qeriesInCache = (uint)Math.Max(0, _qeriesInCache - record.ObjectIDs.Count);
+                        _totalObjectIDsInCache = (uint)Math.Max(0, _totalObjectIDsInCache - totalObjectIDsRemoved);
+                    }
+
+                    if (null != replace)
+                    {
+                        _cache[objectFullName] = replace;
+
+                        // update the cache totals
+                        uint totalObjectIDsRemoved = 0;
+                        foreach (var entry in replace.ObjectIDs)
+                        {
+                            totalObjectIDsRemoved += (uint)entry.Value.ObjectIDCount;
+                        }
+                        _qeriesInCache = (uint)(_qeriesInCache + replace.ObjectIDs.Count);
+                        _totalObjectIDsInCache = _totalObjectIDsInCache + totalObjectIDsRemoved;
+                    }
+                }
+                finally
+                {
+                    _cacheLock.ExitWriteLock();
+                }
+            }
+            else
+            {
+                // this is an act of desparation to make sure that dirty values won't be read
+                _ResetCache();
+            }
+        }
+
         private void _ObjectVersionRemoved(string value, uint newVersion)
         {
-            _cache.Remove(value);
+            _ReplaceObjectInCache(value, null);
         }
 
         private void _ObjectMetadataAdded(string value)
@@ -144,28 +234,44 @@ namespace ZeroG.Data.Object.Cache
             if (0 < parameters.Length)
             {
                 string objectFullName = (string)parameters[0];
+                bool objectIsDirty = false;
 
-                if (_cache.ContainsKey(objectFullName))
+                if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
                 {
-                    var entry = _cache[objectFullName];
-
-                    if (entry.IsDirty)
+                    try
                     {
-                        _cache[objectFullName] = _CreateObjectCacheRecord(objectFullName);
-                    }
-                    else
-                    {
-                        var hash = ConstructHash(parameters);
-                        if (0 != hash)
+                        if (_cache.ContainsKey(objectFullName))
                         {
-                            var objIds = entry.ObjectIDs;
-                            // try to get from cache
-                            if (objIds.ContainsKey(hash))
+                            ObjectIndexerCacheRecord entry = _cache[objectFullName];
+
+                            if (entry.IsDirty)
                             {
-                                return objIds[hash]; 
+                                objectIsDirty = true;
+                            }
+                            else
+                            {
+                                var hash = ConstructHash(parameters);
+                                if (0 != hash)
+                                {
+                                    var objIds = entry.ObjectIDs;
+                                    // try to get from cache
+                                    if (objIds.ContainsKey(hash))
+                                    {
+                                        returnValue = objIds[hash].ObjectIDs;
+                                    }
+                                }
                             }
                         }
                     }
+                    finally
+                    {
+                        _cacheLock.ExitReadLock();
+                    }
+                }
+
+                if (objectIsDirty)
+                {
+                    _ReplaceObjectInCache(objectFullName, _CreateObjectCacheRecord(objectFullName));
                 }
             }
             return returnValue;
@@ -178,28 +284,99 @@ namespace ZeroG.Data.Object.Cache
                 string objectFullName = (string)parameters[0];
 
                 ObjectIndexerCacheRecord entry = null;
+                bool objectIsDirty = false;
 
-                if (_cache.ContainsKey(objectFullName))
+                if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
                 {
-                    entry = _cache[objectFullName];
-                    if (entry.IsDirty)
+                    try
                     {
-                        _cache[objectFullName] = _CreateObjectCacheRecord(objectFullName);
+                        if (_cache.ContainsKey(objectFullName))
+                        {
+                            entry = _cache[objectFullName];
+                            if (entry.IsDirty)
+                            {
+                                objectIsDirty = true;
+                            }
+                        }
+                        else
+                        {
+                            entry = _CreateObjectCacheRecord(objectFullName);
+                        }
+
+                        var hash = ConstructHash(parameters);
+                        entry.ObjectIDs[hash] = new ObjectIndexerCacheEntry(hash, objectIds);
+                    }
+                    finally
+                    {
+                        _cacheLock.ExitReadLock();
                     }
                 }
-                else
-                {
-                    entry = _CreateObjectCacheRecord(objectFullName);
-                    _cache[objectFullName] = entry;
-                }
 
-                var hash = ConstructHash(parameters);
-                if (!entry.ObjectIDs.ContainsKey(hash))
+                if (objectIsDirty)
                 {
-                    entry.Count += 1;
+                    _ReplaceObjectInCache(objectFullName, entry);
                 }
-                entry.ObjectIDs[hash] = objectIds;
             }
         }
+
+        #region Dispose implementation
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            _Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void _Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    if (null != _cacheLock)
+                    {
+                        _cacheLock.Dispose();
+                    }
+                }
+
+                _disposed = true;
+            }
+        }
+        #endregion
+
+        #region ICleanableCache implementation
+        public uint TotalQueries
+        {
+            get { return _totalObjectIDsInCache; }
+        }
+
+        public uint TotalObjectIDs
+        {
+            get { return _totalObjectIDsInCache; }
+        }
+
+        public IEnumerable<ICacheEntry> EnumerateCache()
+        {
+            if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
+            {
+                try
+                {
+                    foreach (var cacheEntry in _cache)
+                    {
+                        Dictionary<uint, ObjectIndexerCacheEntry> queries = cacheEntry.Value.ObjectIDs;
+                        foreach (KeyValuePair<uint, ObjectIndexerCacheEntry> query in queries)
+                        {
+                            yield return query.Value;
+                        }
+                    }
+                }
+                finally
+                {
+                    _cacheLock.ExitReadLock();
+                }
+            }
+        }
+        #endregion
     }
 }
