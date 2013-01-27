@@ -1,5 +1,5 @@
-ZeroG - .NET and JavaScript software libraries
-==============================================
+ZeroG - For building high performance, data intensive .NET applications.
+========================================================================
 
 ZeroG is a free, open source collection of libraries for use with .NET based 
 applications. The source code is available on GitHub and may be forked and 
@@ -8,8 +8,10 @@ modified as desired.
 Version Information
 -------------------
 ZeroG is still a work in progress and is progressing towards an initial beta release in the near future.
-The majority of ongoing work is around the ZeroG.Data Object storage framework.
-Changes are only committed to `master` once they have been completed and unit tested.
+The majority of ongoing work is around the ZeroG Object Store framework, which provides high speed 
+data storage capability along with convenient features common in relational database systems.
+Changes are only committed to `master` once they have been completed and unit tested. The software is 
+fairly stable and reliable even though it is still in beta development.
 
 Major Components
 ----------------
@@ -20,7 +22,8 @@ There are several major libraries that make up the ZeroG library collection.
 
 Programming language utilities including support for `JSON` and `BSON` parsing as well as `binary` value formatting.
 
-  * Light-weight, high speed JSON/BSON tokenizer, walker, and validator
+  * Feather-weight, high speed JSON/BSON tokenizer, walker, and validator
+  * Can parse thousands of JSON objects per millisecond on commodity hardware and supports indefinite object nesting with high performance.
   * JSON/BSON selector - supports a sub-set of JSONPath to allow values to be extracted from JSON/BSON documents.
   * Binary helper that allows binary values to be converted to and from hexadecimal strings efficiently.
 
@@ -41,28 +44,28 @@ Object Versioning and caching scheme built in.
 
 Key Capabilities
 
-  * Build "Object Stores" on the fly that hold object metadata, object values, and indexes.
+  * Store, retrieve, and index thousands of objects per second.
+  * Build "Object Stores" on the fly that hold object metadata, values, and indexes.
   * Store Objects in a high-speed Key/Value store.
   * Index the Objects with arbitrary index values by utilizing existing RDMS drivers.
   * Query indexed objects using a JSON-based constraint language.
-  * Utilize a JSON to SQL compiler.
   * SQL tables are generated on the fly to hold index values.
   * Index query caching optimizes usage of key/value store.
-  * Bulk insert and index thousands of objects efficiently.
-  * Backup objects and index values into a single compressed file with a portable data format.
-  * Restore objects and index values from a single file.
+  * Bulk insert and index objects efficiently.
+  * Full backup/restore capability of object stores and index values. into a single compressed file with a portable data format.
+  * Backup/restore data stored in compressed files with a portable data format (i.e. data can be backed up from one database engine and be restored into another.)
 
 ### ZeroG.Database.MySQL
 
-An implementation of the DatabaseService for MySQL.
+An implementation of the DatabaseService and Object Store Indexer for MySQL.
 
 ### ZeroG.Database.SQLite
 
-An implementation of the DatabaseService for SQLite.
+An implementation of the DatabaseService and Object Store Indexer for SQLite.
 
 ### ZeroG.Database.SQLServer
 
-An implementation of the DatabaseService for Microsoft SQL Server.
+An implementation of the DatabaseService and Object Store Indexer for Microsoft SQL Server.
 
 ### ZeroG.DataClient
 
