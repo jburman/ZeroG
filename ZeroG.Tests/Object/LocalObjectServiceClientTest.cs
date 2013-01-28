@@ -107,36 +107,60 @@ namespace ZeroG.Tests.Object
 
                 var val1 = new Guid("{C8159CCF-9401-404E-A11E-0B5DF8BA6DB1}");
                 var val2 = new Guid("{F1B3E0E4-0C96-4671-8BBF-A086ED1C96BC}");
+                var val3 = new Guid("{46C4CD37-EECA-416C-AD7A-52F4EA1CC999}");
                 var key1 = Encoding.UTF8.GetBytes("val1");
                 var key2 = Encoding.UTF8.GetBytes("val2");
+                var key3 = Encoding.UTF8.GetBytes("val3");
 
                 var objId1 = client.Store(val1.ToByteArray());
                 var objId2 = client.Store(key2, val2.ToByteArray());
+                var objId3 = client.Store(key3, val3.ToByteArray());
 
+                // test that all objects are returned
                 var getVal = client.Get(objId1.ID);
                 Assert.IsNotNull(getVal);
                 Assert.AreEqual(val1, new Guid(getVal));
-
                 getVal = client.GetBySecondaryKey(key2);
                 Assert.IsNotNull(getVal);
                 Assert.AreEqual(val2, new Guid(getVal));
+                getVal = client.GetBySecondaryKey(key3);
+                Assert.IsNotNull(getVal);
+                Assert.AreEqual(val3, new Guid(getVal));
 
+                // remove an object and test that it is no longer returned
                 client.Remove(objId1.ID);
                 getVal = client.Get(objId1.ID);
                 Assert.IsNull(getVal);
                 getVal = client.GetBySecondaryKey(key1);
                 Assert.IsNull(getVal);
-
                 getVal = client.Get(objId2.ID);
                 Assert.IsNotNull(getVal);
+                getVal = client.GetBySecondaryKey(key3);
+                Assert.IsNotNull(getVal);
+                Assert.AreEqual(val3, new Guid(getVal));
 
+                // remove a second object
                 client.Remove(objId2.ID);
                 getVal = client.Get(objId2.ID);
                 Assert.IsNull(getVal);
                 getVal = client.GetBySecondaryKey(key2);
                 Assert.IsNull(getVal);
+                getVal = client.GetBySecondaryKey(key3);
+                Assert.IsNotNull(getVal);
+                Assert.AreEqual(val3, new Guid(getVal));
+
+                // remove a third object by its secondary key
+                bool removed = client.RemoveBySecondaryKey(key3);
+                Assert.IsTrue(removed);
+                getVal = client.Get(objId2.ID);
+                Assert.IsNull(getVal);
+                getVal = client.GetBySecondaryKey(key2);
+                Assert.IsNull(getVal);
+                getVal = client.GetBySecondaryKey(key3);
+                Assert.IsNull(getVal);
             }
         }
+
 
         [TestMethod]
         public void SetAndFindTest()

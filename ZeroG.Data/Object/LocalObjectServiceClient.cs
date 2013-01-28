@@ -169,6 +169,11 @@ namespace ZeroG.Data.Object
         {
             _service.Remove(_nameSpace, _objectName, objectIds);
         }
+
+        public bool RemoveBySecondaryKey(byte[] secondaryKey)
+        {
+            return _service.RemoveBySecondaryKey(_nameSpace, _objectName, secondaryKey);
+        }
         
         #endregion
 

@@ -256,6 +256,23 @@ namespace ZeroG.Data.Object
             }
         }
 
+        public int? LookupPrimaryKey(string objectFullName, byte[] secondaryKey)
+        {
+            int? returnValue = null;
+
+            if (_SecondaryStoreExists(objectFullName))
+            {
+                KeyValueStore secondaryStore = _EnsureSecondaryStore(objectFullName);
+                byte[] lookup = secondaryStore.Get(secondaryKey);
+                if (null != lookup)
+                {
+                    returnValue = SerializerHelper.DeserializeInt32(lookup);
+                }
+            }
+
+            return returnValue;
+        }
+
         public void Remove(string objectFullName, int id)
         {
             var store = _EnsureStore(objectFullName);

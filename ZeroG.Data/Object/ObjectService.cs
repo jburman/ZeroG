@@ -811,6 +811,36 @@ namespace ZeroG.Data.Object
             }
         }
 
+        public bool RemoveBySecondaryKey(string nameSpace, string objectName, byte[] secondaryKey)
+        {
+            bool removed = false;
+
+            _ValidateArguments(nameSpace, objectName);
+
+            if (secondaryKey != null)
+            {
+                var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+                int? lookupObjectId = _objectStore.LookupPrimaryKey(objectFullName, secondaryKey);
+                if (lookupObjectId != null)
+                {
+                    using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
+                    {
+                        if (_objectIndexer.ObjectExists(objectFullName))
+                        {
+                            _objectIndexer.RemoveObjectIndex(objectFullName, lookupObjectId.Value);
+                        }
+                        _objectStore.Remove(objectFullName, lookupObjectId.Value);
+                        _objectVersions.Update(objectFullName);
+                        removed = true;
+
+                        trans.Complete();
+                    }
+                }
+            }
+
+            return removed;
+        }
+
         #endregion
 
         #region Dispose implementation
