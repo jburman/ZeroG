@@ -47,6 +47,7 @@ namespace ZeroG.Data.Object
 
         void Remove(int id);
         void Remove(int[] ids);
+        bool RemoveBySecondaryKey(byte[] secondaryKey);
 
         /// <summary>
         /// Simplistic interface for finding objects. 
