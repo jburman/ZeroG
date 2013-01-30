@@ -30,12 +30,22 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using ZeroG.Data.Object.Metadata;
+using System.Threading;
 
 namespace ZeroG.Data.Object
 {
     internal class ObjectVersionStore : IDisposable
     {
+        private struct ObjectVersionChangeData
+        {
+            public uint Version;
+            public string ObjectFullName;
+        }
+
         public static readonly string GlobalObjectVersionName = ObjectNaming.CreateFullObjectName(ObjectNaming.DefaultNameSpace, "GlobalVersion");
+
+        private const int _ReaderWaitTimeout = 2000;
+        private const int _WriterWaitTimeout = 4000;
 
         public ObjectVersionChangedEvent VersionChanged;
         public ObjectVersionChangedEvent VersionRemoved;
@@ -45,21 +55,64 @@ namespace ZeroG.Data.Object
         private ObjectMetadataStore _metadata;
         private KeyValueStore _store;
         private Dictionary<string, uint> _versions;
+        private ReaderWriterLockSlim _lock;
 
         public ObjectVersionStore(Config config, ObjectMetadataStore metadata)
         {
             _metadata = metadata;
             _store = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectVersionStore"));
             _versions = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
+            _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         }
 
         public uint Update(string objectFullName)
         {
-            var returnValue = _Update(objectFullName);
+            uint returnValue = 0;
 
-            foreach (var dep in _metadata.EnumerateObjectDependencies(objectFullName))
+            // Holds data to be passed to any VersionChanged event listeners
+            List<ObjectVersionChangeData> versionChangeData = new List<ObjectVersionChangeData>();
+
+            // The writer lock is obtained so that the version can be written to storage and the _versions cache object
+            // can be updated. 
+            if (_lock.TryEnterWriteLock(_WriterWaitTimeout))
             {
-                _Update(dep);
+                try
+                {
+                    uint newVersion = _Update(objectFullName);
+                    versionChangeData.Add(new ObjectVersionChangeData()
+                    {
+                        Version = newVersion,
+                        ObjectFullName = objectFullName
+                    });
+
+                    // Dependent objects are automatically updated
+                    foreach (var dep in _metadata.EnumerateObjectDependencies(objectFullName))
+                    {
+                        newVersion = _Update(dep);
+                        versionChangeData.Add(new ObjectVersionChangeData()
+                        {
+                            Version = newVersion,
+                            ObjectFullName = dep
+                        });
+                    }
+                }
+                finally
+                {
+                    _lock.ExitWriteLock();
+                }
+
+                // Fire off events
+                if (VersionChanged != null)
+                {
+                    foreach (ObjectVersionChangeData changeData in versionChangeData)
+                    {
+                        VersionChanged(changeData.ObjectFullName, changeData.Version);
+                    }
+                }
+            }
+            else
+            {
+                throw new TimeoutException("Unable to update Object Version. Write lock timeout expired."); 
             }
 
             return returnValue;
@@ -76,29 +129,61 @@ namespace ZeroG.Data.Object
             _store.Set(SerializerHelper.Serialize(objectFullName), BitConverter.GetBytes(returnValue));
             _versions[objectFullName] = returnValue;
 
-            if (null != VersionChanged)
-            {
-                VersionChanged(objectFullName, returnValue);
-            }
-
             return returnValue;
         }
 
         public uint Current(string objectFullName)
         {
             uint returnValue = 0;
+            bool notInCache = true;
 
-            if (_versions.ContainsKey(objectFullName))
+            // Allow multiple readers of the _versions object, which is treated as a version cache.
+            // This method may be called by a thread that has the Write lock already.
+            if (_lock.IsWriteLockHeld || _lock.TryEnterReadLock(_WriterWaitTimeout))
             {
-                returnValue = _versions[objectFullName];
+                try
+                {
+                    if (_versions.ContainsKey(objectFullName))
+                    {
+                        returnValue = _versions[objectFullName];
+                        notInCache = false;
+                    }
+                }
+                finally
+                {
+                    if (_lock.IsReadLockHeld)
+                    {
+                        _lock.ExitReadLock();
+                    }
+                }
             }
             else
             {
-                var val = _store.Get(SerializerHelper.Serialize(objectFullName));
-                if (null != val)
+                throw new TimeoutException("Unable to read Object Version. Read lock timeout expired.");
+            }
+
+            if (notInCache)
+            {
+                // Obtain the writer lock so that the _versions cache object can be updated.
+                if (_lock.TryEnterWriteLock(_WriterWaitTimeout))
                 {
-                    returnValue = BitConverter.ToUInt32(val, 0);
-                    _versions[objectFullName] = returnValue;
+                    try
+                    {
+                        var val = _store.Get(SerializerHelper.Serialize(objectFullName));
+                        if (null != val)
+                        {
+                            returnValue = BitConverter.ToUInt32(val, 0);
+                            _versions[objectFullName] = returnValue;
+                        }
+                    }
+                    finally
+                    {
+                        _lock.ExitWriteLock();
+                    }
+                }
+                else
+                {
+                    throw new TimeoutException("Unable to read Object Version. Write lock timeout expired.");
                 }
             }
             return returnValue;
@@ -106,14 +191,57 @@ namespace ZeroG.Data.Object
 
         public void Remove(string objectFullName)
         {
-            foreach (var dep in _metadata.EnumerateObjectDependencies(objectFullName))
-            {
-                _Update(dep);
-            }
-            _versions.Remove(objectFullName);
-            _store.Delete(SerializerHelper.Serialize(objectFullName));
+            // Holds data to be passed to any VersionChanged event listeners
+            List<ObjectVersionChangeData> versionChangeData = null;
 
-            if (null != VersionRemoved)
+            if (_lock.TryEnterWriteLock(_WriterWaitTimeout))
+            {
+                try
+                {
+                    if (_metadata.HasObjectDependencies(objectFullName))
+                    {
+                        if (VersionChanged != null)
+                        {
+                            versionChangeData = new List<ObjectVersionChangeData>();
+                        }
+
+                        // Dependent objects are automatically updated
+                        foreach (var dep in _metadata.EnumerateObjectDependencies(objectFullName))
+                        {
+                            uint newVersion = _Update(dep);
+                            if (versionChangeData != null)
+                            {
+                                versionChangeData.Add(new ObjectVersionChangeData()
+                                {
+                                    ObjectFullName = dep,
+                                    Version = newVersion
+                                });
+                            }
+                        }
+                    }
+                    _versions.Remove(objectFullName);
+                    _store.Delete(SerializerHelper.Serialize(objectFullName));
+                }
+                finally
+                {
+                    _lock.ExitWriteLock();
+                }
+
+                // Fire off events
+                if (versionChangeData != null)
+                {
+                    foreach (ObjectVersionChangeData changeData in versionChangeData)
+                    {
+                        VersionChanged(changeData.ObjectFullName, changeData.Version);
+                    }
+                }
+            }
+            else
+            {
+                throw new TimeoutException("Unable to remove Object Version. Write lock timeout expired.");
+            }
+
+            if (VersionRemoved != null)
             {
                 VersionRemoved(objectFullName, 0);
             }

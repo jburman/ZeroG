@@ -10,6 +10,7 @@ using System.IO;
 using ZeroG.Lang;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ZeroG.Tests.Object
 {
@@ -417,6 +418,166 @@ namespace ZeroG.Tests.Object
 
                 Assert.IsNull(svc.Get(ns, obj, 5));
                 Assert.IsNull(svc.GetBySecondaryKey(ns, obj, uniqueId));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void GetNextID()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                // test a basic sequence of numbers
+                int objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(1, objectId);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(2, objectId);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(3, objectId);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void GetNextIDAndTruncate()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                // test a basic sequence of numbers
+                int objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(1, objectId);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(2, objectId);
+
+                // truncate the object store and reset the object ID
+                svc.Truncate(ns, obj, true);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(1, objectId);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(2, objectId);
+
+                // truncate the object store without resetting the object ID
+                svc.Truncate(ns, obj, false);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(3, objectId);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(4, objectId);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void GetNextIDMany()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                int nextExpectedId = 1;
+                for (int i = 0; i < 500000; i++)
+                {
+                    int nextId = svc.GetNextObjectID(ns, obj);
+                    Assert.AreEqual(nextExpectedId, nextId);
+                    ++nextExpectedId;
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void GetNextIDParallel()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                // Create a set of actions to run in parallel.
+                // These actions retrieve object next IDs.
+                // The purpose of this test is to ensure that the same ID is not returned twice.
+                Action[] getNextIdActions = new Action[1000];
+                List<List<int>> captureNextIds = new List<List<int>>();
+                for (int i = 0; i < getNextIdActions.Length; i++)
+                {
+                    List<int> nextIds = new List<int>();
+                    captureNextIds.Add(nextIds);
+                    getNextIdActions[i] = () =>
+                    {
+                        for(int j = 0; j < 100; j++) 
+                        {
+                            nextIds.Add(svc.GetNextObjectID(ns, obj));
+                        }
+                    };
+                }
+
+                // Run each action in parallel
+                Parallel.Invoke(getNextIdActions);
+
+                // Make sure the same ID was not received twice.
+                Dictionary<int, int> idFrequency = new Dictionary<int, int>();
+                foreach (List<int> idList in captureNextIds)
+                {
+                    foreach (int id in idList)
+                    {
+                        if (!idFrequency.ContainsKey(id))
+                        {
+                            idFrequency.Add(id, 1);
+                        }
+                        else
+                        {
+                            idFrequency[id]++;
+                        }
+                    }
+                }
+
+                Assert.AreEqual(0, idFrequency.Where(kv => kv.Value > 1).Count());
+
+                // test that there are not any gaps in the values
+                int expectedId = 1;
+                foreach (int id in idFrequency.Keys.OrderBy(k => k))
+                {
+                    Assert.AreEqual(id, expectedId);
+
+                    ++expectedId;
+                }
             }
         }
 

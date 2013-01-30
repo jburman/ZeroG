@@ -57,14 +57,17 @@ namespace ZeroG.Data.Object
 
         public int GetCurrentID(byte[] key)
         {
-            byte[] val = _store.Get(key);
-            if (null == val)
+            lock (_idLock)
             {
-                return 0;
-            }
-            else
-            {
-                return SerializerHelper.DeserializeInt32(val);
+                byte[] val = _store.Get(key);
+                if (null == val)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return SerializerHelper.DeserializeInt32(val);
+                }
             }
         }
 
