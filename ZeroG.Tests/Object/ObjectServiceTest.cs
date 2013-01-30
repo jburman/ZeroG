@@ -583,6 +583,90 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [TestCategory("Core")]
+        public void ObjectVersionChangedEvent()
+        {
+            List<string> objectNames = new List<string>();
+            List<uint> objectVersions = new List<uint>();
+
+            Action<string, uint> versionChanged = (objectFullName, newVersion) =>
+            {
+                objectNames.Add(objectFullName);
+                objectVersions.Add(newVersion);
+            };
+
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig(), versionChanged))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+                var objFullName = ObjectNaming.CreateFullObjectName(ns, obj);
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var val3 = new Guid("{82B2056A-7F32-4CDE-AC57-DB375086B40F}");
+
+                var secKey1 = Encoding.UTF8.GetBytes("001");
+                var secKey2 = Encoding.UTF8.GetBytes("002");
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    SecondaryKey = secKey1
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    SecondaryKey = secKey2
+                });
+
+                var objID3 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val3.ToByteArray()
+                });
+
+                Assert.AreEqual(3, objectNames.Count);
+                Assert.AreEqual(3, objectVersions.Count);
+                Assert.AreEqual(objFullName, objectNames[0]);
+                Assert.AreEqual(objFullName, objectNames[1]);
+                Assert.AreEqual(objFullName, objectNames[2]);
+                Assert.AreEqual(1u, objectVersions[0]);
+                Assert.AreEqual(2u, objectVersions[1]);
+                Assert.AreEqual(3u, objectVersions[2]);
+
+                svc.Remove(ns, obj, objID2.ID);
+                svc.RemoveBySecondaryKey(ns, obj, secKey1);
+
+                Assert.AreEqual(5, objectNames.Count);
+                Assert.AreEqual(5, objectVersions.Count);
+                Assert.AreEqual(objFullName, objectNames[3]);
+                Assert.AreEqual(objFullName, objectNames[4]);
+                Assert.AreEqual(4u, objectVersions[3]);
+                Assert.AreEqual(5u, objectVersions[4]);
+
+                svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val3.ToByteArray()
+                });
+
+                Assert.AreEqual(6, objectNames.Count);
+                Assert.AreEqual(6, objectVersions.Count);
+                Assert.AreEqual(objFullName, objectNames[5]);
+                Assert.AreEqual(6u, objectVersions[5]);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void StoreAndRetrieveByIndex()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))

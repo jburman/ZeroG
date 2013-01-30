@@ -25,5 +25,5 @@
 
 namespace ZeroG.Data.Object
 {
-    internal delegate void ObjectVersionChangedEvent(string value, uint newVersion);
+    internal delegate void ObjectVersionChangedEvent(string objectFullName, uint newVersion);
 }

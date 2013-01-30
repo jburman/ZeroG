@@ -58,15 +58,34 @@ namespace ZeroG.Data.Object
             _DefaultTransactionOptions.Timeout = TransactionManager.DefaultTimeout;
         }
 
+        /// <summary>
+        /// Constructs a new ObjectService that is configured via the application's config file.
+        /// </summary>
         public ObjectService()
             : this(Config.Default)
         {
         }
 
+        /// <summary>
+        /// Constructs a new ObjectService configured via the supplied Config instance.
+        /// </summary>
+        /// <param name="config"></param>
         public ObjectService(Config config)
+            : this(config, null)
+        {
+        }
+
+        /// <summary>
+        /// Constructs a new ObjectService configured via the supplied Config instance.
+        /// Also, allows a delegate action to be run when the ObjectVersionChanged event 
+        /// fires. This is useful, for example, for notifying caches kept external to 
+        /// the ObjectService itself.
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="onObjectVersionChanged"></param>
+        public ObjectService(Config config, Action<string, uint> onObjectVersionChanged)
         {
             _assignments = new List<IDisposable>();
-
 
             _objectMetadata = new ObjectMetadataStore(config);
             _objectNaming = new ObjectNaming(_objectMetadata);
@@ -87,6 +106,14 @@ namespace ZeroG.Data.Object
             _assignments.Add(_objectVersions);
             _assignments.Add(_objectStore);
             _assignments.Add(_objectIndexer);
+
+            if (onObjectVersionChanged != null)
+            {
+                _objectVersions.VersionChanged += (objectFullName, newVersion) => 
+                {
+                    onObjectVersionChanged(objectFullName, newVersion);
+                };
+            }
         }
 
         #endregion
