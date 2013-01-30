@@ -54,6 +54,35 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        public void CreateAndRemoveNameSpace()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                Assert.IsFalse(svc.NameSpaceExists(NameSpace1));
+
+                var now = DateTime.Now;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
+                    "ZeroGTest", "Unit Test", now));
+
+                Assert.IsTrue(svc.NameSpaceExists(NameSpace1));
+
+                var ns = svc.GetNameSpace(NameSpace1);
+
+                Assert.IsNotNull(ns);
+
+                Assert.AreEqual(NameSpace1, ns.Name);
+                Assert.AreEqual("ZeroGTest", ns.Owner);
+                Assert.AreEqual("Unit Test", ns.StoreLocation);
+                Assert.AreEqual(now, ns.Created);
+
+                svc.RemoveNameSpace(NameSpace1);
+                ns = svc.GetNameSpace(NameSpace1);
+                Assert.IsNull(ns);
+            }
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(System.ArgumentException))]
         public void CreateDuplicateNameSpace()
         {
@@ -119,6 +148,35 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(NameSpace1, metadata.NameSpace);
                 Assert.AreEqual(ObjectName1, metadata.ObjectName);
                 Assert.IsNull(metadata.Indexes);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void ProvisionAndUnprovisionObjectStoreNoIndexes()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(NameSpace1, ObjectName1));
+
+                Assert.IsTrue(svc.ObjectNameExists(NameSpace1, ObjectName1));
+
+                var metadata = svc.GetObjectMetadata(NameSpace1, ObjectName1);
+                Assert.IsNotNull(metadata);
+
+                Assert.AreEqual(NameSpace1, metadata.NameSpace);
+                Assert.AreEqual(ObjectName1, metadata.ObjectName);
+                Assert.IsNull(metadata.Indexes);
+
+                svc.UnprovisionObjectStore(NameSpace1, ObjectName1);
+                metadata = svc.GetObjectMetadata(NameSpace1, ObjectName1);
+                Assert.IsNull(metadata);
             }
         }
 

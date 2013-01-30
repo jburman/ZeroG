@@ -39,6 +39,8 @@ namespace ZeroG.Data.Object.Metadata
 
         private KeyValueStore _store;
         private KeyValueStore _nsStore;
+        private Dictionary<string, ObjectMetadata> _mdCache;
+        private Dictionary<string, ObjectNameSpaceConfig> _nsCache;
 
         public event ObjectMetadatastoreUpdatedEvent ObjectNameSpaceAdded;
         public event ObjectMetadatastoreUpdatedEvent ObjectNameSpaceRemoved;
@@ -55,6 +57,29 @@ namespace ZeroG.Data.Object.Metadata
             _config = config;
             _store = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectMetadataStore"));
             _nsStore = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectNameSpaceStore"));
+            _nsCache = new Dictionary<string, ObjectNameSpaceConfig>(StringComparer.OrdinalIgnoreCase);
+            _mdCache = new Dictionary<string, ObjectMetadata>(StringComparer.OrdinalIgnoreCase);
+
+            _InitCache();
+        }
+
+        private void _InitCache()
+        {
+            lock (_nsCache)
+            {
+                foreach (var e in _nsStore.Enumerate())
+                {
+                    _nsCache[SerializerHelper.DeserializeString(e.Key)] = SerializerHelper.Deserialize<ObjectNameSpaceConfig>(e.Value);
+                }
+            }
+
+            lock (_mdCache)
+            {
+                foreach (var e in _store.Enumerate())
+                {
+                    _mdCache[SerializerHelper.DeserializeString(e.Key)] = SerializerHelper.Deserialize<ObjectMetadata>(e.Value);
+                }
+            }
         }
 
         public void CreateNameSpace(ObjectNameSpaceConfig config)
@@ -84,7 +109,10 @@ namespace ZeroG.Data.Object.Metadata
                     }
                     // namespace is not already used so go ahead and store it
                     _nsStore.Set(nsKey, SerializerHelper.Serialize<ObjectNameSpaceConfig>(config));
-
+                    lock (_nsCache)
+                    {
+                        _nsCache[nameSpace] = config;
+                    }
                     if (null != ObjectNameSpaceAdded)
                     {
                         ObjectNameSpaceAdded(nameSpace);
@@ -123,6 +151,10 @@ namespace ZeroG.Data.Object.Metadata
                     {
                         // overwrite the existing namespace
                         _nsStore.Set(nsKey, SerializerHelper.Serialize<ObjectNameSpaceConfig>(config));
+                        lock (_nsCache)
+                        {
+                            _nsCache[nameSpace] = config;
+                        }
                     }
                     else
                     {
@@ -145,6 +177,14 @@ namespace ZeroG.Data.Object.Metadata
             }
             else
             {
+                lock (_nsCache)
+                {
+                    if (_nsCache.ContainsKey(nameSpace))
+                    {
+                        return _nsCache[nameSpace];
+                    }
+                }
+
                 var nsKey = SerializerHelper.Serialize(nameSpace);
                 var data = _nsStore.Get(nsKey);
                 if (null == data)
@@ -160,18 +200,10 @@ namespace ZeroG.Data.Object.Metadata
 
         public bool NameSpaceExists(string nameSpace)
         {
-            bool returnValue = false;
-
-            foreach (var storedNameSpace in EnumerateNameSpaces())
+            lock (_nsCache)
             {
-                if (storedNameSpace.Equals(nameSpace, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    returnValue = true;
-                    break;
-                }
+                return _nsCache.ContainsKey(nameSpace);
             }
-
-            return returnValue;
         }
 
         public void RemoveNameSpace(string nameSpace)
@@ -190,6 +222,13 @@ namespace ZeroG.Data.Object.Metadata
                     if (0 == EnumerateObjectNames(nameSpace).Count())
                     {
                         _nsStore.Delete(nsKey);
+                        lock (_nsCache)
+                        {
+                            if (_nsCache.ContainsKey(nameSpace))
+                            {
+                                _nsCache.Remove(nameSpace);
+                            }
+                        }
                         if (null != ObjectNameSpaceRemoved)
                         {
                             ObjectNameSpaceRemoved(nameSpace);
@@ -246,6 +285,10 @@ namespace ZeroG.Data.Object.Metadata
             var objKey = SerializerHelper.Serialize(fullObjName);
             var metadataVal = SerializerHelper.Serialize<ObjectMetadata>(metadata);
             _store.Set(objKey, metadataVal);
+            lock (_mdCache)
+            {
+                _mdCache[fullObjName] = metadata;
+            }
 
             if (null != ObjectMetadataAdded)
             {
@@ -262,6 +305,13 @@ namespace ZeroG.Data.Object.Metadata
         {
             var objKey = ObjectNaming.CreateFullObjectKey(objectFullName);
             _store.Delete(objKey);
+            lock (_mdCache)
+            {
+                if (_mdCache.ContainsKey(objectFullName))
+                {
+                    _mdCache.Remove(objectFullName);
+                }
+            }
             if (null != ObjectMetadataRemoved)
             {
                 ObjectMetadataRemoved(objectFullName);
@@ -275,43 +325,52 @@ namespace ZeroG.Data.Object.Metadata
 
         public ObjectMetadata GetMetadata(string objectFullName)
         {
-            var objKey = ObjectNaming.CreateFullObjectKey(objectFullName);
-            var value = _store.Get(objKey);
-            if (null == value)
+            lock (_mdCache)
             {
-                return null;
-            }
-            else
-            {
-                return SerializerHelper.Deserialize<ObjectMetadata>(value);
+                if (_mdCache.ContainsKey(objectFullName))
+                {
+                    return _mdCache[objectFullName];
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
         public IEnumerable<string> EnumerateObjectNames()
         {
-            foreach (var e in _store.Enumerate())
+            lock (_mdCache)
             {
-                yield return SerializerHelper.DeserializeString(e.Key);
+                foreach (var md in _mdCache.Values)
+                {
+                    yield return md.ObjectFullName;
+                }
             }
         }
 
         public IEnumerable<string> EnumerateObjectNames(string nameSpace)
         {
-            foreach (var e in _store.Enumerate())
+            lock (_mdCache)
             {
-                string objFullName = SerializerHelper.DeserializeString(e.Key);
-                if (nameSpace.Equals(ObjectNaming.GetNameSpaceFromFullObjectName(objFullName), StringComparison.OrdinalIgnoreCase))
+                foreach (var md in _mdCache.Values)
                 {
-                    yield return objFullName;
+                    if (nameSpace.Equals(md.NameSpace, StringComparison.OrdinalIgnoreCase))
+                    {
+                        yield return md.ObjectFullName;
+                    }
                 }
             }
         }
 
         public IEnumerable<string> EnumerateNameSpaces()
         {
-            foreach (var e in _nsStore.Enumerate())
+            lock (_nsCache)
             {
-                yield return SerializerHelper.DeserializeString(e.Key);
+                foreach (string ns in _nsCache.Keys)
+                {
+                    yield return ns;
+                }
             }
         }
 
@@ -332,7 +391,16 @@ namespace ZeroG.Data.Object.Metadata
 
         public bool Exists(string objectFullName)
         {
-            return null != _store.Get(SerializerHelper.Serialize(objectFullName));
+            lock (_mdCache)
+            {
+                return _mdCache.ContainsKey(objectFullName);
+            }
+        }
+
+        public bool HasObjectDependencies(string objectFullName)
+        {
+            var md = GetMetadata(objectFullName);
+            return (null != md && null != md.Dependencies && 0 != md.Dependencies.Length);
         }
 
         #region Dispose implementation
@@ -352,6 +420,14 @@ namespace ZeroG.Data.Object.Metadata
                 {
                     _store.Dispose();
                     _nsStore.Dispose();
+                    lock (_nsCache)
+                    {
+                        _nsCache.Clear();
+                    }
+                    lock (_mdCache)
+                    {
+                        _mdCache.Clear();
+                    }
                 }
                 _disposed = true;
             }
