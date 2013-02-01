@@ -10,6 +10,7 @@ namespace ZeroG.Tests.Object
     public class ObjectIndexTest
     {
         [TestMethod]
+        [TestCategory("Core")]
         public void Create()
         {
             var idx = ObjectIndex.Create("Index_Name1", 5);
@@ -21,6 +22,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         public void CreateEachDataType()
         {
             var idx = ObjectIndex.Create("Index_Name1", 5);
@@ -59,6 +61,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         [ExpectedException(typeof(ArgumentNullException))]
         public void IndexNameNull()
         {
@@ -66,6 +69,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         [ExpectedException(typeof(ArgumentException))]
         public void InvalidCharacterIndexName()
         {
@@ -73,6 +77,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         [ExpectedException(typeof(ArgumentException))]
         public void IndexNameTooShort()
         {
@@ -80,6 +85,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         [ExpectedException(typeof(ArgumentException))]
         public void IndexNameTooLong()
         {

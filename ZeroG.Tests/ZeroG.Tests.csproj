@@ -76,13 +76,14 @@
     <Compile Include="Data\Drivers\SQLiteTests.cs" />
     <Compile Include="Data\Lang\GenerateConstraintTest.cs" />
     <Compile Include="Lang\JSON\JSONTokenizerTest.cs" />
+    <Compile Include="Object\Cache\ObjectIndexerCacheRecordTest.cs" />
     <Compile Include="Object\ConfigTest.cs" />
     <Compile Include="Object\LocalObjectServiceClientTest.cs" />
     <Compile Include="Object\MultiThreadingTest.cs" />
     <Compile Include="Object\ObjectMetadataTest.cs" />
     <Compile Include="Object\ObjectServiceTest.cs" />
     <Compile Include="Object\ObjectTestHelper.cs" />
-    <Compile Include="Object\ObjectIndexerCacheTest.cs" />
+    <Compile Include="Object\Cache\ObjectIndexerCacheTest.cs" />
     <Compile Include="Object\ObjectIndexTest.cs" />
     <Compile Include="Object\ObjectBackupTest.cs" />
     <Compile Include="Object\ObjectIndexRecordTest.cs" />

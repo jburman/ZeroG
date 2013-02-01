@@ -42,8 +42,6 @@ namespace ZeroG.Data.Object.Cache
         private ReaderWriterLockSlim _cacheLock;
         private ObjectMetadataStore _metadata;
         private ObjectVersionStore _versions;
-        private uint _totalQueriesInCache;
-        private uint _totalObjectIDsInCache;
 
         internal ObjectIndexerCache(ObjectMetadataStore metadata, ObjectVersionStore versions)
         {
@@ -51,8 +49,6 @@ namespace ZeroG.Data.Object.Cache
             _cacheLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
             _metadata = metadata;
             _versions = versions;
-            _totalQueriesInCache = 0;
-            _totalObjectIDsInCache = 0;
 
             metadata.ObjectMetadataAdded += _ObjectMetadataAdded;
             metadata.ObjectMetadataRemoved += _ObjectMetadataRemoved;
@@ -73,8 +69,6 @@ namespace ZeroG.Data.Object.Cache
                 try
                 {
                     _cache.Clear();
-                    _totalQueriesInCache = 0;
-                    _totalObjectIDsInCache = 0;
                 }
                 finally
                 {
@@ -121,7 +115,6 @@ namespace ZeroG.Data.Object.Cache
             {
                 ObjectFullName = objectFullName,
                 Version = _versions.Current(objectFullName),
-                Queries = new Dictionary<uint, ObjectIndexerCacheEntry>(),
                 IsDirty = false
             };
             return record;
@@ -133,35 +126,9 @@ namespace ZeroG.Data.Object.Cache
             {
                 try
                 {
-                    if (_cache.ContainsKey(objectFullName))
-                    {
-                        ObjectIndexerCacheRecord record = _cache[objectFullName];
-
-                        // remove existing record and  update totals
-                        _cache.Remove(objectFullName);
-
-                        // update the cache totals
-                        uint totalObjectIDsRemoved = 0;
-                        foreach (var entry in record.Queries)
-                        {
-                            totalObjectIDsRemoved += entry.Value.ObjectIDCount;
-                        }
-                        _totalQueriesInCache = (uint)Math.Max(0, _totalQueriesInCache - record.Queries.Count);
-                        _totalObjectIDsInCache = (uint)Math.Max(0, _totalObjectIDsInCache - totalObjectIDsRemoved);
-                    }
-
                     if (null != replace)
                     {
                         _cache[objectFullName] = replace;
-
-                        // update the cache totals
-                        uint totalObjectIDsRemoved = 0;
-                        foreach (var entry in replace.Queries)
-                        {
-                            totalObjectIDsRemoved += (uint)entry.Value.ObjectIDCount;
-                        }
-                        _totalQueriesInCache = (uint)(_totalQueriesInCache + replace.Queries.Count);
-                        _totalObjectIDsInCache = _totalObjectIDsInCache + totalObjectIDsRemoved;
                     }
                 }
                 finally
@@ -234,7 +201,6 @@ namespace ZeroG.Data.Object.Cache
             if (0 < parameters.Length)
             {
                 string objectFullName = (string)parameters[0];
-                bool objectIsDirty = false;
 
                 if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
                 {
@@ -244,21 +210,13 @@ namespace ZeroG.Data.Object.Cache
                         {
                             ObjectIndexerCacheRecord entry = _cache[objectFullName];
 
-                            if (entry.IsDirty)
-                            {
-                                objectIsDirty = true;
-                            }
-                            else
+                            if (!entry.IsDirty)
                             {
                                 var hash = ConstructHash(parameters);
                                 if (0 != hash)
                                 {
-                                    var objIds = entry.Queries;
                                     // try to get from cache
-                                    if (objIds.ContainsKey(hash))
-                                    {
-                                        returnValue = objIds[hash].ObjectIDs;
-                                    }
+                                    returnValue = entry.GetFromCache(hash);
                                 }
                             }
                         }
@@ -267,11 +225,6 @@ namespace ZeroG.Data.Object.Cache
                     {
                         _cacheLock.ExitReadLock();
                     }
-                }
-
-                if (objectIsDirty)
-                {
-                    _ReplaceObjectInCache(objectFullName, _CreateObjectCacheRecord(objectFullName));
                 }
             }
             return returnValue;
@@ -285,6 +238,8 @@ namespace ZeroG.Data.Object.Cache
 
                 ObjectIndexerCacheRecord entry = null;
                 bool objectIsDirty = false;
+                bool objectIsNew = false;
+                var hash = ConstructHash(parameters);
 
                 if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
                 {
@@ -301,10 +256,9 @@ namespace ZeroG.Data.Object.Cache
                         else
                         {
                             entry = _CreateObjectCacheRecord(objectFullName);
+                            entry.AddToCache(hash, objectIds);
+                            objectIsNew = true;
                         }
-
-                        var hash = ConstructHash(parameters);
-                        entry.Queries[hash] = new ObjectIndexerCacheEntry(hash, objectIds);
                     }
                     finally
                     {
@@ -312,7 +266,22 @@ namespace ZeroG.Data.Object.Cache
                     }
                 }
 
-                if (objectIsDirty)
+                if (!objectIsDirty)
+                {
+                    if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
+                    {
+                        try
+                        {
+                            entry.AddToCache(hash, objectIds);
+                        }
+                        finally
+                        {
+                            _cacheLock.ExitWriteLock();
+                        }
+                    }
+                }
+
+                if (objectIsDirty || objectIsNew)
                 {
                     _ReplaceObjectInCache(objectFullName, entry);
                 }
@@ -346,14 +315,74 @@ namespace ZeroG.Data.Object.Cache
         #endregion
 
         #region ICleanableCache implementation
-        public uint TotalQueries
+
+        private struct CacheEntry : ICacheEntry
         {
-            get { return _totalQueriesInCache; }
+            private string _objectFullName;
+            private uint _hash;
+            private int _counter, _objectIdCount;
+
+            public CacheEntry(string objectFullName,
+                uint hash,
+                int counter,
+                int objectIdCount)
+            {
+                _objectFullName = objectFullName;
+                _hash = hash;
+                _counter = counter;
+                _objectIdCount = objectIdCount;
+            }
+
+            public string ObjectFullName
+            {
+                get { return _objectFullName; }
+            }
+
+            public uint Hash
+            {
+                get { return _hash; }
+            }
+
+            public int Counter
+            {
+                get { return _counter; }
+            }
+
+            public int ObjectIDCount
+            {
+                get { return _objectIdCount; }
+            }
         }
 
-        public uint TotalObjectIDs
+        public CacheTotals Totals
         {
-            get { return _totalObjectIDsInCache; }
+            get 
+            {
+                int totalQueries = 0;
+                int totalObjectIds = 0;
+
+                if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
+                {
+                    try
+                    {
+                        totalQueries = _cache.Count;
+
+                        foreach (var entry in _cache)
+                        {
+                            foreach (var cache in entry.Value.Cache)
+                            {
+                                totalObjectIds += cache.Value.Value.Length;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        _cacheLock.ExitReadLock();
+                    }
+                }
+
+                return new CacheTotals(totalQueries, totalObjectIds);
+            }
         }
 
         public IEnumerable<ICacheEntry> EnumerateCache()
@@ -362,18 +391,43 @@ namespace ZeroG.Data.Object.Cache
             {
                 try
                 {
-                    foreach (var cacheEntry in _cache)
+                    foreach (var entry in _cache)
                     {
-                        Dictionary<uint, ObjectIndexerCacheEntry> queries = cacheEntry.Value.Queries;
-                        foreach (KeyValuePair<uint, ObjectIndexerCacheEntry> query in queries)
+                        string objectName = entry.Value.ObjectFullName;
+
+                        foreach (var cache in entry.Value.Cache)
                         {
-                            yield return query.Value;
+                            yield return new CacheEntry(objectName,
+                                cache.Key,
+                                cache.Value.Counter,
+                                cache.Value.Value.Length);
                         }
                     }
                 }
                 finally
                 {
                     _cacheLock.ExitReadLock();
+                }
+            }
+        }
+
+        public void Remove(ICacheEntry[] entries)
+        {
+            if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
+            {
+                try
+                {
+                    foreach (ICacheEntry entry in entries)
+                    {
+                        if (_cache.ContainsKey(entry.ObjectFullName))
+                        {
+                            _cache[entry.ObjectFullName].RemoveFromCache(entry.Hash);
+                        }
+                    }
+                }
+                finally
+                {
+                    _cacheLock.ExitWriteLock();
                 }
             }
         }

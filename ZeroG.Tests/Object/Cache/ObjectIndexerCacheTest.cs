@@ -288,7 +288,7 @@ namespace ZeroG.Tests.Object
                 });
 
                 stopWatchUncached.Start();
-                for (int i = 0; 10 > i; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     var findVals = svc.Find(ns, obj, @"{ ""IntIndex1"" : 12500 }").ToArray();
                     Assert.AreEqual(1, findVals.Length);
@@ -300,7 +300,7 @@ namespace ZeroG.Tests.Object
             using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
             {
                 stopWatchCached.Start();
-                for (int i = 0; 10 > i; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     var findVals = svc.Find(ns, obj, @"{ ""IntIndex1"" : 12500 }").ToArray();
                     Assert.AreEqual(1, findVals.Length);
@@ -310,6 +310,10 @@ namespace ZeroG.Tests.Object
             }
 
             Assert.IsTrue(stopWatchUncached.Elapsed > stopWatchCached.Elapsed);
+
+            Console.WriteLine("Uncached time: {0} -- Cached time: {1}",
+                stopWatchUncached.Elapsed,
+                stopWatchCached.Elapsed);
         }
 
         [TestMethod]

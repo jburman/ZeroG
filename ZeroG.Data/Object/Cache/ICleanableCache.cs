@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2013 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -29,8 +29,8 @@ namespace ZeroG.Data.Object.Cache
 {
     public interface ICleanableCache
     {
-        uint TotalQueries { get; }
-        uint TotalObjectIDs { get; }
+        CacheTotals Totals { get; }
         IEnumerable<ICacheEntry> EnumerateCache();
+        void Remove(ICacheEntry[] entry);
     }
 }

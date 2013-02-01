@@ -23,14 +23,21 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+using System;
 
 namespace ZeroG.Data.Object.Cache
 {
-    public interface ICacheEntry
+    public sealed class CacheValue<T>
     {
-        string ObjectFullName { get; }
-        uint Hash { get; }
-        int Counter { get; }
-        int ObjectIDCount { get; }
+        public CacheValue(T value)
+        {
+            Counter = 0;
+            Value = value;
+        }
+
+        public T Value;
+
+        // records how many times this value was accessed
+        public int Counter;
     }
 }

@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2013 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -25,40 +25,15 @@
 
 namespace ZeroG.Data.Object.Cache
 {
-    internal class ObjectIndexerCacheEntry : ICacheEntry
+    public struct CacheTotals
     {
-        private uint _counter;
-
-        public ObjectIndexerCacheEntry(uint hash, int[] objectIds)
+        public CacheTotals(int totalQueries, int totalObjectIDs)
         {
-            _counter = 0;
-            Hash = hash;
-            ObjectIDs = objectIds;
+            TotalQueries = totalQueries;
+            TotalObjectIDs = totalObjectIDs;
         }
 
-        internal uint Hash;
-        internal int[] ObjectIDs;
-
-        public uint CacheKey
-        {
-            get { return Hash; }
-        }
-
-        public uint Counter
-        {
-            get
-            {
-                return _counter;
-            }
-            set
-            {
-                _counter = value;
-            }
-        }
-
-        public uint ObjectIDCount
-        {
-            get { return (uint)ObjectIDs.Length; }
-        }
+        public int TotalQueries;
+        public int TotalObjectIDs;
     }
 }

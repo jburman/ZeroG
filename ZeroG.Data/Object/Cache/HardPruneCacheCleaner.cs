@@ -24,54 +24,50 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 
 namespace ZeroG.Data.Object.Cache
 {
-    public sealed class ObjectIndexerCacheRecord
+    /// <summary>
+    /// Cleans the cache with a more brute force mechanism.
+    /// The strategy is to wait until either the Maximum Query Count 
+    /// or Maximum Objects in the cache exceeds a threshold.
+    /// </summary>
+    public class HardPruneCacheCleaner : ICacheCleaner
     {
-        public ObjectIndexerCacheRecord()
+        private ICleanableCache _cache;
+        private uint _maxQueries, _maxObjects;
+
+        public HardPruneCacheCleaner(ICleanableCache cache, uint maximumQueries, uint maximumObjects)
         {
-            Cache = new Dictionary<uint, CacheValue<int[]>>();
+            if (null == cache)
+            {
+                throw new ArgumentNullException("cache");
+            }
+            _cache = cache;
+            _maxQueries = maximumQueries;
+            _maxObjects = maximumObjects;
         }
 
-        public string ObjectFullName;
-        public bool IsDirty;
-        public uint Version;
-        public uint TotalObjectIDs;
-        public Dictionary<uint, CacheValue<int[]>> Cache;
-
-        public void AddToCache(uint hash, int[] objectIds)
+        public bool NeedsCleaning()
         {
-            if (Cache.ContainsKey(hash))
-            {
-                TotalObjectIDs -= (uint)Math.Max(0, TotalObjectIDs - Cache[hash].Value.Length);
-            }
-            Cache[hash] = new CacheValue<int[]>(objectIds);
-            TotalObjectIDs += (uint)objectIds.Length;
+            var totals = _cache.Totals;
+
+            return (totals.TotalQueries > _maxQueries || totals.TotalObjectIDs > _maxObjects);
         }
 
-        public int[] GetFromCache(uint hash)
+        public bool Update()
         {
-            if (Cache.ContainsKey(hash))
+            foreach (ICacheEntry cache in _cache.EnumerateCache())
             {
-                CacheValue<int[]> value = Cache[hash];
-                value.Counter += 1;
-                return value.Value;
+                // TODO
             }
-            else
-            {
-                return null;
-            }
+
+            return true;
         }
 
-        public void RemoveFromCache(uint hash)
+        public void Dispose()
         {
-            if (Cache.ContainsKey(hash))
-            {
-                TotalObjectIDs = (uint)Math.Max(0, TotalObjectIDs - Cache[hash].Value.Length);
-                Cache.Remove(hash);
-            }
+            
         }
     }
 }

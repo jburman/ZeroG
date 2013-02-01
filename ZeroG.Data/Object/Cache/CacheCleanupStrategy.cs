@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2013 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -23,14 +23,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-
 namespace ZeroG.Data.Object.Cache
 {
-    public interface ICacheEntry
+    public enum CacheCleanupStrategy
     {
-        string ObjectFullName { get; }
-        uint Hash { get; }
-        int Counter { get; }
-        int ObjectIDCount { get; }
+        HardPrune,
+        AgingPrune
     }
 }
