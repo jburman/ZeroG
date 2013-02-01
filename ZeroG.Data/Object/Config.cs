@@ -23,6 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+using System;
 using System.Configuration;
 using ZeroG.Data.Database;
 
@@ -31,13 +32,66 @@ namespace ZeroG.Data.Object
     public class Config
     {
         public static readonly string StoreVersion = "1.0";
-
         public static readonly string ObjectIndexProviderConfigKey = "ObjectIndexProvider";
 
+        private static string _appDir;
+
+        /// <summary>
+        /// Constructs a new Config instance with all properties initialized from the App config file.
+        /// </summary>
         public Config()
         {
             _baseDataPath = ConfigurationManager.AppSettings["ObjectServiceDataDir"];
-            
+
+            _LoadPropertiesFromConfig();
+
+            _FinalizeProperties();
+        }
+
+
+        /// <summary>
+        /// Constructs a new Config instance with all properties initialized from the App config file,
+        /// except for the base data path property.
+        /// </summary>
+        public Config(string baseDataPath) : this()
+        {
+            _baseDataPath = baseDataPath;
+
+            _LoadPropertiesFromConfig();
+
+            _FinalizeProperties();
+        }
+
+        /// <summary>
+        /// Allows Config values to be specified without using the App config file.
+        /// </summary>
+        /// <param name="baseDataPath"></param>
+        /// <param name="indexCacheEnabled"></param>
+        /// <param name="objectIndexSchemaConn"></param>
+        /// <param name="objectIndexDataConn"></param>
+        /// <param name="maxObjectDependences"></param>
+        public Config(string baseDataPath,
+            bool indexCacheEnabled,
+            string objectIndexSchemaConn,
+            string objectIndexDataConn,
+            uint maxObjectDependences)
+        {
+            _baseDataPath = baseDataPath;
+            _indexCacheEnabled = indexCacheEnabled;
+            _objectIndexSchemaConn = objectIndexSchemaConn;
+            _objectIndexDataConn = objectIndexDataConn;
+            _maxObjectDependencies = maxObjectDependences;
+
+            _FinalizeProperties();
+        }
+
+        #region Private helpers
+
+        /// <summary>
+        /// Initializes all properties from the App config file except for ObjectServiceDataDir.
+        /// </summary>
+        private void _LoadPropertiesFromConfig()
+        {
             bool boolParse = false;
             bool.TryParse(ConfigurationManager.AppSettings["ObjectIndexCacheEnabled"], out boolParse);
             _indexCacheEnabled = boolParse;
@@ -50,30 +104,36 @@ namespace ZeroG.Data.Object
 
             uint intParse = 0;
             uint.TryParse(ConfigurationManager.AppSettings["MaxObjectDependencies"], out intParse);
-            if(0 == intParse) 
+            if (0 == intParse)
             {
                 intParse = 5;
             }
             _maxObjectDependencies = intParse;
         }
 
-        public Config(string baseDataPath) : this()
+        /// <summary>
+        /// Performs final processing on configuration property values before they are used.
+        /// For example, place holder values are substituted into the BaseDataPath value.
+        /// </summary>
+        private void _FinalizeProperties()
         {
-            _baseDataPath = baseDataPath;
+            if (null != _baseDataPath)
+            {
+                var index = -1;
+                if (-1 != (index = _baseDataPath.IndexOf("{appdir}", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var sub = _baseDataPath.Substring(index, "{appdir}".Length);
+
+                    if (_appDir == null)
+                    {
+                        _appDir = AppDomain.CurrentDomain.BaseDirectory;
+                    }
+                    _baseDataPath = _baseDataPath.Replace(sub, _appDir);
+                }
+            }
         }
 
-        public Config(string baseDataPath,
-            bool indexCacheEnabled,
-            string objectIndexSchemaConn,
-            string objectIndexDataConn,
-            uint maxObjectDependences)
-        {
-            _baseDataPath = baseDataPath;
-            _indexCacheEnabled = indexCacheEnabled;
-            _objectIndexSchemaConn = objectIndexSchemaConn;
-            _objectIndexDataConn = objectIndexDataConn;
-            _maxObjectDependencies = maxObjectDependences;
-        }
+        #endregion
 
         private static Config _default;
         public static Config Default
