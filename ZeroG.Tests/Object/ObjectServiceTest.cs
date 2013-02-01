@@ -894,6 +894,69 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [TestCategory("Core")]
+        public void StoreAndRetrieveManyByIndex()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[] 
+                        {
+                            new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 32),
+                            new ObjectIndexMetadata("StrNullIndex1", ObjectIndexType.String, 32, true)
+                        }));
+
+                int objectCount = 5000;
+                var strIndexes = new List<string>();
+                var storeValues = new List<PersistentObject>();
+                for (int i = 0; i < objectCount; i++)
+                {
+                    Guid val = Guid.NewGuid();
+                    string strIndex = val.ToString("N");
+                    strIndexes.Add(strIndex);
+
+                    storeValues.Add(new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = val.ToByteArray(),
+                        Indexes = new ObjectIndex[] 
+                        { 
+                            ObjectIndex.Create("IntIndex1", i + 1000),
+                            ObjectIndex.Create("StrIndex1", strIndex),
+                            ObjectIndex.Create("StrNullIndex1", (0 == i || 0 == (i % 4)) ? null : "strIndex")
+                        }
+                    });
+                }
+
+                svc.BulkStore(ns, storeValues);
+
+                // query each value again
+                for (int i = 0; i < objectCount; i++)
+                {
+                    string strIndex = strIndexes[i];
+                    int intIndex = i + 1000;
+                    string strIndex2 = (0 == i || 0 == (i % 4)) ? null : "strIndex";
+
+                    IEnumerable<byte[]> objects = svc.Find(ns, obj, @"{ ""IntIndex1"" : " + intIndex + @", 
+""AND"" : { ""StrIndex1"" : """ + strIndex + @""", 
+""AND"" : { ""StrNullIndex1"" : " + ((null == strIndex2) ? "null" : "\"" + strIndex2 + "\"") + " } } }");
+
+                    Assert.IsNotNull(objects);
+                    Assert.AreEqual(1, objects.Count());
+                    Assert.AreEqual(strIndex, new Guid(objects.First()).ToString("N"));
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void StoreAndRetrieveManyObjects()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
