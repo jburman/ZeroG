@@ -20,7 +20,7 @@ namespace ZeroG.Tests.Object.Cache
             Assert.IsFalse(record.IsDirty);
             Assert.IsNull(record.ObjectFullName);
             Assert.AreEqual(0u, record.Version);
-            Assert.AreEqual(0u, record.TotalObjectIDs);
+            Assert.AreEqual(0, record.TotalObjectIDs);
             Assert.IsNotNull(record.Cache);
             Assert.AreEqual(0, record.Cache.Count);
             Assert.IsNull(record.GetFromCache(2));
@@ -33,7 +33,7 @@ namespace ZeroG.Tests.Object.Cache
             Assert.IsTrue(record.IsDirty);
             Assert.AreEqual(objectFullName, record.ObjectFullName);
             Assert.AreEqual(3u, record.Version);
-            Assert.AreEqual(5u, record.TotalObjectIDs);
+            Assert.AreEqual(5, record.TotalObjectIDs);
         }
 
         [TestMethod]
@@ -43,7 +43,7 @@ namespace ZeroG.Tests.Object.Cache
             var record = new ObjectIndexerCacheRecord();
             Assert.IsNull(record.GetFromCache(3));
             record.AddToCache(3, new int[] { 1, 2, 3 });
-            Assert.AreEqual(3u, record.TotalObjectIDs);
+            Assert.AreEqual(3, record.TotalObjectIDs);
             
             int[] vals = record.GetFromCache(3);
             Assert.IsNotNull(vals);
@@ -53,7 +53,7 @@ namespace ZeroG.Tests.Object.Cache
             Assert.AreEqual(3, vals[2]);
 
             record.AddToCache(4, new int[] { 4 });
-            Assert.AreEqual(4u, record.TotalObjectIDs);
+            Assert.AreEqual(4, record.TotalObjectIDs);
             vals = record.GetFromCache(3);
             Assert.IsNotNull(vals);
             Assert.AreEqual(3, vals.Length);
@@ -71,7 +71,7 @@ namespace ZeroG.Tests.Object.Cache
             var record = new ObjectIndexerCacheRecord();
             Assert.IsNull(record.GetFromCache(3));
             record.AddToCache(3, new int[] { 1, 2, 3 });
-            Assert.AreEqual(3u, record.TotalObjectIDs);
+            Assert.AreEqual(3, record.TotalObjectIDs);
             Assert.AreEqual(0, record.Cache[3].Counter);
             int[] vals = record.GetFromCache(3);
             Assert.IsNotNull(vals);
@@ -96,17 +96,17 @@ namespace ZeroG.Tests.Object.Cache
             record.AddToCache(3, new int[] { 1, 2, 3 });
             record.AddToCache(4, new int[] { 4 });
             record.AddToCache(5, new int[] { 5 });
-            Assert.AreEqual(5u, record.TotalObjectIDs);
+            Assert.AreEqual(5, record.TotalObjectIDs);
             Assert.IsNotNull(record.GetFromCache(3));
             Assert.IsNotNull(record.GetFromCache(4));
             Assert.IsNotNull(record.GetFromCache(5));
             record.RemoveFromCache(4);
-            Assert.AreEqual(4u, record.TotalObjectIDs);
+            Assert.AreEqual(4, record.TotalObjectIDs);
             Assert.IsNotNull(record.GetFromCache(3));
             Assert.IsNull(record.GetFromCache(4));
             Assert.IsNotNull(record.GetFromCache(5));
             record.RemoveFromCache(3);
-            Assert.AreEqual(1u, record.TotalObjectIDs);
+            Assert.AreEqual(1, record.TotalObjectIDs);
             Assert.IsNull(record.GetFromCache(3));
             Assert.IsNull(record.GetFromCache(4));
             Assert.IsNotNull(record.GetFromCache(5));

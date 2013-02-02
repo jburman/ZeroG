@@ -38,17 +38,17 @@ namespace ZeroG.Data.Object.Cache
         public string ObjectFullName;
         public bool IsDirty;
         public uint Version;
-        public uint TotalObjectIDs;
+        public int TotalObjectIDs;
         public Dictionary<uint, CacheValue<int[]>> Cache;
 
         public void AddToCache(uint hash, int[] objectIds)
         {
             if (Cache.ContainsKey(hash))
             {
-                TotalObjectIDs -= (uint)Math.Max(0, TotalObjectIDs - Cache[hash].Value.Length);
+                TotalObjectIDs -= Math.Max(0, TotalObjectIDs - Cache[hash].Value.Length);
             }
             Cache[hash] = new CacheValue<int[]>(objectIds);
-            TotalObjectIDs += (uint)objectIds.Length;
+            TotalObjectIDs += objectIds.Length;
         }
 
         public int[] GetFromCache(uint hash)
@@ -69,7 +69,7 @@ namespace ZeroG.Data.Object.Cache
         {
             if (Cache.ContainsKey(hash))
             {
-                TotalObjectIDs = (uint)Math.Max(0, TotalObjectIDs - Cache[hash].Value.Length);
+                TotalObjectIDs = Math.Max(0, TotalObjectIDs - Cache[hash].Value.Length);
                 Cache.Remove(hash);
             }
         }

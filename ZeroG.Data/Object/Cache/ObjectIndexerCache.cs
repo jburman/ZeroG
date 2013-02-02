@@ -31,7 +31,7 @@ using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object.Cache
 {
-    public class ObjectIndexerCache : IDisposable, ICleanableCache
+    internal class ObjectIndexerCache : IDisposable, ICleanableCache
     {
         internal const int MaxCacheKeyLen = 500;
 
@@ -40,77 +40,25 @@ namespace ZeroG.Data.Object.Cache
 
         private Dictionary<string, ObjectIndexerCacheRecord> _cache;
         private ReaderWriterLockSlim _cacheLock;
-        private ObjectMetadataStore _metadata;
         private ObjectVersionStore _versions;
 
         internal ObjectIndexerCache(ObjectMetadataStore metadata, ObjectVersionStore versions)
         {
             _cache = new Dictionary<string, ObjectIndexerCacheRecord>(StringComparer.OrdinalIgnoreCase);
             _cacheLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
-            _metadata = metadata;
             _versions = versions;
 
-            metadata.ObjectMetadataAdded += _ObjectMetadataAdded;
-            metadata.ObjectMetadataRemoved += _ObjectMetadataRemoved;
+            metadata.ObjectMetadataAdded += ObjectMetadataAdded;
+            metadata.ObjectMetadataRemoved += ObjectMetadataRemoved;
 
-            versions.VersionChanged += _ObjectVersionChanged;
-            versions.VersionRemoved += _ObjectVersionRemoved;
+            versions.VersionChanged += ObjectVersionChanged;
+            versions.VersionRemoved += ObjectVersionRemoved;
         }
 
         #region Private methods
 
-        /// <summary>
-        /// Resets the entire cache
-        /// </summary>
-        private void _ResetCache()
-        {
-            if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
-            {
-                try
-                {
-                    _cache.Clear();
-                }
-                finally
-                {
-                    _cacheLock.ExitWriteLock();
-                }
-            }
-            else
-            {
-                throw new TimeoutException("Unable to acquire write lock on ObjectIndexerCache. It may contain unreliable information and should be recreated.");
-            }
-        }
-
-        private void _ObjectVersionChanged(string value, uint newVersion)
-        {
-            if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
-            {
-                try
-                {
-                    if (_cache.ContainsKey(value))
-                    {
-                        var entry = _cache[value];
-                        if (newVersion != entry.Version)
-                        {
-                            entry.IsDirty = true;
-                        }
-                    }
-                }
-                finally
-                {
-                    _cacheLock.ExitReadLock();
-                }
-            }
-            else
-            {
-                // this is an act of desparation to make sure that dirty values won't be read
-                _ResetCache();
-            }
-        }
-
         private ObjectIndexerCacheRecord _CreateObjectCacheRecord(string objectFullName)
         {
-            var metadata = _metadata.GetMetadata(objectFullName);
             var record = new ObjectIndexerCacheRecord()
             {
                 ObjectFullName = objectFullName,
@@ -139,23 +87,8 @@ namespace ZeroG.Data.Object.Cache
             else
             {
                 // this is an act of desparation to make sure that dirty values won't be read
-                _ResetCache();
+                Reset();
             }
-        }
-
-        private void _ObjectVersionRemoved(string value, uint newVersion)
-        {
-            _ReplaceObjectInCache(value, null);
-        }
-
-        private void _ObjectMetadataAdded(string value)
-        {
-            _ResetCache();
-        }
-
-        private void _ObjectMetadataRemoved(string value)
-        {
-            _ResetCache();
         }
 
         #endregion
@@ -237,7 +170,6 @@ namespace ZeroG.Data.Object.Cache
                 string objectFullName = (string)parameters[0];
 
                 ObjectIndexerCacheRecord entry = null;
-                bool objectIsDirty = false;
                 bool objectIsNew = false;
                 var hash = ConstructHash(parameters);
 
@@ -248,15 +180,10 @@ namespace ZeroG.Data.Object.Cache
                         if (_cache.ContainsKey(objectFullName))
                         {
                             entry = _cache[objectFullName];
-                            if (entry.IsDirty)
-                            {
-                                objectIsDirty = true;
-                            }
                         }
                         else
                         {
                             entry = _CreateObjectCacheRecord(objectFullName);
-                            entry.AddToCache(hash, objectIds);
                             objectIsNew = true;
                         }
                     }
@@ -266,7 +193,7 @@ namespace ZeroG.Data.Object.Cache
                     }
                 }
 
-                if (!objectIsDirty)
+                if (!entry.IsDirty)
                 {
                     if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
                     {
@@ -281,10 +208,74 @@ namespace ZeroG.Data.Object.Cache
                     }
                 }
 
-                if (objectIsDirty || objectIsNew)
+                if (entry.IsDirty || objectIsNew)
                 {
                     _ReplaceObjectInCache(objectFullName, entry);
                 }
+            }
+        }
+
+        public void ObjectVersionChanged(string objectFullName, uint newVersion)
+        {
+            if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
+            {
+                try
+                {
+                    if (_cache.ContainsKey(objectFullName))
+                    {
+                        var entry = _cache[objectFullName];
+                        if (newVersion != entry.Version)
+                        {
+                            entry.IsDirty = true;
+                        }
+                    }
+                }
+                finally
+                {
+                    _cacheLock.ExitReadLock();
+                }
+            }
+            else
+            {
+                // this is an act of desparation to make sure that dirty values won't be read
+                Reset();
+            }
+        }
+
+        public void ObjectVersionRemoved(string objectFullName, uint newVersion)
+        {
+            _ReplaceObjectInCache(objectFullName, null);
+        }
+
+        public void ObjectMetadataAdded(string objectFullName)
+        {
+            Reset();
+        }
+
+        public void ObjectMetadataRemoved(string objectFullName)
+        {
+            Reset();
+        }
+
+        /// <summary>
+        /// Resets the entire cache
+        /// </summary>
+        public void Reset()
+        {
+            if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
+            {
+                try
+                {
+                    _cache.Clear();
+                }
+                finally
+                {
+                    _cacheLock.ExitWriteLock();
+                }
+            }
+            else
+            {
+                throw new TimeoutException("Unable to acquire write lock on ObjectIndexerCache. It may contain unreliable information and should be recreated.");
             }
         }
 
@@ -352,6 +343,25 @@ namespace ZeroG.Data.Object.Cache
             {
                 get { return _objectIdCount; }
             }
+
+            public int CompareTo(object obj)
+            {
+                int returnValue = 1;
+
+                if (obj != null && obj is ICacheEntry)
+                {
+                    ICacheEntry compareTo = (ICacheEntry)obj;
+                    // first compare counter
+                    returnValue = Counter.CompareTo(compareTo.Counter);
+                    // next compare object count
+                    if (returnValue == 0)
+                    {
+                        returnValue = ObjectIDCount.CompareTo(compareTo.ObjectIDCount);
+                    }
+                }
+
+                return returnValue;
+            }
         }
 
         public CacheTotals Totals
@@ -365,14 +375,10 @@ namespace ZeroG.Data.Object.Cache
                 {
                     try
                     {
-                        totalQueries = _cache.Count;
-
                         foreach (var entry in _cache)
                         {
-                            foreach (var cache in entry.Value.Cache)
-                            {
-                                totalObjectIds += cache.Value.Value.Length;
-                            }
+                            totalQueries += entry.Value.Cache.Count;
+                            totalObjectIds += entry.Value.TotalObjectIDs;
                         }
                     }
                     finally
@@ -411,7 +417,7 @@ namespace ZeroG.Data.Object.Cache
             }
         }
 
-        public void Remove(ICacheEntry[] entries)
+        public void Remove(IEnumerable<ICacheEntry> entries)
         {
             if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
             {

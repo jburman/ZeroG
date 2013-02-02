@@ -24,9 +24,10 @@
 #endregion
 
 
+using System;
 namespace ZeroG.Data.Object.Cache
 {
-    public interface ICacheEntry
+    public interface ICacheEntry : IComparable
     {
         string ObjectFullName { get; }
         uint Hash { get; }

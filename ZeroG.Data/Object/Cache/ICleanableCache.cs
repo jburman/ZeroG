@@ -31,6 +31,6 @@ namespace ZeroG.Data.Object.Cache
     {
         CacheTotals Totals { get; }
         IEnumerable<ICacheEntry> EnumerateCache();
-        void Remove(ICacheEntry[] entry);
+        void Remove(IEnumerable<ICacheEntry> entries);
     }
 }

@@ -5,6 +5,7 @@ using ZeroG.Data.Object;
 using ZeroG.Data.Object.Metadata;
 using ZeroG.Data.Object.Index;
 using System.Diagnostics;
+using ZeroG.Data.Object.Cache;
 
 namespace ZeroG.Tests.Object
 {
@@ -21,6 +22,137 @@ namespace ZeroG.Tests.Object
         public void PostTest()
         {
             ObjectTestHelper.CleanTestObjects();
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void CreateAndModify()
+        {
+            Config config = ObjectTestHelper.GetConfigWithCaching();
+            
+            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
+            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
+            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+
+            string objectName = "TestObj";
+            object[] cacheParams = new object[] { objectName, 5, "Val1" };
+            object[] cacheParams2 = new object[] { objectName, 5, "Val3" };
+            int[] objectIds = new int[] { 1000, 2000 };
+            int[] objectIds2 = new int[] { 3000, 4000 };
+
+            try
+            {
+                Assert.AreEqual(0, cache.EnumerateCache().Count());
+                CacheTotals totals = cache.Totals;
+                Assert.AreEqual(0, totals.TotalQueries);
+                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.IsNull(cache.Get(cacheParams));
+
+                cache.Reset();
+
+                Assert.AreEqual(0, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(0, totals.TotalQueries);
+                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.IsNull(cache.Get(cacheParams));
+
+                // add one query to cache
+                cache.Set(objectIds, cacheParams);
+
+                Assert.AreEqual(1, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(1, totals.TotalQueries);
+                Assert.AreEqual(2, totals.TotalObjectIDs);
+
+                int[] lookupIds = cache.Get(cacheParams);
+                Assert.AreEqual(objectIds.Length, lookupIds.Length);
+                Assert.AreEqual(objectIds[0], lookupIds[0]);
+                Assert.AreEqual(objectIds[1], lookupIds[1]);
+
+                cache.Reset();
+
+                Assert.AreEqual(0, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(0, totals.TotalQueries);
+                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.IsNull(cache.Get(cacheParams));
+
+                // add more than one query to cache
+                cache.Set(objectIds, cacheParams);
+                cache.Set(objectIds2, cacheParams2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+
+                lookupIds = cache.Get(cacheParams);
+                Assert.AreEqual(objectIds.Length, lookupIds.Length);
+                Assert.AreEqual(objectIds[0], lookupIds[0]);
+                Assert.AreEqual(objectIds[1], lookupIds[1]);
+
+                lookupIds = cache.Get(cacheParams2);
+                Assert.AreEqual(objectIds2.Length, lookupIds.Length);
+                Assert.AreEqual(objectIds2[0], lookupIds[0]);
+                Assert.AreEqual(objectIds2[1], lookupIds[1]);
+
+                // add the same query to cache again - make sure it replaces the existing one
+                cache.Set(objectIds2, cacheParams2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+
+                lookupIds = cache.Get(cacheParams);
+                Assert.AreEqual(objectIds.Length, lookupIds.Length);
+                Assert.AreEqual(objectIds[0], lookupIds[0]);
+                Assert.AreEqual(objectIds[1], lookupIds[1]);
+
+                lookupIds = cache.Get(cacheParams2);
+                Assert.AreEqual(objectIds2.Length, lookupIds.Length);
+                Assert.AreEqual(objectIds2[0], lookupIds[0]);
+                Assert.AreEqual(objectIds2[1], lookupIds[1]);
+
+                // remove query from cache
+                var entryToRemove = cache.EnumerateCache().Last();
+                // we don't know what order they will be returned so find out 
+                // which value is being removed
+                object[] remainingCacheParams = cacheParams;
+                int[] remainingObjectIds = objectIds;
+                if (entryToRemove.Hash == ObjectIndexerCache.ConstructHash(cacheParams))
+                {
+                    // then the first entry as removed so the second will be the 
+                    // remaining entry
+                    remainingCacheParams = cacheParams2;
+                    remainingObjectIds = objectIds2;
+                }
+                cache.Remove(new ICacheEntry[] { entryToRemove });
+
+                Assert.AreEqual(1, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(1, totals.TotalQueries);
+                Assert.AreEqual(2, totals.TotalObjectIDs);
+
+                lookupIds = cache.Get(remainingCacheParams);
+                Assert.AreEqual(remainingObjectIds.Length, lookupIds.Length);
+                Assert.AreEqual(remainingObjectIds[0], lookupIds[0]);
+                Assert.AreEqual(remainingObjectIds[1], lookupIds[1]);
+
+                Assert.IsNull(cache.Get(cacheParams2));
+            }
+            finally
+            {
+                cache.Dispose();
+                versions.Dispose();
+                metadata.Dispose();
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void CacheWithVersionChangeEvent()
+        {
         }
 
         [TestMethod]
