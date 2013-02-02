@@ -262,6 +262,7 @@ namespace ZeroG.Data.Object
             {
                 if (disposing)
                 {
+                    _lock.Dispose();
                     _store.Dispose();
                 }
                 _disposed = true;
