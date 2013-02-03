@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using ZeroG.Data.Object.Metadata;
 
@@ -404,7 +405,7 @@ namespace ZeroG.Data.Object.Cache
 
         public IEnumerable<ICacheEntry> EnumerateCache()
         {
-            if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
+            if (_cacheLock.IsWriteLockHeld || _cacheLock.TryEnterReadLock(ReadLockTimeout))
             {
                 try
                 {
@@ -423,7 +424,10 @@ namespace ZeroG.Data.Object.Cache
                 }
                 finally
                 {
-                    _cacheLock.ExitReadLock();
+                    if (!_cacheLock.IsWriteLockHeld)
+                    {
+                        _cacheLock.ExitReadLock();
+                    }
                 }
             }
         }
@@ -434,8 +438,11 @@ namespace ZeroG.Data.Object.Cache
             {
                 try
                 {
-                    foreach (ICacheEntry entry in entries)
+                    ICacheEntry[] entriesToRemove = entries.ToArray();
+                    for (int i = 0; i < entriesToRemove.Length; i++)
                     {
+                        ICacheEntry entry = entriesToRemove[i];
+
                         if (_cache.ContainsKey(entry.ObjectFullName))
                         {
                             _cache[entry.ObjectFullName].RemoveFromCache(entry.Hash);

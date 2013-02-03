@@ -6,6 +6,8 @@ using ZeroG.Data.Object.Metadata;
 using ZeroG.Data.Object.Index;
 using System.Diagnostics;
 using ZeroG.Data.Object.Cache;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ZeroG.Tests.Object
 {
@@ -862,6 +864,86 @@ namespace ZeroG.Tests.Object
 
                 Assert.IsNotNull(findVals[0]);
                 Assert.IsNotNull(findVals[1]);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void CreateAndModifyMultithreaded()
+        {
+            Config config = ObjectTestHelper.GetConfigWithCaching();
+
+            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
+            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
+            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+
+            try
+            {
+                // Create 4 actions to simulate 4 threads
+                // This test simulates 4 concurrent processes adding and reading items to the cache
+                // while they are also removed.
+                Action[] actions = new Action[4];
+                
+                for (int i = 0; i < 4; i++)
+                {
+                    string nextObjName = "Obj" + i;
+                    int cacheNum = i * 10000;
+                    actions[i] = new Action(() => {
+
+                        for (int loops = 0; loops < 100; loops++)
+                        {
+                            object[][] cacheParams = new object[100][];
+
+                            // create 100 cache entries
+                            for (int add = 0; add < 100; add++)
+                            {
+                                cacheParams[add] = new object[] { nextObjName, "Idx" + (cacheNum + (loops * 100) + add) };
+
+                                cache.Set(
+                                    new int[] { loops, loops + 1, loops + 2, loops + 3 },
+                                    cacheParams[add]);
+                            }
+
+                            // read 1000 entries
+                            for (int read = 0; read < 1000; read++)
+                            {
+                                int[] getIds = cache.Get(cacheParams[read % 100]);
+                                // may get removed so check for null
+                                if (null != getIds)
+                                {
+                                    Assert.AreEqual(loops, getIds[0]);
+                                    Assert.AreEqual(loops + 1, getIds[1]);
+                                }
+                            }
+
+                            // Remove 20 entries - this can remove objects added by other threads
+                            // Linq query is executed once write lock is aquired which is why this works
+                            cache.Remove(cache.EnumerateCache().Take(20));
+                            
+                        }
+                        // that 100 times - total at end will equal 8000 entries and 32000 object ids
+                    });
+                }
+
+                Parallel.Invoke(actions);
+
+                Assert.AreEqual(8000 * actions.Length, cache.EnumerateCache().Count());
+                CacheTotals totals = cache.Totals;
+                Assert.AreEqual(8000 * actions.Length, totals.TotalQueries);
+                Assert.AreEqual(32000 * actions.Length, totals.TotalObjectIDs);
+                
+                cache.Reset();
+
+                Assert.AreEqual(0, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(0, totals.TotalQueries);
+                Assert.AreEqual(0, totals.TotalObjectIDs);
+            }
+            finally
+            {
+                cache.Dispose();
+                versions.Dispose();
+                metadata.Dispose();
             }
         }
     }

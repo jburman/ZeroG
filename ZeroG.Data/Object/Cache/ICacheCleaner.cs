@@ -30,6 +30,6 @@ namespace ZeroG.Data.Object.Cache
     public interface ICacheCleaner : IDisposable
     {
         bool NeedsCleaning();
-        bool Update();
+        bool Clean();
     }
 }

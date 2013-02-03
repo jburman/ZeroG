@@ -25,6 +25,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 
 namespace ZeroG.Data.Object.Cache
 {
@@ -33,15 +34,17 @@ namespace ZeroG.Data.Object.Cache
     /// The strategy is to wait until either the Maximum Query Count 
     /// or Maximum Objects in the cache exceeds a threshold.
     /// </summary>
-    public class HardPruneCacheCleaner : ICacheCleaner
+    internal class HardPruneCacheCleaner : ICacheCleaner
     {
         private ICleanableCache _cache;
+        private Timer _cleanTimer; 
         private int _maxQueries, _maxObjects, _reductionFactor;
 
         public HardPruneCacheCleaner(ICleanableCache cache, 
             int maximumQueries, 
             int maximumObjects,
-            int reductionFactor)
+            int reductionFactor,
+            int cleanFrequency)
         {
             if (null == cache)
             {
@@ -51,6 +54,18 @@ namespace ZeroG.Data.Object.Cache
             _maxQueries = maximumQueries;
             _maxObjects = maximumObjects;
             _reductionFactor = Math.Max(2, reductionFactor);
+
+            if (cleanFrequency > 0)
+            {
+                _cleanTimer = new Timer((target) =>
+                {
+                    CacheTotals totals = _cache.Totals;
+                    if (_NeedsCleaning(totals))
+                    {
+                        _Clean(totals);
+                    }
+                }, null, cleanFrequency, cleanFrequency);
+            }
         }
 
         #region Private helpers
@@ -59,7 +74,7 @@ namespace ZeroG.Data.Object.Cache
             return (totals.TotalQueries > _maxQueries || totals.TotalObjectIDs > _maxObjects);
         }
 
-        private bool _Update(CacheTotals totals)
+        private bool _Clean(CacheTotals totals)
         {
             bool itemsRemoved = false;
 
@@ -78,13 +93,38 @@ namespace ZeroG.Data.Object.Cache
             return _NeedsCleaning(_cache.Totals);
         }
 
-        public bool Update()
+        public bool Clean()
         {
-            return _Update(_cache.Totals);
+            return _Clean(_cache.Totals);
+        }
+
+        private bool _disposed;
+
+        private void _Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    if (_cleanTimer != null)
+                    {
+                        _cleanTimer.Dispose();
+                    }
+                }
+
+                _disposed = true;
+            }
         }
 
         public void Dispose()
         {
+            _Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~HardPruneCacheCleaner()
+        {
+            _Dispose(false);
         }
     }
 }
