@@ -887,7 +887,6 @@ namespace ZeroG.Tests.Object
                 for (int i = 0; i < 4; i++)
                 {
                     string nextObjName = "Obj" + i;
-                    int cacheNum = i * 10000;
                     actions[i] = new Action(() => {
 
                         for (int loops = 0; loops < 100; loops++)
@@ -897,7 +896,7 @@ namespace ZeroG.Tests.Object
                             // create 100 cache entries
                             for (int add = 0; add < 100; add++)
                             {
-                                cacheParams[add] = new object[] { nextObjName, "Idx" + (cacheNum + (loops * 100) + add) };
+                                cacheParams[add] = new object[] { nextObjName, "Idx" + ((loops * 100) + add) };
 
                                 cache.Set(
                                     new int[] { loops, loops + 1, loops + 2, loops + 3 },
