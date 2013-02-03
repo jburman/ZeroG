@@ -35,8 +35,12 @@ namespace ZeroG.Tests.Object
             ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
 
             string objectName = "TestObj";
-            object[] cacheParams = new object[] { objectName, 5, "Val1" };
-            object[] cacheParams2 = new object[] { objectName, 5, "Val3" };
+            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
+
+            object[] cacheParams = new object[] { objectName, intVal1, strVal1 };
+            object[] cacheParams2 = new object[] { objectName, intVal1, strVal2 };
             int[] objectIds = new int[] { 1000, 2000 };
             int[] objectIds2 = new int[] { 3000, 4000 };
 
@@ -153,6 +157,329 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void CacheWithVersionChangeEvent()
         {
+            Config config = ObjectTestHelper.GetConfigWithCaching();
+
+            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
+            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
+            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+
+            string objectName = "TestObj";
+            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
+
+            object[] cacheParams = new object[] { objectName, intVal1, strVal1 };
+            object[] cacheParams2 = new object[] { objectName, intVal1, strVal2 };
+            int[] objectIds = new int[] { 1000, 2000 };
+            int[] objectIds2 = new int[] { 3000, 4000 };
+
+            try
+            {
+                // add a couple items to cache - they should not be returned
+                // once the object's version changes (they become "dirty")
+                cache.Set(objectIds, cacheParams);
+                cache.Set(objectIds2, cacheParams2);
+                
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                CacheTotals totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.IsNotNull(cache.Get(cacheParams));
+                Assert.IsNotNull(cache.Get(cacheParams2));
+
+                versions.Update(objectName);
+
+                // NOTE: Dirty cache entries are not removed from cache as soon as 
+                // they become dirty. They are removed lazily when Get/Set 
+                // are called.
+                // CacheTotals and Enumerate will return Dirty objects and are 
+                // only meant to be used by the Cache Cleaner and not directly 
+                // by the Object Indexer.
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+
+                // Since the object is dirty, these should return null.
+                Assert.IsNull(cache.Get(cacheParams));
+                Assert.IsNull(cache.Get(cacheParams2));
+
+                // Reset the cache values and they should be returned again.
+                cache.Set(objectIds, cacheParams);
+                cache.Set(objectIds2, cacheParams2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.IsNotNull(cache.Get(cacheParams));
+                Assert.IsNotNull(cache.Get(cacheParams2));
+            }
+            finally
+            {
+                cache.Dispose();
+                versions.Dispose();
+                metadata.Dispose();
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void CacheWithObjectRemovedEvent()
+        {
+            Config config = ObjectTestHelper.GetConfigWithCaching();
+            string ns = ObjectTestHelper.NameSpace1;
+            string obj = ObjectTestHelper.ObjectName1;
+            string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
+            ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
+                new ObjectIndexMetadata[] 
+                {
+                    new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                    new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                });
+
+            // Temporarily use the ObjectService to provision the Object's Metadata.
+            using (var svc = new ObjectService(config))
+            {
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(objectMetadata);
+            }
+
+            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
+            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
+            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+
+            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
+
+            object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
+            object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
+            int[] objectIds = new int[] { 1000, 2000 };
+            int[] objectIds2 = new int[] { 3000, 4000 };
+
+            try
+            {
+                // add a couple items to cache - they should not be cleared
+                // when the object's metadata is removed
+                cache.Set(objectIds, cacheParams);
+                cache.Set(objectIds2, cacheParams2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                CacheTotals totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.IsNotNull(cache.Get(cacheParams));
+                Assert.IsNotNull(cache.Get(cacheParams2));
+
+                metadata.Remove(objectFullName);
+
+                // NOTE: Dirty cache entries are not removed from cache as soon as 
+                // they become dirty. They are removed lazily when Get/Set 
+                // are called.
+                // CacheTotals and Enumerate will return Dirty objects and are 
+                // only meant to be used by the Cache Cleaner and not directly 
+                // by the Object Indexer.
+                Assert.AreEqual(0, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(0, totals.TotalQueries);
+                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.IsNull(cache.Get(cacheParams));
+                Assert.IsNull(cache.Get(cacheParams2));
+
+                // The metadata needs to be added back so TestCleanup completes
+                metadata.StoreMetadata(objectMetadata);
+            }
+            finally
+            {
+                cache.Dispose();
+                versions.Dispose();
+                metadata.Dispose();
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void CacheWithDependencyVersionChangeEvent()
+        {
+            Config config = ObjectTestHelper.GetConfigWithCaching();
+            string ns = ObjectTestHelper.NameSpace1;
+            string obj = ObjectTestHelper.ObjectName1;
+            string obj2 = ObjectTestHelper.ObjectName2;
+            string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
+            string objectFullName2 = ObjectNaming.CreateFullObjectName(ns, obj2);
+
+            ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
+                new ObjectIndexMetadata[] 
+                {
+                    new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                    new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                }); 
+
+            ObjectMetadata objectMetadata2 = new ObjectMetadata(ns, obj2, null,
+                new string[] { obj }); // Make Object1 a dependency of Object2.
+            // Now whenever Object2's version changes, Object1's change event will fire as well.
+            // NOTE: Do not supply Full Object Name as objects can only depend on other objects
+            // within their namespace.
+
+            // Temporarily use the ObjectService to provision the Object's Metadata.
+            using (var svc = new ObjectService(config))
+            {
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(objectMetadata);
+                svc.ProvisionObjectStore(objectMetadata2);
+            }
+
+            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
+            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
+            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+
+            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
+
+            object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
+            object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
+            int[] objectIds = new int[] { 1000, 2000 };
+            int[] objectIds2 = new int[] { 3000, 4000 };
+
+            try
+            {
+                // add a couple items to cache - they should not be returned
+                // once the objects dependency object version changes
+                cache.Set(objectIds, cacheParams);
+                cache.Set(objectIds2, cacheParams2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                CacheTotals totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.IsNotNull(cache.Get(cacheParams));
+                Assert.IsNotNull(cache.Get(cacheParams2));
+
+                versions.Update(objectFullName2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+
+                Assert.IsNull(cache.Get(cacheParams));
+                Assert.IsNull(cache.Get(cacheParams2));
+
+                cache.Set(objectIds, cacheParams);
+                cache.Set(objectIds2, cacheParams2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.IsNotNull(cache.Get(cacheParams));
+                Assert.IsNotNull(cache.Get(cacheParams2));
+            }
+            finally
+            {
+                cache.Dispose();
+                versions.Dispose();
+                metadata.Dispose();
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void CacheWithDependencyRemoveEvent()
+        {
+            Config config = ObjectTestHelper.GetConfigWithCaching();
+            string ns = ObjectTestHelper.NameSpace1;
+            string obj = ObjectTestHelper.ObjectName1;
+            string obj2 = ObjectTestHelper.ObjectName2;
+            string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
+            string objectFullName2 = ObjectNaming.CreateFullObjectName(ns, obj2);
+
+            ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
+                new ObjectIndexMetadata[] 
+                {
+                    new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                    new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                });
+
+            ObjectMetadata objectMetadata2 = new ObjectMetadata(ns, obj2, null,
+                new string[] { obj }); // Make Object1 a dependency of Object2.
+            // Now whenever Object2's version changes, Object1's change event will fire as well.
+            // NOTE: Do not supply Full Object Name as objects can only depend on other objects
+            // within their namespace.
+
+            // Temporarily use the ObjectService to provision the Object's Metadata.
+            using (var svc = new ObjectService(config))
+            {
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(objectMetadata);
+                svc.ProvisionObjectStore(objectMetadata2);
+            }
+
+            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
+            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
+            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+
+            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
+
+            object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
+            object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
+            int[] objectIds = new int[] { 1000, 2000 };
+            int[] objectIds2 = new int[] { 3000, 4000 };
+
+            try
+            {
+                // Add a couple items to cache - they should not be returned
+                // once the objects dependency object is removed
+                cache.Set(objectIds, cacheParams);
+                cache.Set(objectIds2, cacheParams2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                CacheTotals totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.IsNotNull(cache.Get(cacheParams));
+                Assert.IsNotNull(cache.Get(cacheParams2));
+
+                // Remove should fire a change event on its dependencies
+                versions.Remove(objectFullName2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+
+                Assert.IsNull(cache.Get(cacheParams));
+                Assert.IsNull(cache.Get(cacheParams2));
+
+                cache.Set(objectIds, cacheParams);
+                cache.Set(objectIds2, cacheParams2);
+
+                Assert.AreEqual(2, cache.EnumerateCache().Count());
+                totals = cache.Totals;
+                Assert.AreEqual(2, totals.TotalQueries);
+                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.IsNotNull(cache.Get(cacheParams));
+                Assert.IsNotNull(cache.Get(cacheParams2));
+
+                // The metadata needs to be added back so TestCleanup completes
+                metadata.StoreMetadata(objectMetadata2);
+            }
+            finally
+            {
+                cache.Dispose();
+                versions.Dispose();
+                metadata.Dispose();
+            }
         }
 
         [TestMethod]

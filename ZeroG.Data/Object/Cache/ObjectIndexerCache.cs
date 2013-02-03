@@ -57,7 +57,7 @@ namespace ZeroG.Data.Object.Cache
 
         #region Private methods
 
-        private ObjectIndexerCacheRecord _CreateObjectCacheRecord(string objectFullName)
+        private ObjectIndexerCacheRecord _CreateObjectCacheRecord(string objectFullName, uint hash, int[] objectIds)
         {
             var record = new ObjectIndexerCacheRecord()
             {
@@ -65,6 +65,7 @@ namespace ZeroG.Data.Object.Cache
                 Version = _versions.Current(objectFullName),
                 IsDirty = false
             };
+            record.AddToCache(hash, objectIds);
             return record;
         }
 
@@ -170,7 +171,7 @@ namespace ZeroG.Data.Object.Cache
                 string objectFullName = (string)parameters[0];
 
                 ObjectIndexerCacheRecord entry = null;
-                bool objectIsNew = false;
+                bool replaceEntry = false;
                 var hash = ConstructHash(parameters);
 
                 if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
@@ -180,11 +181,20 @@ namespace ZeroG.Data.Object.Cache
                         if (_cache.ContainsKey(objectFullName))
                         {
                             entry = _cache[objectFullName];
+
+                            if (entry.IsDirty)
+                            {
+                                // The object version has changed so the cache entry is no longer
+                                // valid
+                                entry = _CreateObjectCacheRecord(objectFullName, hash, objectIds);
+                                replaceEntry = true;
+                            }
                         }
                         else
                         {
-                            entry = _CreateObjectCacheRecord(objectFullName);
-                            objectIsNew = true;
+                            // No cache entry yet so create a new record to store it in.
+                            entry = _CreateObjectCacheRecord(objectFullName, hash, objectIds);
+                            replaceEntry = true;
                         }
                     }
                     finally
@@ -193,8 +203,14 @@ namespace ZeroG.Data.Object.Cache
                     }
                 }
 
-                if (!entry.IsDirty)
+                if (replaceEntry)
                 {
+                    // A new cache entry was created and the old one needs to be replaced.
+                    _ReplaceObjectInCache(objectFullName, entry);
+                }
+                else
+                {
+                    // Update the exist cache entry
                     if (_cacheLock.TryEnterWriteLock(WriteLockTimeout))
                     {
                         try
@@ -206,11 +222,6 @@ namespace ZeroG.Data.Object.Cache
                             _cacheLock.ExitWriteLock();
                         }
                     }
-                }
-
-                if (entry.IsDirty || objectIsNew)
-                {
-                    _ReplaceObjectInCache(objectFullName, entry);
                 }
             }
         }
