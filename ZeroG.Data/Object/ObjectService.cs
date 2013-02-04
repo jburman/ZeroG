@@ -46,6 +46,7 @@ namespace ZeroG.Data.Object
         private ObjectStore _objectStore;
         private ObjectIndexer _objectIndexer;
         private ObjectIndexerCache _indexerCache;
+        private ICacheCleaner _indexerCacheCleaner;
 
         private List<IDisposable> _assignments;
 
@@ -95,7 +96,10 @@ namespace ZeroG.Data.Object
             if (config.IndexCacheEnabled)
             {
                 _indexerCache = new ObjectIndexerCache(_objectMetadata, _objectVersions);
+                _indexerCacheCleaner = new HardPruneCacheCleaner(_indexerCache);
+
                 _assignments.Add(_indexerCache);
+                _assignments.Add(_indexerCacheCleaner);
             }
 
             _objectStore = new ObjectStore(config, _objectMetadata);

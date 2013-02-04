@@ -36,9 +36,23 @@ namespace ZeroG.Data.Object.Cache
     /// </summary>
     internal class HardPruneCacheCleaner : ICacheCleaner
     {
+        internal const int DefaultMaxQueries = 100000;
+        internal const int DefaultMaxObjects = DefaultMaxQueries * 100;
+        internal const int DefaultReductionFactor = 2; // Reduces queries by 50%.
+        internal const int DefaultCleanFrequency = (5 * 60 * 1000); // 5 minutes
+
         private ICleanableCache _cache;
         private Timer _cleanTimer; 
-        private int _maxQueries, _maxObjects, _reductionFactor;
+        private int _maxQueries, _maxObjects, _reductionFactor, _cleanFrequency;
+
+        public HardPruneCacheCleaner(ICleanableCache cache)
+            : this(cache, 
+            DefaultMaxQueries, 
+            DefaultMaxObjects, 
+            DefaultReductionFactor, 
+            DefaultCleanFrequency)
+        {
+        }
 
         public HardPruneCacheCleaner(ICleanableCache cache, 
             int maximumQueries, 
@@ -54,6 +68,7 @@ namespace ZeroG.Data.Object.Cache
             _maxQueries = maximumQueries;
             _maxObjects = maximumObjects;
             _reductionFactor = Math.Max(2, reductionFactor);
+            _cleanFrequency = cleanFrequency;
 
             if (cleanFrequency > 0)
             {
@@ -67,6 +82,11 @@ namespace ZeroG.Data.Object.Cache
                 }, null, cleanFrequency, cleanFrequency);
             }
         }
+
+        public int MaxQueries { get { return _maxQueries; } }
+        public int MaxObjects { get { return _maxObjects; } }
+        public int ReductionFactor { get { return _reductionFactor; } }
+        public int CleanFrequency { get { return _cleanFrequency; } }
 
         #region Private helpers
         private bool _NeedsCleaning(CacheTotals totals)

@@ -26,6 +26,32 @@ namespace ZeroG.Tests.Object.Cache
 
         [TestMethod]
         [TestCategory("Core")]
+        public void CreateDefault()
+        {
+            Config config = ObjectTestHelper.GetConfigWithCaching();
+            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
+            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
+            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+            using (var cleaner = new HardPruneCacheCleaner(cache))
+            {
+                try
+                {
+                    Assert.AreEqual(HardPruneCacheCleaner.DefaultMaxQueries, cleaner.MaxQueries);
+                    Assert.AreEqual(HardPruneCacheCleaner.DefaultMaxObjects, cleaner.MaxObjects);
+                    Assert.AreEqual(HardPruneCacheCleaner.DefaultReductionFactor, cleaner.ReductionFactor);
+                    Assert.AreEqual(HardPruneCacheCleaner.DefaultCleanFrequency, cleaner.CleanFrequency);
+                }
+                finally
+                {
+                    cache.Dispose();
+                    versions.Dispose();
+                    metadata.Dispose();
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void BasicCreateAndClean()
         {
             Config config = ObjectTestHelper.GetConfigWithCaching();
@@ -59,6 +85,12 @@ namespace ZeroG.Tests.Object.Cache
                     2,
                     500)) // run every half second
                 {
+                    // verify properties
+                    Assert.AreEqual(50, cleaner.MaxQueries);
+                    Assert.AreEqual(200, cleaner.MaxObjects);
+                    Assert.AreEqual(2, cleaner.ReductionFactor);
+                    Assert.AreEqual(500, cleaner.CleanFrequency);
+
                     Thread.Sleep(700);
                 }
 
