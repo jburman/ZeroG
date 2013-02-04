@@ -52,8 +52,8 @@ Key Capabilities
   * SQL tables are generated on the fly to hold index values.
   * Index query caching optimizes usage of key/value store.
   * Bulk insert and index objects efficiently.
-  * Full backup/restore capability of object stores and index values. into a single compressed file with a portable data format.
-  * Backup/restore data stored in compressed files with a portable data format (i.e. data can be backed up from one database engine and be restored into another.)
+  * Full backup/restore capability of object stores and index values.
+  * Backup/restore utilizes compressed files with a portable data format (i.e. data can be backed up from one database engine and be restored into another.)
 
 ### ZeroG.Database.MySQL
 
