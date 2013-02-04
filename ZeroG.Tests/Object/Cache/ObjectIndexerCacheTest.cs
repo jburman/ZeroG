@@ -8,6 +8,7 @@ using System.Diagnostics;
 using ZeroG.Data.Object.Cache;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace ZeroG.Tests.Object
 {
@@ -937,6 +938,83 @@ namespace ZeroG.Tests.Object
                 totals = cache.Totals;
                 Assert.AreEqual(0, totals.TotalQueries);
                 Assert.AreEqual(0, totals.TotalObjectIDs);
+            }
+            finally
+            {
+                cache.Dispose();
+                versions.Dispose();
+                metadata.Dispose();
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void CreateAndModifySameObjectMultithreaded()
+        {
+            Config config = ObjectTestHelper.GetConfigWithCaching();
+
+            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
+            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
+            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+
+            string objectName = "TestObj";
+            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+
+            object[] cacheParams = new object[] { objectName, intVal1, strVal1 };
+            int[] objectIds = new int[] { 1000, 2000 };
+            int nullGetCount = 0;
+
+            try
+            {
+                // Create a couple of threads that Get and Set a cache item.
+                // A third thread periodically expires the Object by changing its version.
+                List<Action> actions = new List<Action>();
+                for (int i = 0; i < 2; i++)
+                {
+                    actions.Add(new Action(() => 
+                    {
+                        int localNullGetCount = 0;
+
+                        for (int loops = 0; loops < 40; loops++)
+                        {
+                            for (int tryGet = 0; tryGet < 100; tryGet++)
+                            {
+                                int[] getObjectIds = cache.Get(cacheParams);
+                                if (null == getObjectIds)
+                                {
+                                    cache.Set(objectIds, cacheParams);
+                                    ++localNullGetCount;
+                                }
+                                else
+                                {
+                                    Assert.AreEqual(objectIds[0], getObjectIds[0]);
+                                    Assert.AreEqual(objectIds[1], getObjectIds[1]);
+                                }
+                            }
+
+                            Thread.Sleep(100);
+                        }
+
+                        lock (objectIds)
+                        {
+                            nullGetCount += localNullGetCount;
+                        }
+                    }));
+                }
+
+                actions.Add(new Action(() =>
+                {
+                    for (int loops = 0; loops < 40; loops++)
+                    {
+                        versions.Update(objectName);
+                        Thread.Sleep(100);
+                    }
+                }));
+
+                Parallel.Invoke(actions.ToArray());
+
+                Assert.IsTrue(nullGetCount > 2);
             }
             finally
             {
