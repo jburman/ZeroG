@@ -26,21 +26,28 @@
 using RazorDB;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using ZeroG.Data.Object.Metadata;
-using System.Text;
+using System.Threading;
+using System.Diagnostics;
 
 namespace ZeroG.Data.Object
 {
     internal class ObjectStore : IDisposable
     {
+        private class ExpiringObjectStore
+        {
+            public KeyValueStore Store;
+            public DateTime WhenExpired;
+        }
+
         private Config _config;
         private ObjectMetadataStore _objectMetadata;
-        private Dictionary<string, KeyValueStore> _stores;
-        private Dictionary<string, KeyValueStore> _secondaryStores;
+        private Dictionary<string, ExpiringObjectStore> _stores;
+        private Dictionary<string, ExpiringObjectStore> _secondaryStores;
         private Dictionary<string, bool> _secondaryStoreExists;
+        private Timer _cleanupTimer; 
 
         public ObjectStore(Config config, ObjectMetadataStore objectMetadata)
         {
@@ -56,9 +63,15 @@ namespace ZeroG.Data.Object
 
             _config = config;
             _objectMetadata = objectMetadata;
-            _stores = new Dictionary<string, KeyValueStore>(StringComparer.OrdinalIgnoreCase);
-            _secondaryStores = new Dictionary<string, KeyValueStore>(StringComparer.OrdinalIgnoreCase);
+            _stores = new Dictionary<string, ExpiringObjectStore>(StringComparer.OrdinalIgnoreCase);
+            _secondaryStores = new Dictionary<string, ExpiringObjectStore>(StringComparer.OrdinalIgnoreCase);
             _secondaryStoreExists = new Dictionary<string, bool>();
+
+            // Start the Object Store cleanup timer if cleanup is enabled
+            if (_config.ObjectStoreAutoClose && _config.ObjectStoreAutoCloseTimeout > 0)
+            {
+                _StartObjectStoreCleanup();
+            }
         }
 
         #region Private helpers
@@ -68,13 +81,16 @@ namespace ZeroG.Data.Object
             return Path.Combine(Path.Combine(_config.BaseDataPath, storeName), objectFullName);
         }
 
-        private KeyValueStore _EnsureStore(Dictionary<string, KeyValueStore> storeCollection, string path, string objectFullName)
+        private KeyValueStore _EnsureStore(Dictionary<string, ExpiringObjectStore> storeCollection, string path, string objectFullName)
         {
             lock (storeCollection)
             {
                 if (storeCollection.ContainsKey(objectFullName))
                 {
-                    return storeCollection[objectFullName];
+                    ExpiringObjectStore store = storeCollection[objectFullName];
+                    // reset expiration time
+                    store.WhenExpired = DateTime.Now.AddSeconds(_config.ObjectStoreAutoCloseTimeout);
+                    return store.Store;
                 }
                 else
                 {
@@ -88,7 +104,11 @@ namespace ZeroG.Data.Object
                     objectFullName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
 
                     var store = new KeyValueStore(_CreateStorePath(path, objectFullName));
-                    storeCollection[objectFullName] = store;
+                    storeCollection[objectFullName] = new ExpiringObjectStore()
+                    {
+                        Store = store,
+                        WhenExpired = DateTime.Now.AddSeconds(_config.ObjectStoreAutoCloseTimeout)
+                    };
                     return store;
                 }
             }
@@ -185,6 +205,56 @@ namespace ZeroG.Data.Object
             }
 
             return returnValue;
+        }
+
+        private void _StartObjectStoreCleanup()
+        {
+            _cleanupTimer = new Timer(new TimerCallback((o) => 
+            {
+                var now = DateTime.Now;
+
+                lock (_stores)
+                {
+                    string[] keys = _stores.Keys.ToArray();
+                    foreach (string key in keys)
+                    {
+                        if (_stores[key].WhenExpired < now)
+                        {
+                            try
+                            {
+                                _stores[key].Store.Dispose();
+                                _stores.Remove(key);
+                            }
+                            catch(Exception ex)
+                            {
+                                Trace.TraceError("Error closing Object Store: {0}", ex);
+                                _stores.Remove(key);
+                            }
+                        }
+                    }
+                }
+
+                lock (_secondaryStores)
+                {
+                    string[] keys = _secondaryStores.Keys.ToArray();
+                    foreach (string key in keys)
+                    {
+                        if (_secondaryStores[key].WhenExpired < now)
+                        {
+                            try
+                            {
+                                _secondaryStores[key].Store.Dispose();
+                                _secondaryStores.Remove(key);
+                            }
+                            catch (Exception ex)
+                            {
+                                Trace.TraceError("Error closing Secondary Object Store: {0}", ex);
+                                _secondaryStores.Remove(key);
+                            }
+                        }
+                    }
+                }
+            }), null, _config.ObjectStoreAutoCloseTimeout, _config.ObjectStoreAutoCloseTimeout);
         }
 
         #endregion
@@ -324,7 +394,7 @@ namespace ZeroG.Data.Object
                     {
                         foreach (var s in _stores)
                         {
-                            s.Value.Dispose();
+                            s.Value.Store.Dispose();
                         }
                     }
 
@@ -332,8 +402,13 @@ namespace ZeroG.Data.Object
                     {
                         foreach (var s in _secondaryStores)
                         {
-                            s.Value.Dispose();
+                            s.Value.Store.Dispose();
                         }
+                    }
+
+                    if (_cleanupTimer != null)
+                    {
+                        _cleanupTimer.Dispose();
                     }
                 }
                 _disposed = true;

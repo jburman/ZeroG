@@ -29,7 +29,9 @@ namespace ZeroG.Tests.Object
                 true,
                 defaultConfig.ObjectIndexSchemaConnection,
                 defaultConfig.ObjectIndexDataConnection,
-                defaultConfig.MaxObjectDependencies);
+                defaultConfig.MaxObjectDependencies,
+                defaultConfig.ObjectStoreAutoClose,
+                defaultConfig.ObjectStoreAutoCloseTimeout);
         }
 
         public static IObjectIndexProvider CreateObjectIndexProvider()

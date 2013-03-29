@@ -1154,6 +1154,67 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [TestCategory("Core")]
+        public void StoreAndRetrieveWithObjectStoreCleanup()
+        {
+            var defaultConfig = ObjectTestHelper.GetConfig();
+            var config = new Config(defaultConfig.BaseDataPath,
+                defaultConfig.IndexCacheEnabled,
+                defaultConfig.ObjectIndexSchemaConnection,
+                defaultConfig.ObjectIndexDataConnection,
+                defaultConfig.MaxObjectDependencies,
+                true, // auto-close turned on
+                1); // set to 1 second
+
+            using (var svc = new ObjectService(config))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var secKey1 = Encoding.UTF8.GetBytes("001");
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    SecondaryKey = secKey1
+                });
+
+                
+                var retval1 = svc.Get(ns, obj, objID1.ID);
+                Assert.AreEqual(val1, new Guid(retval1));
+
+                retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
+                Assert.AreEqual(val1, new Guid(retval1));
+
+                // sleep enough time so that the store is cleaned up and then access it again
+                Thread.Sleep(1100);
+
+                retval1 = svc.Get(ns, obj, objID1.ID);
+                Assert.AreEqual(val1, new Guid(retval1));
+
+                retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
+                Assert.AreEqual(val1, new Guid(retval1));
+
+                // do it over again
+                Thread.Sleep(1100);
+
+                retval1 = svc.Get(ns, obj, objID1.ID);
+                Assert.AreEqual(val1, new Guid(retval1));
+
+                retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
+                Assert.AreEqual(val1, new Guid(retval1));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void Count()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))

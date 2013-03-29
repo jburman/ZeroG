@@ -24,11 +24,16 @@
 #endregion
 
 using System;
+using System.Collections.Specialized;
 using System.Configuration;
 using ZeroG.Data.Database;
 
 namespace ZeroG.Data.Object
 {
+    /// <summary>
+    /// Stores run-time configurable settings for the Object Service and related code.
+    /// The configuration values may be initialized either via constructor or via App Settings in the configuration file.
+    /// </summary>
     public class Config
     {
         public static readonly string StoreVersion = "1.0";
@@ -74,13 +79,17 @@ namespace ZeroG.Data.Object
             bool indexCacheEnabled,
             string objectIndexSchemaConn,
             string objectIndexDataConn,
-            uint maxObjectDependences)
+            uint maxObjectDependences,
+            bool objectStoreAutoClose,
+            uint objectStoreAutoCloseTimeout)
         {
             _baseDataPath = baseDataPath;
             _indexCacheEnabled = indexCacheEnabled;
             _objectIndexSchemaConn = objectIndexSchemaConn;
             _objectIndexDataConn = objectIndexDataConn;
             _maxObjectDependencies = maxObjectDependences;
+            _objectStoreAutoClose = objectStoreAutoClose;
+            _objectStoreAutoCloseTimeout = objectStoreAutoCloseTimeout;
 
             _FinalizeProperties();
         }
@@ -92,23 +101,37 @@ namespace ZeroG.Data.Object
         /// </summary>
         private void _LoadPropertiesFromConfig()
         {
+            NameValueCollection appSettings = ConfigurationManager.AppSettings;
+
             bool boolParse = false;
-            bool.TryParse(ConfigurationManager.AppSettings["ObjectIndexCacheEnabled"], out boolParse);
+            bool.TryParse(appSettings["ObjectIndexCacheEnabled"], out boolParse);
             _indexCacheEnabled = boolParse;
 
-            _objectIndexSchemaConn = ConfigurationManager.AppSettings["ObjectIndexSchemaConnection"];
+            _objectIndexSchemaConn = appSettings["ObjectIndexSchemaConnection"];
             _objectIndexSchemaConn = _objectIndexSchemaConn ?? ObjectIndexProvider.DefaultSchemaConnection;
 
-            _objectIndexDataConn = ConfigurationManager.AppSettings["ObjectIndexDataConnection"];
+            _objectIndexDataConn = appSettings["ObjectIndexDataConnection"];
             _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
 
             uint intParse = 0;
-            uint.TryParse(ConfigurationManager.AppSettings["MaxObjectDependencies"], out intParse);
+            uint.TryParse(appSettings["MaxObjectDependencies"], out intParse);
             if (0 == intParse)
             {
                 intParse = 5;
             }
             _maxObjectDependencies = intParse;
+
+            boolParse = true;
+            bool.TryParse(appSettings["ObjectStoreAutoClose"], out boolParse);
+            _objectStoreAutoClose = boolParse;
+
+            intParse = 300;
+            uint.TryParse(appSettings["ObjectStoreAutoCloseTimeout"], out intParse);
+            _objectStoreAutoCloseTimeout = intParse;
+            if (0 == intParse)
+            {
+                _objectStoreAutoCloseTimeout = 300; // reset to the default value
+            }
         }
 
         /// <summary>
@@ -136,6 +159,9 @@ namespace ZeroG.Data.Object
         #endregion
 
         private static Config _default;
+        /// <summary>
+        /// A static Config instance initialized from the application's configuration file.
+        /// </summary>
         public static Config Default
         {
             get
@@ -149,6 +175,11 @@ namespace ZeroG.Data.Object
         }
 
         private string _baseDataPath;
+        /// <summary>
+        /// The base directory to store Object Store values under.
+        /// It may include the {appdir} token to allow it to be dynamically rebased to the 
+        /// directory that the process is running under.
+        /// </summary>
         public string BaseDataPath
         {
             get
@@ -158,6 +189,10 @@ namespace ZeroG.Data.Object
         }
 
         private bool _indexCacheEnabled;
+        /// <summary>
+        /// Enable caching of index query results.
+        /// </summary>
+        /// <remarks>Defaults to False</remarks>
         public bool IndexCacheEnabled
         {
             get
@@ -167,6 +202,10 @@ namespace ZeroG.Data.Object
         }
 
         private string _objectIndexSchemaConn;
+        /// <summary>
+        /// The database connection string that the Object Service will use when 
+        /// updating database schemas.
+        /// </summary>
         public string ObjectIndexSchemaConnection
         {
             get
@@ -176,6 +215,10 @@ namespace ZeroG.Data.Object
         }
 
         private string _objectIndexDataConn;
+        /// <summary>
+        /// The database connection string that the Object Service will use when 
+        /// retrieving or updating data.
+        /// </summary>
         public string ObjectIndexDataConnection
         {
             get
@@ -184,7 +227,40 @@ namespace ZeroG.Data.Object
             }
         }
 
+        private bool _objectStoreAutoClose;
+        /// <summary>
+        /// Specifies whether or not inactive Object Store instances are automatically closed after a specified time period.
+        /// By default, they are retained for future requests and released when the ObjectService is disposed.
+        /// </summary>
+        /// <seealso cref="ZeroG.Data.Config.ObjectStoreAutoCloseTimeout"/>
+        /// <remarks>Defaults to True</remarks>
+        public bool ObjectStoreAutoClose
+        {
+            get
+            {
+                return _objectStoreAutoClose;
+            }
+        }
+
+        private uint _objectStoreAutoCloseTimeout;
+        /// <summary>
+        /// Specifies the number of seconds that an Object Store instance is left open before it is closed.
+        /// </summary>
+        /// <seealso cref="ZeroG.Data.Config.ObjectStoreAutoClose"/>
+        /// <remarks>Defaults to 300 seconds</remarks>
+        public uint ObjectStoreAutoCloseTimeout
+        {
+            get
+            {
+                return _objectStoreAutoCloseTimeout;
+            }
+        }
+
         private uint _maxObjectDependencies;
+        /// <summary>
+        /// The maximum number of Objects that that another Object can be dependent on.
+        /// </summary>
+        /// <remarks>Defaults to 5</remarks>
         public uint MaxObjectDependencies
         {
             get
