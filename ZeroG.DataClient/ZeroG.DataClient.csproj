@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="IObjectServiceAdminClient.cs" />
     <Compile Include="IObjectServiceClient.cs" />
+    <Compile Include="Support\BulkStore.cs" />
     <Compile Include="Support\ObjectFindLogic.cs" />
     <Compile Include="Support\ObjectFindOperator.cs" />
     <Compile Include="Support\ObjectFindOptions.cs" />

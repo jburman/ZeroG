@@ -49,7 +49,28 @@ namespace ZeroG.Data.Object
             _objectName = objectName;
         }
 
+        public string ObjectNameSpace
+        {
+            get 
+            {
+                return _nameSpace;
+            }
+        }
+
+        public string ObjectName
+        {
+            get
+            {
+                return _objectName;
+            }
+        }
+
         #region Private helpers
+        private IEnumerable<ObjectID> _BulkStore(IEnumerable<PersistentObject> bulkStoreObjects)
+        {
+            return _service.BulkStore(_nameSpace, bulkStoreObjects);
+        }
+
         private byte[] _Compress(byte[] value)
         {
             var buffer = new MemoryStream();
@@ -113,6 +134,11 @@ namespace ZeroG.Data.Object
                     Value = value,
                     Indexes = indexes
                 });
+        }
+
+        public ObjectID Store(int objectId, byte[] value)
+        {
+            return Store(objectId, null, value, null);
         }
 
         public ObjectID Store(int objectId, byte[] secondaryKey, byte[] value, ObjectIndex[] indexes)
@@ -192,6 +218,15 @@ namespace ZeroG.Data.Object
         public byte[][] Find(string constraint, uint limit, OrderOptions order)
         {
             return _service.Find(_nameSpace, _objectName, constraint, limit, order).ToArray();
+        }
+
+        #endregion
+
+        #region Public Bulk methods
+
+        public BulkStore BeginBulkStore()
+        {
+            return new BulkStore(this, new BulkStore.BulkStoreOperation(_BulkStore));
         }
 
         #endregion

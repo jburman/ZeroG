@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ZeroG.Data;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Metadata;
+using System.Collections.Generic;
 
 namespace ZeroG.Tests.Object
 {
@@ -24,6 +25,62 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
+        public void BulkStoreManyWithClient()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                // stores the object's metadata and builds the database tables
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[] 
+                        {
+                            new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                        }));
+
+                var client = new LocalObjectServiceClient(svc, ns, obj);
+
+                var objCount = 50000;
+
+                var random = new Random();
+                var buf = new byte[100];
+
+                BulkStore bulk = client.BeginBulkStore();
+
+                // generate a list of objects to store
+                for (int i = 0; objCount > i; i++)
+                {
+                    random.NextBytes(buf);
+
+                    bulk.Add(buf,
+                        new ObjectIndex[] 
+                        { 
+                            ObjectIndex.Create("IntIndex1", i + 100),
+                            ObjectIndex.Create("StrIndex1", "idx_" + i)
+                        });
+                }
+
+                // Complete the operation and store and index the objects
+                var ids = bulk.Complete();
+
+                Assert.AreEqual(objCount, ids.Count());
+
+                // query 100 objects from the index
+                var vals = client.Find(@"{""IntIndex1"":10000, ""Op"": "">"", ""And"" : {""IntIndex1"":10101, ""Op"": ""<""}}");
+                Assert.AreEqual(100, vals.Count());
+            }
+        }
+
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void SetAndGetTest()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
@@ -56,6 +113,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         public void SecondaryKeyTest()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
@@ -90,6 +148,7 @@ namespace ZeroG.Tests.Object
         }
 
         [TestMethod]
+        [TestCategory("Core")]
         public void RemoveTest()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
@@ -163,6 +222,7 @@ namespace ZeroG.Tests.Object
 
 
         [TestMethod]
+        [TestCategory("Core")]
         public void SetAndFindTest()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))

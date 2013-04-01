@@ -31,6 +31,9 @@ namespace ZeroG.Data.Object
     /// </summary>
     public interface IObjectServiceClient
     {
+        string ObjectNameSpace { get; }
+        string ObjectName { get; }
+
         ObjectID Store(byte[] value);
         ObjectID Store(byte[] secondaryKey, byte[] value);
         ObjectID Store(byte[] value, ObjectIndex[] indexes);
@@ -80,5 +83,7 @@ namespace ZeroG.Data.Object
         /// <param name="order"></param>
         /// <returns></returns>
         byte[][] Find(string constraint, uint limit, OrderOptions order);
+
+        BulkStore BeginBulkStore();
     }
 }
