@@ -593,7 +593,10 @@ namespace ZeroG.Data.Object
                                 indexValues.Add(indexList.ToArray());
                             }
                         }
-                        _objectIndexer.BulkIndexObject(objectFullName, objectMetadata, indexValues);
+                        if (indexValues.Count > 0)
+                        {
+                            _objectIndexer.BulkIndexObject(objectFullName, objectMetadata, indexValues);
+                        }
                     }
                     trans.Complete();
                 }
@@ -725,6 +728,14 @@ namespace ZeroG.Data.Object
 
             var objectFullKey = ObjectNaming.CreateFullObjectKey(nameSpace, objectName);
             return _objectIDStore.GetNextID(objectFullKey);
+        }
+
+        public int GetCurrentObjectID(string nameSpace, string objectName)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectFullKey = ObjectNaming.CreateFullObjectKey(nameSpace, objectName);
+            return _objectIDStore.GetCurrentID(objectFullKey);
         }
 
         public byte[] GetBySecondaryKey(string nameSpace, string objectName, byte[] key)

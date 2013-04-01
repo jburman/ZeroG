@@ -26,6 +26,54 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [TestCategory("Core")]
+        public void BulkStoreWithClient()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(new ObjectMetadata(ns, obj));
+
+                var client = new LocalObjectServiceClient(svc, ns, obj);
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var val3 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+
+                var val2SecondaryKey = Encoding.UTF8.GetBytes("val2key");
+
+                BulkStore bulk = client.BeginBulkStore();
+
+                bulk.Add(12, val1.ToByteArray());
+                bulk.Add(val2SecondaryKey, val2.ToByteArray(), null);
+                bulk.Add(500, val3.ToByteArray());
+
+                var ids = bulk.Complete().ToArray();
+                Assert.AreEqual(3, ids.Length);
+                Assert.AreEqual(12, ids[0].ID);
+                Assert.IsFalse(ids[0].HasSecondaryKey());
+                Assert.AreEqual(1, ids[1].ID);
+                Assert.IsTrue(ids[1].HasSecondaryKey());
+                Assert.AreEqual(val2SecondaryKey, ids[1].SecondaryKey);
+                Assert.AreEqual(500, ids[2].ID);
+                Assert.IsFalse(ids[2].HasSecondaryKey());
+
+                Assert.AreEqual(val1, new Guid(client.Get(12)));
+                Assert.AreEqual(val2, new Guid(client.Get(1)));
+                Assert.AreEqual(val3, new Guid(client.Get(500)));
+
+                Assert.AreEqual(val2, new Guid(client.GetBySecondaryKey(val2SecondaryKey)));
+
+                Assert.AreEqual(3, client.Count());
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void BulkStoreManyWithClient()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))

@@ -450,6 +450,38 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [TestCategory("Core")]
+        public void GetCurrentID()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                // test a basic sequence of numbers
+                int objectId = svc.GetCurrentObjectID(ns, obj);
+                Assert.AreEqual(0, objectId);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                Assert.AreEqual(1, objectId);
+
+                objectId = svc.GetCurrentObjectID(ns, obj);
+                Assert.AreEqual(1, objectId);
+
+                objectId = svc.GetNextObjectID(ns, obj);
+                objectId = svc.GetNextObjectID(ns, obj);
+                objectId = svc.GetCurrentObjectID(ns, obj);
+                Assert.AreEqual(3, objectId);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void GetNextIDAndTruncate()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
