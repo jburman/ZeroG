@@ -32,6 +32,6 @@ namespace ZeroG.Data.Object.Cache
         string ObjectFullName { get; }
         uint Hash { get; }
         int Counter { get; }
-        int ObjectIDCount { get; }
+        int ValueCount { get; }
     }
 }

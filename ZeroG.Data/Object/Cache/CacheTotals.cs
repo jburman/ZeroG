@@ -27,13 +27,13 @@ namespace ZeroG.Data.Object.Cache
 {
     public struct CacheTotals
     {
-        public CacheTotals(int totalQueries, int totalObjectIDs)
+        public CacheTotals(int totalQueries, int totalValues)
         {
             TotalQueries = totalQueries;
-            TotalObjectIDs = totalObjectIDs;
+            TotalValues = totalValues;
         }
 
         public int TotalQueries;
-        public int TotalObjectIDs;
+        public int TotalValues;
     }
 }

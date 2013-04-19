@@ -32,23 +32,23 @@ namespace ZeroG.Data.Object.Cache
     /// <summary>
     /// Cleans the cache with a more brute force mechanism.
     /// The strategy is to wait until either the Maximum Query Count 
-    /// or Maximum Objects in the cache exceeds a threshold.
+    /// or Maximum Values in the cache exceeds a threshold.
     /// </summary>
     internal class HardPruneCacheCleaner : ICacheCleaner
     {
         internal const int DefaultMaxQueries = 100000;
-        internal const int DefaultMaxObjects = DefaultMaxQueries * 100;
+        internal const int DefaultMaxValues = DefaultMaxQueries * 100;
         internal const int DefaultReductionFactor = 2; // Reduces queries by 50%.
         internal const int DefaultCleanFrequency = (5 * 60 * 1000); // 5 minutes
 
         private ICleanableCache _cache;
         private Timer _cleanTimer; 
-        private int _maxQueries, _maxObjects, _reductionFactor, _cleanFrequency;
+        private int _maxQueries, _maxValues, _reductionFactor, _cleanFrequency;
 
         public HardPruneCacheCleaner(ICleanableCache cache)
             : this(cache, 
             DefaultMaxQueries, 
-            DefaultMaxObjects, 
+            DefaultMaxValues, 
             DefaultReductionFactor, 
             DefaultCleanFrequency)
         {
@@ -56,7 +56,7 @@ namespace ZeroG.Data.Object.Cache
 
         public HardPruneCacheCleaner(ICleanableCache cache, 
             int maximumQueries, 
-            int maximumObjects,
+            int maximumValues,
             int reductionFactor,
             int cleanFrequency)
         {
@@ -66,7 +66,7 @@ namespace ZeroG.Data.Object.Cache
             }
             _cache = cache;
             _maxQueries = maximumQueries;
-            _maxObjects = maximumObjects;
+            _maxValues = maximumValues;
             _reductionFactor = Math.Max(2, reductionFactor);
             _cleanFrequency = cleanFrequency;
 
@@ -84,14 +84,14 @@ namespace ZeroG.Data.Object.Cache
         }
 
         public int MaxQueries { get { return _maxQueries; } }
-        public int MaxObjects { get { return _maxObjects; } }
+        public int MaxValues { get { return _maxValues; } }
         public int ReductionFactor { get { return _reductionFactor; } }
         public int CleanFrequency { get { return _cleanFrequency; } }
 
         #region Private helpers
         private bool _NeedsCleaning(CacheTotals totals)
         {
-            return (totals.TotalQueries > _maxQueries || totals.TotalObjectIDs > _maxObjects);
+            return (totals.TotalQueries > _maxQueries || totals.TotalValues > _maxValues);
         }
 
         private bool _Clean(CacheTotals totals)

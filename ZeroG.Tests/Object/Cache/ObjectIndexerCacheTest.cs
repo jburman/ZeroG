@@ -52,7 +52,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(0, cache.EnumerateCache().Count());
                 CacheTotals totals = cache.Totals;
                 Assert.AreEqual(0, totals.TotalQueries);
-                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.AreEqual(0, totals.TotalValues);
                 Assert.IsNull(cache.Get(cacheParams));
 
                 cache.Reset();
@@ -60,7 +60,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(0, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(0, totals.TotalQueries);
-                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.AreEqual(0, totals.TotalValues);
                 Assert.IsNull(cache.Get(cacheParams));
 
                 // add one query to cache
@@ -69,7 +69,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(1, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(1, totals.TotalQueries);
-                Assert.AreEqual(2, totals.TotalObjectIDs);
+                Assert.AreEqual(2, totals.TotalValues);
 
                 int[] lookupIds = cache.Get(cacheParams);
                 Assert.AreEqual(objectIds.Length, lookupIds.Length);
@@ -81,7 +81,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(0, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(0, totals.TotalQueries);
-                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.AreEqual(0, totals.TotalValues);
                 Assert.IsNull(cache.Get(cacheParams));
 
                 // add more than one query to cache
@@ -91,7 +91,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
 
                 lookupIds = cache.Get(cacheParams);
                 Assert.AreEqual(objectIds.Length, lookupIds.Length);
@@ -109,7 +109,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
 
                 lookupIds = cache.Get(cacheParams);
                 Assert.AreEqual(objectIds.Length, lookupIds.Length);
@@ -139,7 +139,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(1, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(1, totals.TotalQueries);
-                Assert.AreEqual(2, totals.TotalObjectIDs);
+                Assert.AreEqual(2, totals.TotalValues);
 
                 lookupIds = cache.Get(remainingCacheParams);
                 Assert.AreEqual(remainingObjectIds.Length, lookupIds.Length);
@@ -186,7 +186,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 CacheTotals totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
 
@@ -201,7 +201,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
 
                 // Since the object is dirty, these should return null.
                 Assert.IsNull(cache.Get(cacheParams));
@@ -214,7 +214,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
             }
@@ -273,7 +273,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 CacheTotals totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
 
@@ -288,7 +288,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(0, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(0, totals.TotalQueries);
-                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.AreEqual(0, totals.TotalValues);
                 Assert.IsNull(cache.Get(cacheParams));
                 Assert.IsNull(cache.Get(cacheParams2));
 
@@ -360,7 +360,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 CacheTotals totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
 
@@ -369,7 +369,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
 
                 Assert.IsNull(cache.Get(cacheParams));
                 Assert.IsNull(cache.Get(cacheParams2));
@@ -380,7 +380,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
             }
@@ -449,7 +449,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 CacheTotals totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
 
@@ -459,7 +459,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
 
                 Assert.IsNull(cache.Get(cacheParams));
                 Assert.IsNull(cache.Get(cacheParams2));
@@ -470,7 +470,7 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(2, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(2, totals.TotalQueries);
-                Assert.AreEqual(4, totals.TotalObjectIDs);
+                Assert.AreEqual(4, totals.TotalValues);
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
 
@@ -613,6 +613,177 @@ namespace ZeroG.Tests.Object
             }
         }
 
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void FindAndCountWithCachingTest()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[] 
+                        {
+                            new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                        }));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var val3 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var intIndex1 = 5;
+                var intIndex2 = 12500;
+                var intIndex3 = -100;
+                var strIndex1 = "asdf";
+                var strIndex2 = "index test val";
+                var strIndex3 = "zzyyxx";
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex1),
+                        ObjectIndex.Create("StrIndex1", strIndex1)
+                    }
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex2),
+                        ObjectIndex.Create("StrIndex1", strIndex2)
+                    }
+                });
+
+                var objID3 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val3.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex3),
+                        ObjectIndex.Create("StrIndex1", strIndex3)
+                    }
+                });
+
+                //////////////////
+                // This test runs identical Find/Count queries to make sure that 
+                // cached values to not clobber each other.
+                //////////////////
+
+                // test a single index lookup using And
+                var options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+                var findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                int count = svc.Count(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500)
+                });
+                Assert.AreEqual(1, count);
+
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                findVals = svc.Find(ns, obj, "{\"IntIndex1\" : 12500, \"Or\" : { \"StrIndex1\" : \"asdf\" } }").ToArray();
+                Assert.AreEqual(2, findVals.Length);
+                var findVal1 = new Guid(findVals[0]);
+                var findVal2 = new Guid(findVals[1]);
+                Assert.IsFalse(findVal1 == findVal2);
+                Assert.IsTrue(findVal1 == val1 || findVal1 == val2);
+                Assert.IsTrue(findVal2 == val1 || findVal2 == val2);
+
+                count = svc.Count(ns, obj, "{\"IntIndex1\" : 12500, \"Or\" : { \"StrIndex1\" : \"asdf\" } }");
+                Assert.AreEqual(2, count);
+
+                findVals = svc.Find(ns, obj, "{\"IntIndex1\" : 12500, \"Or\" : { \"StrIndex1\" : \"asdf\" } }").ToArray();
+                Assert.AreEqual(2, findVals.Length);
+                findVal1 = new Guid(findVals[0]);
+                findVal2 = new Guid(findVals[1]);
+                Assert.IsFalse(findVal1 == findVal2);
+                Assert.IsTrue(findVal1 == val1 || findVal1 == val2);
+                Assert.IsTrue(findVal2 == val1 || findVal2 == val2);
+
+                count = svc.Count(ns, obj, "{\"IntIndex1\" : 12500, \"Or\" : { \"StrIndex1\" : \"asdf\" } }");
+                Assert.AreEqual(2, count);
+
+                /*
+                // test two index lookups using And
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "index test val"),
+                    ObjectIndex.Create("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test a single lookup using Or
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.Or
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test two index lookups using Or
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.Or
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500),
+                    ObjectIndex.Create("StrIndex1", "asdf")
+                }).ToArray();
+
+                Assert.AreEqual(2, findVals.Length);
+                var findVal1 = new Guid(findVals[0]);
+                var findVal2 = new Guid(findVals[1]);
+                Assert.IsFalse(findVal1 == findVal2);
+                Assert.IsTrue(findVal1 == val1 || findVal1 == val2);
+                Assert.IsTrue(findVal2 == val1 || findVal2 == val2);*/
+            }
+        }
+
         [TestMethod]
         [TestCategory("Core")]
         public void FindByConstraintWithCachingTest()
@@ -690,6 +861,9 @@ namespace ZeroG.Tests.Object
             var stopWatchUncached = new Stopwatch();
             var stopWatchCached = new Stopwatch();
 
+            var stopWatchCountUncached = new Stopwatch();
+            var stopWatchCountCached = new Stopwatch();
+
             var ns = ObjectTestHelper.NameSpace1;
             var obj = ObjectTestHelper.ObjectName1;
 
@@ -757,6 +931,14 @@ namespace ZeroG.Tests.Object
                     Assert.AreEqual(val2, new Guid(findVals[0]));
                 }
                 stopWatchUncached.Stop();
+
+                stopWatchCountUncached.Start();
+                for (int i = 0; i < 10; i++)
+                {
+                    var count = svc.Count(ns, obj, @"{ ""IntIndex1"" : 12500 }");
+                    Assert.AreEqual(1, count);
+                }
+                stopWatchCountUncached.Stop();
             }
 
             using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
@@ -769,13 +951,26 @@ namespace ZeroG.Tests.Object
                     Assert.AreEqual(val2, new Guid(findVals[0]));
                 }
                 stopWatchCached.Stop();
+
+                stopWatchCountCached.Start();
+                for (int i = 0; i < 10; i++)
+                {
+                    var count = svc.Count(ns, obj, @"{ ""IntIndex1"" : 12500 }");
+                    Assert.AreEqual(1, count);
+                }
+                stopWatchCountCached.Stop();
             }
 
             Assert.IsTrue(stopWatchUncached.Elapsed > stopWatchCached.Elapsed);
+            Assert.IsTrue(stopWatchCountUncached.Elapsed > stopWatchCountCached.Elapsed);
 
-            Console.WriteLine("Uncached time: {0} -- Cached time: {1}",
+            Console.WriteLine("Uncached Find time: {0} -- Cached Find time: {1}",
                 stopWatchUncached.Elapsed,
                 stopWatchCached.Elapsed);
+
+            Console.WriteLine("Uncached Count time: {0} -- Cached Count time: {1}",
+                stopWatchCountUncached.Elapsed,
+                stopWatchCountCached.Elapsed);
         }
 
         [TestMethod]
@@ -930,14 +1125,14 @@ namespace ZeroG.Tests.Object
                 Assert.AreEqual(8000 * actions.Length, cache.EnumerateCache().Count());
                 CacheTotals totals = cache.Totals;
                 Assert.AreEqual(8000 * actions.Length, totals.TotalQueries);
-                Assert.AreEqual(32000 * actions.Length, totals.TotalObjectIDs);
+                Assert.AreEqual(32000 * actions.Length, totals.TotalValues);
                 
                 cache.Reset();
 
                 Assert.AreEqual(0, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(0, totals.TotalQueries);
-                Assert.AreEqual(0, totals.TotalObjectIDs);
+                Assert.AreEqual(0, totals.TotalValues);
             }
             finally
             {

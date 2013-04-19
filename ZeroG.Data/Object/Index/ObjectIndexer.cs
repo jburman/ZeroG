@@ -145,12 +145,72 @@ namespace ZeroG.Data.Object.Index
 
         public int Count(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes)
         {
-            return _indexer.Count(objectFullName, options, indexes);
+            int returnValue = 0;
+
+            if (null != _cache)
+            {
+                var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
+                parameters[0] = objectFullName;
+                parameters[1] = options;
+                parameters[2] = "C";
+                if (null != indexes)
+                {
+                    for (int i = 0; indexes.Length > i; i++)
+                    {
+                        parameters[i + 3] = indexes[i];
+                    }
+                }
+                int[] cacheValue = _cache.Get(parameters);
+                if (cacheValue != null && cacheValue.Length == 1)
+                {
+                    returnValue = cacheValue[0];
+                }
+                else
+                {
+                    returnValue = _indexer.Count(objectFullName, options, indexes);
+                    _cache.Set(new int[] { returnValue }, parameters);
+                }
+            }
+            else
+            {
+                returnValue = _indexer.Count(objectFullName, options, indexes);
+            }
+            return returnValue;
         }
 
         public int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
-            return _indexer.Count(objectFullName, constraint, indexes);
+            int returnValue = 0;
+
+            if (null != _cache)
+            {
+                var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
+                parameters[0] = objectFullName;
+                parameters[1] = constraint;
+                parameters[2] = "C";
+                if (null != indexes)
+                {
+                    for (int i = 0; indexes.Length > i; i++)
+                    {
+                        parameters[i + 3] = indexes[i];
+                    }
+                }
+                int[] cacheValue = _cache.Get(parameters);
+                if (cacheValue != null && cacheValue.Length == 1)
+                {
+                    returnValue = cacheValue[0];
+                }
+                else
+                {
+                    returnValue = _indexer.Count(objectFullName, constraint, indexes);
+                    _cache.Set(new int[] { returnValue }, parameters);
+                }
+            }
+            else
+            {
+                returnValue = _indexer.Count(objectFullName, constraint, indexes);
+            }
+            return returnValue;
         }
 
         public int CountObjects(string objectFullName)
@@ -164,14 +224,15 @@ namespace ZeroG.Data.Object.Index
 
             if (null != _cache)
             {
-                var parameters = new object[2 + ((null == indexes) ? 0 : indexes.Length)];
+                var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
                 parameters[0] = objectFullName;
                 parameters[1] = options;
+                parameters[2] = "F";
                 if (null != indexes)
                 {
                     for (int i = 0; indexes.Length > i; i++)
                     {
-                        parameters[i + 2] = indexes[i];
+                        parameters[i + 3] = indexes[i];
                     }
                 }
                 returnValue = _cache.Get(parameters);
@@ -208,16 +269,17 @@ namespace ZeroG.Data.Object.Index
 
             if (null != _cache)
             {
-                var parameters = new object[4 + ((null == indexes) ? 0 : indexes.Length)];
+                var parameters = new object[5 + ((null == indexes) ? 0 : indexes.Length)];
                 parameters[0] = objectFullName;
                 parameters[1] = constraint;
                 parameters[2] = limit;
                 parameters[3] = order;
+                parameters[4] = "F";
                 if (null != indexes)
                 {
                     for (int i = 0; indexes.Length > i; i++)
                     {
-                        parameters[i + 3] = indexes[i];
+                        parameters[i + 5] = indexes[i];
                     }
                 }
                 returnValue = _cache.Get(parameters);

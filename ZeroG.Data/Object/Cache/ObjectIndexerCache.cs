@@ -58,7 +58,7 @@ namespace ZeroG.Data.Object.Cache
 
         #region Private methods
 
-        private ObjectIndexerCacheRecord _CreateObjectCacheRecord(string objectFullName, uint hash, int[] objectIds)
+        private ObjectIndexerCacheRecord _CreateObjectCacheRecord(string objectFullName, uint hash, int[] values)
         {
             var record = new ObjectIndexerCacheRecord()
             {
@@ -66,7 +66,7 @@ namespace ZeroG.Data.Object.Cache
                 Version = _versions.Current(objectFullName),
                 IsDirty = false
             };
-            record.AddToCache(hash, objectIds);
+            record.AddToCache(hash, values);
             return record;
         }
 
@@ -165,7 +165,7 @@ namespace ZeroG.Data.Object.Cache
             return returnValue;
         }
 
-        public void Set(int[] objectIds, params object[] parameters)
+        public void Set(int[] values, params object[] parameters)
         {
             if (0 < parameters.Length)
             {
@@ -187,14 +187,14 @@ namespace ZeroG.Data.Object.Cache
                             {
                                 // The object version has changed so the cache entry is no longer
                                 // valid
-                                entry = _CreateObjectCacheRecord(objectFullName, hash, objectIds);
+                                entry = _CreateObjectCacheRecord(objectFullName, hash, values);
                                 replaceEntry = true;
                             }
                         }
                         else
                         {
                             // No cache entry yet so create a new record to store it in.
-                            entry = _CreateObjectCacheRecord(objectFullName, hash, objectIds);
+                            entry = _CreateObjectCacheRecord(objectFullName, hash, values);
                             replaceEntry = true;
                         }
                     }
@@ -216,7 +216,7 @@ namespace ZeroG.Data.Object.Cache
                     {
                         try
                         {
-                            entry.AddToCache(hash, objectIds);
+                            entry.AddToCache(hash, values);
                         }
                         finally
                         {
@@ -323,17 +323,17 @@ namespace ZeroG.Data.Object.Cache
         {
             private string _objectFullName;
             private uint _hash;
-            private int _counter, _objectIdCount;
+            private int _counter, _valueCount;
 
             public CacheEntry(string objectFullName,
                 uint hash,
                 int counter,
-                int objectIdCount)
+                int valueCount)
             {
                 _objectFullName = objectFullName;
                 _hash = hash;
                 _counter = counter;
-                _objectIdCount = objectIdCount;
+                _valueCount = valueCount;
             }
 
             public string ObjectFullName
@@ -351,9 +351,9 @@ namespace ZeroG.Data.Object.Cache
                 get { return _counter; }
             }
 
-            public int ObjectIDCount
+            public int ValueCount
             {
-                get { return _objectIdCount; }
+                get { return _valueCount; }
             }
 
             public int CompareTo(object obj)
@@ -368,7 +368,7 @@ namespace ZeroG.Data.Object.Cache
                     // next compare object count
                     if (returnValue == 0)
                     {
-                        returnValue = ObjectIDCount.CompareTo(compareTo.ObjectIDCount);
+                        returnValue = ValueCount.CompareTo(compareTo.ValueCount);
                     }
                 }
 
@@ -381,7 +381,7 @@ namespace ZeroG.Data.Object.Cache
             get 
             {
                 int totalQueries = 0;
-                int totalObjectIds = 0;
+                int totalValues = 0;
 
                 if (_cacheLock.TryEnterReadLock(ReadLockTimeout))
                 {
@@ -390,7 +390,7 @@ namespace ZeroG.Data.Object.Cache
                         foreach (var entry in _cache)
                         {
                             totalQueries += entry.Value.Cache.Count;
-                            totalObjectIds += entry.Value.TotalObjectIDs;
+                            totalValues += entry.Value.TotalValues;
                         }
                     }
                     finally
@@ -399,7 +399,7 @@ namespace ZeroG.Data.Object.Cache
                     }
                 }
 
-                return new CacheTotals(totalQueries, totalObjectIds);
+                return new CacheTotals(totalQueries, totalValues);
             }
         }
 
