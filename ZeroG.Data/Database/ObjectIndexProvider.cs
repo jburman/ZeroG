@@ -159,6 +159,7 @@ namespace ZeroG.Data.Database
         public abstract bool ObjectExists(string objectFullName);
         public abstract bool Exists(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
         public abstract int CountObjects(string objectFullName);
+        public abstract int Count(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes);
         public abstract int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
         public abstract int[] Find(string objectFullName, params ObjectIndex[] indexes);
         public abstract int[] Find(string objectFullName, ObjectFindOptions options, params ObjectIndex[] indexes);

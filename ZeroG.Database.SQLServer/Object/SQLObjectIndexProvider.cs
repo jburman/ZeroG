@@ -308,6 +308,11 @@ WHEN NOT MATCHED THEN
             }
         }
 
+        public override int Count(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes)
+        {
+            throw new NotImplementedException();
+        }
+
         public override int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
             using (var db = OpenData())

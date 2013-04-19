@@ -626,7 +626,78 @@ namespace ZeroG.Tests.Data.Drivers
         }
 
         [TestMethod]
-        public void Count()
+        public void CountByFindOptions()
+        {
+            var provider = IndexProvider;
+            var indexMetadata = new ObjectIndexMetadata[]
+            {
+                new ObjectIndexMetadata("TestCol1", ObjectIndexType.Integer),
+                new ObjectIndexMetadata("TestCol2", ObjectIndexType.String, 15, true)
+            };
+
+            provider.ProvisionIndex(
+                new ObjectMetadata(NameSpace1, ObjectName1,
+                    indexMetadata));
+
+            provider.UpsertIndexValues(ObjectFullName1, 1,
+                ObjectIndex.Create("TestCol1", 100),
+                ObjectIndex.Create("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 2,
+                ObjectIndex.Create("TestCol1", 105),
+                ObjectIndex.Create("TestCol2", "A"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 3,
+                ObjectIndex.Create("TestCol1", 500),
+                ObjectIndex.Create("TestCol2", "B"));
+
+            provider.UpsertIndexValues(ObjectFullName1, 4,
+                ObjectIndex.Create("TestCol1", 500),
+                ObjectIndex.Create("TestCol2", null));
+
+            Assert.AreEqual(1, provider.Count(ObjectFullName1,
+                new ObjectFindOptions() 
+                {
+                    Operator = ObjectFindOperator.Equals
+                },
+                new ObjectIndex[] { ObjectIndex.Create("TestCol1", 100) }));
+
+            Assert.AreEqual(0, provider.Count(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals
+                },
+                new ObjectIndex[] { ObjectIndex.Create("TestCol1", 102) }));
+
+            Assert.AreEqual(1, provider.Count(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.IsNull
+                },
+                new ObjectIndex[] { ObjectIndex.Create("TestCol2", null) }));
+
+            Assert.AreEqual(2, provider.Count(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Like
+                },
+                new ObjectIndex[] { ObjectIndex.Create("TestCol2", "a") }));
+
+            Assert.AreEqual(3, provider.Count(ObjectFullName1,
+                new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Like,
+                    Logic = ObjectFindLogic.Or
+                },
+                new ObjectIndex[] 
+                { 
+                    ObjectIndex.Create("TestCol2", "a"),
+                    ObjectIndex.Create("TestCol2", "B")
+                }));            
+        }
+
+        [TestMethod]
+        public void CountByConstraint()
         {
             var provider = IndexProvider;
             var indexMetadata = new ObjectIndexMetadata[]

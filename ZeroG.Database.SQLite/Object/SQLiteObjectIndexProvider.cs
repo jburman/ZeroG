@@ -178,6 +178,11 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
             }
         }
 
+        public override int Count(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes)
+        {
+            throw new NotImplementedException();
+        }
+
         public override int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes)
         {
             using (var db = OpenData())

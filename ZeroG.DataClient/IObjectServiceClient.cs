@@ -47,6 +47,8 @@ namespace ZeroG.Data.Object
         byte[][] GetAll();
 
         int Count();
+        int Count(ObjectFindOptions options, ObjectIndex[] indexes);
+        int Count(string constraint);
 
         void Remove(int id);
         void Remove(int[] ids);

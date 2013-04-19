@@ -926,6 +926,216 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [TestCategory("Core")]
+        public void StoreAndCountByIndex()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[] 
+                        {
+                            new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                            new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15),
+                            new ObjectIndexMetadata("StrNullIndex1", ObjectIndexType.String, 5, true)
+                        }));
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var val3 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                var intIndex1 = 5;
+                var intIndex2 = 12500;
+                var intIndex3 = -100;
+                var strIndex1 = "asdf";
+                var strIndex2 = "index test val";
+                var strIndex3 = "zzyyxx";
+
+                var strNullIndexVal = "0011";
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex1),
+                        ObjectIndex.Create("StrIndex1", strIndex1),
+                        ObjectIndex.Create("StrNullIndex1", null)
+                    }
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val2.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex2),
+                        ObjectIndex.Create("StrIndex1", strIndex2),
+                        ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
+                    }
+                });
+
+                var objID3 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val3.ToByteArray(),
+                    Indexes = new ObjectIndex[] 
+                    { 
+                        ObjectIndex.Create("IntIndex1", intIndex3),
+                        ObjectIndex.Create("StrIndex1", strIndex3),
+                        ObjectIndex.Create("StrNullIndex1", null)
+                    }
+                });
+
+                // count all index values
+                Assert.AreEqual(3, svc.Count(ns, obj));
+
+                // test a single index lookup using And
+                var options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+                var count = svc.Count(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500)
+                });
+
+                Assert.AreEqual(1, count);
+
+                // test two index lookups using And
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+                count = svc.Count(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "index test val"),
+                    ObjectIndex.Create("IntIndex1", 12500)
+                });
+
+                Assert.AreEqual(1, count);
+
+                // test a single lookup using Or
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.Or
+                };
+                count = svc.Count(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500)
+                });
+
+                Assert.AreEqual(1, count);
+
+                // test two index lookups using Or
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.Or
+                };
+                count = svc.Count(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("IntIndex1", 12500),
+                    ObjectIndex.Create("StrIndex1", "asdf")
+                });
+
+                Assert.AreEqual(2, count);
+
+                // test with Like
+                // test a single lookup using And
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Like,
+                    Logic = ObjectFindLogic.And
+                };
+                count = svc.Count(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "%test%")
+                });
+
+                Assert.AreEqual(1, count);
+
+                // test with Like
+                // test two lookup values using Or
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Like,
+                    Logic = ObjectFindLogic.Or
+                };
+                count = svc.Count(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "%test%"),
+                    ObjectIndex.Create("StrIndex1", "%xx")
+                });
+
+                Assert.AreEqual(2, count);
+
+                // test with Like
+                // test two lookup values using And - should return 0
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Like,
+                    Logic = ObjectFindLogic.And
+                };
+                count = svc.Count(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("StrIndex1", "%test%"),
+                    ObjectIndex.Create("StrIndex1", "%zz")
+                });
+
+                // should not return any values
+                Assert.AreEqual(0, count);
+
+                // check nulls
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+
+                count = svc.Count(ns, obj, options,
+                    new ObjectIndex[] 
+                    {
+                        ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
+                    }
+                );
+
+                Assert.AreEqual(1, count);
+
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.IsNull,
+                    Logic = ObjectFindLogic.And
+                };
+
+                count = svc.Count(ns, obj, options,
+                    new ObjectIndex[] 
+                    {
+                        ObjectIndex.Create("StrNullIndex1", null)
+                    }
+                );
+
+                Assert.AreEqual(2, count);
+
+                count = svc.Count(ns, obj, @"{""StrNullIndex1"" : [""" + strNullIndexVal + @"""], ""Op"" : ""IN"" }");
+                Assert.AreEqual(1, count);
+
+                count = svc.Count(ns, obj, @"{""StrNullIndex1"" : null, ""Op"" : ""="" }");
+                Assert.AreEqual(2, count);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void StoreAndRetrieveManyByIndex()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))

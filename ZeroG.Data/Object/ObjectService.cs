@@ -768,6 +768,14 @@ namespace ZeroG.Data.Object
             return _objectStore.Count(objectFullName);
         }
 
+        public int Count(string nameSpace, string objectName, ObjectFindOptions options, ObjectIndex[] indexes)
+        {
+            _ValidateArguments(nameSpace, objectName);
+
+            var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, objectName);
+            return _objectIndexer.Count(objectFullName, options, indexes);
+        }
+
         public int Count(string nameSpace, string objectName, string constraint)
         {
             _ValidateArguments(nameSpace, objectName);

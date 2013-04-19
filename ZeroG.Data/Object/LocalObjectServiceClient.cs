@@ -182,6 +182,14 @@ namespace ZeroG.Data.Object
         {
             return _service.Count(_nameSpace, _objectName);
         }
+        public int Count(ObjectFindOptions options, ObjectIndex[] indexes)
+        {
+            return _service.Count(_nameSpace, _objectName, options, indexes);
+        }
+        public int Count(string constraint)
+        {
+            return _service.Count(_nameSpace, _objectName, constraint);
+        }
         #endregion
 
         #region Public Remove methods
