@@ -9,7 +9,7 @@ Version Information
 -------------------
 ZeroG is still a work in progress and is progressing towards an initial beta release in the near future.
 The majority of ongoing work is around the ZeroG Object Store framework, which provides high speed 
-data storage capability along with convenient features common in relational database systems.
+data storage capability along with convenient features common in relational database systems such as indexes and a query language.
 Changes are only committed to `master` once they have been completed and unit tested. The software is 
 fairly stable and reliable even though it is still in beta development.
 
@@ -37,10 +37,9 @@ for storing and indexing objects.
 
 NOTE: The ObjectService relies heavily on [RazorDB](https://github.com/gnoso/razordb), which is an open source, .NET based Key/Value store.
 
-The ObjectService provides a hybrid approach between a Key/Value store and relational database. The intention 
-is to try to capture the speed of a NoSQL approach but retain the capability to perform certain operations 
-efficiently. The ObjectService is mainly optimized for reading data as fast as possible and hence it has an 
-Object Versioning and caching scheme built in.
+The ObjectService provides a hybrid approach between a Key/Value store and relational database, and it is optimized to 
+cache object indexes as long as possible. The intention is to capture the speed of the NoSQL approach but retain 
+the flexability to perform index lookup operations.
 
 Key Capabilities
 
