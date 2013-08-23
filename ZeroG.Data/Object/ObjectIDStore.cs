@@ -41,7 +41,7 @@ namespace ZeroG.Data.Object
 
         public int GetNextID(byte[] key)
         {
-            int nextId = 0;
+            int nextId = 1;
             lock (_idLock)
             {
                 var nextIdRaw = _store.Get(key);

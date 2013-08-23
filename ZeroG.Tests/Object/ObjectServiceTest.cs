@@ -1575,7 +1575,8 @@ namespace ZeroG.Tests.Object
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15),
-                            new ObjectIndexMetadata("StrNullIndex1", ObjectIndexType.String, 5, true)
+                            new ObjectIndexMetadata("StrNullIndex1", ObjectIndexType.String, 5, true),
+                            new ObjectIndexMetadata("DTIndex1", ObjectIndexType.DateTime, 0, true)
                         }));
 
                 var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
@@ -1587,6 +1588,9 @@ namespace ZeroG.Tests.Object
                 var strIndex1 = "asdf";
                 var strIndex2 = "index test val";
                 var strIndex3 = "zzyyxx";
+                var dtIndex1 = new DateTime(2000, 1, 1);
+                var dtIndex2 = new DateTime(3000, 10, 20);
+                var dtIndex3 = DateTime.UtcNow;
 
                 var strNullIndexVal = "0011";
 
@@ -1599,7 +1603,8 @@ namespace ZeroG.Tests.Object
                     { 
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1),
-                        ObjectIndex.Create("StrNullIndex1", null)
+                        ObjectIndex.Create("StrNullIndex1", null),
+                        ObjectIndex.Create("DTIndex1", dtIndex1)
                     }
                 });
                 objList.Add(new PersistentObject()
@@ -1610,7 +1615,8 @@ namespace ZeroG.Tests.Object
                     { 
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2),
-                        ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
+                        ObjectIndex.Create("StrNullIndex1", strNullIndexVal),
+                        ObjectIndex.Create("DTIndex1", dtIndex2)
                     }
                 });
                 objList.Add(new PersistentObject()
@@ -1621,7 +1627,8 @@ namespace ZeroG.Tests.Object
                     { 
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3),
-                        ObjectIndex.Create("StrNullIndex1", null)
+                        ObjectIndex.Create("StrNullIndex1", null),
+                        ObjectIndex.Create("DTIndex1", dtIndex3)
                     }
                 });
 
@@ -1644,6 +1651,20 @@ namespace ZeroG.Tests.Object
                 var findVals = svc.Find(ns, obj, options, new ObjectIndex[]
                 {
                     ObjectIndex.Create("IntIndex1", 12500)
+                }).ToArray();
+
+                Assert.AreEqual(1, findVals.Length);
+                Assert.AreEqual(val2, new Guid(findVals[0]));
+
+                // test a single index lookup against Date Time value
+                options = new ObjectFindOptions()
+                {
+                    Operator = ObjectFindOperator.Equals,
+                    Logic = ObjectFindLogic.And
+                };
+                findVals = svc.Find(ns, obj, options, new ObjectIndex[]
+                {
+                    ObjectIndex.Create("DtIndex1", new DateTime(3000, 10, 20))
                 }).ToArray();
 
                 Assert.AreEqual(1, findVals.Length);
