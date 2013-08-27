@@ -44,6 +44,7 @@ namespace ZeroG.Data.Object
 
         private Config _config;
         private ObjectMetadataStore _objectMetadata;
+        private RazorCache _cache;
         private Dictionary<string, ExpiringObjectStore> _stores;
         private Dictionary<string, ExpiringObjectStore> _secondaryStores;
         private Dictionary<string, bool> _secondaryStoreExists;
@@ -63,6 +64,12 @@ namespace ZeroG.Data.Object
 
             _config = config;
             _objectMetadata = objectMetadata;
+
+            // Create a single cache instance that is shared across all Object Stores
+            // Index cache is set to a fifth the size of the data cache size.
+            int cacheSizeBytes = (int)config.ObjectStoreCacheSize * 1024 * 1024;
+            _cache = new RazorCache((int)Math.Ceiling((double)cacheSizeBytes / 5), cacheSizeBytes);
+            
             _stores = new Dictionary<string, ExpiringObjectStore>(StringComparer.OrdinalIgnoreCase);
             _secondaryStores = new Dictionary<string, ExpiringObjectStore>(StringComparer.OrdinalIgnoreCase);
             _secondaryStoreExists = new Dictionary<string, bool>();
@@ -103,7 +110,7 @@ namespace ZeroG.Data.Object
                     // construct name from stored metadata for consistency
                     objectFullName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
 
-                    var store = new KeyValueStore(_CreateStorePath(path, objectFullName));
+                    var store = new KeyValueStore(_CreateStorePath(path, objectFullName), _cache);
                     storeCollection[objectFullName] = new ExpiringObjectStore()
                     {
                         Store = store,

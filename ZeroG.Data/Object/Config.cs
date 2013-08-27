@@ -81,7 +81,8 @@ namespace ZeroG.Data.Object
             string objectIndexDataConn,
             uint maxObjectDependences,
             bool objectStoreAutoClose,
-            uint objectStoreAutoCloseTimeout)
+            uint objectStoreAutoCloseTimeout,
+            uint objectStoreCacheSize)
         {
             _baseDataPath = baseDataPath;
             _indexCacheEnabled = indexCacheEnabled;
@@ -90,6 +91,7 @@ namespace ZeroG.Data.Object
             _maxObjectDependencies = maxObjectDependences;
             _objectStoreAutoClose = objectStoreAutoClose;
             _objectStoreAutoCloseTimeout = objectStoreAutoCloseTimeout;
+            _objectStoreCacheSize = objectStoreCacheSize;
 
             _FinalizeProperties();
         }
@@ -131,6 +133,14 @@ namespace ZeroG.Data.Object
             if (0 == intParse)
             {
                 _objectStoreAutoCloseTimeout = 300; // reset to the default value
+            }
+
+            intParse = 100;
+            uint.TryParse(appSettings["ObjectStoreCacheSize"], out intParse);
+            _objectStoreCacheSize = intParse;
+            if (0 == intParse)
+            {
+                _objectStoreCacheSize = 100; // reset to the default value
             }
         }
 
@@ -253,6 +263,18 @@ namespace ZeroG.Data.Object
             get
             {
                 return _objectStoreAutoCloseTimeout;
+            }
+        }
+
+        private uint _objectStoreCacheSize;
+        /// <summary>
+        /// Specifies size of ObjectStore data cache in MB.
+        /// </summary>
+        public uint ObjectStoreCacheSize 
+        {
+            get
+            {
+                return _objectStoreCacheSize;
             }
         }
 

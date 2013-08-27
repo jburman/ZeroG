@@ -1404,8 +1404,9 @@ namespace ZeroG.Tests.Object
                 defaultConfig.ObjectIndexSchemaConnection,
                 defaultConfig.ObjectIndexDataConnection,
                 defaultConfig.MaxObjectDependencies,
-                true, // auto-close turned on
-                1); // set to 1 second
+                true,       // auto-close turned on
+                1,          // set to 1 second
+                defaultConfig.ObjectStoreCacheSize);
 
             using (var svc = new ObjectService(config))
             {
