@@ -127,6 +127,119 @@ namespace ZeroG.Tests.Object
 
         [TestMethod]
         [TestCategory("Core")]
+        public void StoreAndRetrieveZeroLengthValue()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                var val1 = new byte[0];
+
+                var secKey1 = new byte[1] { 2 };
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1,
+                    SecondaryKey = secKey1
+                });
+
+                // retrieve by object ID
+                var retval1 = svc.Get(ns, obj, objID1.ID);
+                Assert.IsNotNull(retval1);
+                Assert.AreEqual(0, retval1.Length);
+
+                var retval2 = svc.GetBySecondaryKey(ns, obj, secKey1);
+                Assert.IsNotNull(retval2);
+                Assert.AreEqual(0, retval2.Length);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void StoreAndRetrieveNullValue()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                var secKey1 = new byte[1] { 2 };
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = null
+                });
+
+                var objID2 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = null,
+                    SecondaryKey = secKey1
+                });
+
+                // retrieve by object ID
+                var retval1 = svc.Get(ns, obj, objID1.ID);
+                Assert.IsNotNull(retval1);
+                Assert.AreEqual(0, retval1.Length);
+
+                var retval2 = svc.GetBySecondaryKey(ns, obj, secKey1);
+                Assert.IsNotNull(retval2);
+                Assert.AreEqual(0, retval2.Length);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void StoreAndRetrieveZeroLengthSecondaryKey()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj));
+
+                var val = new byte[1] { 1 };
+
+                var secKey = new byte[0];
+
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val,
+                    SecondaryKey = secKey
+                });
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
         public void StoreAndRemoveNoIndexes()
         {
             using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
@@ -573,7 +686,7 @@ namespace ZeroG.Tests.Object
                     captureNextIds.Add(nextIds);
                     getNextIdActions[i] = () =>
                     {
-                        for(int j = 0; j < 100; j++) 
+                        for (int j = 0; j < 100; j++)
                         {
                             nextIds.Add(svc.GetNextObjectID(ns, obj));
                         }
@@ -886,7 +999,7 @@ namespace ZeroG.Tests.Object
                     Logic = ObjectFindLogic.And
                 };
 
-                findVals = svc.Find(ns, obj, options, 
+                findVals = svc.Find(ns, obj, options,
                     new ObjectIndex[] 
                     {
                         ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
@@ -1232,8 +1345,8 @@ namespace ZeroG.Tests.Object
 
                 // retrieve objects
                 int count = 0;
-                
-                
+
+
                 for (int i = 0; ObjCount > i; i++)
                 {
                     var getObj = svc.Get(ns, obj, i);
@@ -1401,6 +1514,8 @@ namespace ZeroG.Tests.Object
             var defaultConfig = ObjectTestHelper.GetConfig();
             var config = new Config(defaultConfig.BaseDataPath,
                 defaultConfig.IndexCacheEnabled,
+                defaultConfig.IndexCacheMaxQueries,
+                defaultConfig.IndexCacheMaxValues,
                 defaultConfig.ObjectIndexSchemaConnection,
                 defaultConfig.ObjectIndexDataConnection,
                 defaultConfig.MaxObjectDependencies,
@@ -1429,7 +1544,7 @@ namespace ZeroG.Tests.Object
                     SecondaryKey = secKey1
                 });
 
-                
+
                 var retval1 = svc.Get(ns, obj, objID1.ID);
                 Assert.AreEqual(val1, new Guid(retval1));
 
@@ -1925,7 +2040,7 @@ namespace ZeroG.Tests.Object
                 // Update index and re-fetch
                 svc.UpdateIndexes(ns, obj, objID2.ID,
                     new ObjectIndex[] { ObjectIndex.Create("Test", "3") });
-                
+
                 Assert.AreEqual(2, svc.Count(ns, obj));
 
                 retval1 = svc.Find(ns, obj, "{\"Test\":\"asdf\"}").FirstOrDefault();
@@ -1947,6 +2062,51 @@ namespace ZeroG.Tests.Object
 
                 retval3 = svc.Find(ns, obj, "{\"Test\":\"3\"}").FirstOrDefault();
                 Assert.IsNull(retval3);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Core")]
+        public void Report()
+        {
+            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            {
+                var ns = ObjectTestHelper.NameSpace1;
+                var obj = ObjectTestHelper.ObjectName1;
+
+                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                    "ZeroG Test", "Unit Test", DateTime.Now));
+
+                svc.ProvisionObjectStore(
+                    new ObjectMetadata(ns, obj,
+                        new ObjectIndexMetadata[]
+                        {
+                            new ObjectIndexMetadata("Test", ObjectIndexType.String, 5)
+                        }));
+
+                var report = svc.Report();
+                Assert.IsTrue(report.Count > 0, "No values reported");
+
+                foreach (var key in report.Keys.OrderBy(k => k))
+                {
+                    // everything should start off at 0
+                    Assert.AreEqual("0", report[key]);
+                }
+
+                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                var objID1 = svc.Store(ns, new PersistentObject()
+                {
+                    Name = obj,
+                    Value = val1.ToByteArray(),
+                    Indexes = new ObjectIndex[]
+                    {
+                        ObjectIndex.Create("Test", "asdf")
+                    }
+                });
+                var retval1 = svc.Find(ns, obj, "{\"Test\":\"asdf\"}").FirstOrDefault();
+                Assert.IsNotNull(svc.Report().Values.Where(v => v == "1").FirstOrDefault());
+                retval1 = svc.Find(ns, obj, "{\"Test\":\"asdf\"}").FirstOrDefault();
+                Assert.IsNotNull(svc.Report().Values.Where(v => v == "1").FirstOrDefault());
             }
         }
     }

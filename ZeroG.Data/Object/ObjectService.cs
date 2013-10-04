@@ -96,7 +96,11 @@ namespace ZeroG.Data.Object
             if (config.IndexCacheEnabled)
             {
                 _indexerCache = new ObjectIndexerCache(_objectMetadata, _objectVersions);
-                _indexerCacheCleaner = new HardPruneCacheCleaner(_indexerCache);
+                _indexerCacheCleaner = new HardPruneCacheCleaner(_indexerCache,
+                    (int)config.IndexCacheMaxQueries,
+                    (int)config.IndexCacheMaxValues,
+                    HardPruneCacheCleaner.DefaultReductionFactor,
+                    HardPruneCacheCleaner.DefaultCleanFrequency);
 
                 _assignments.Add(_indexerCache);
                 _assignments.Add(_indexerCacheCleaner);
@@ -145,6 +149,11 @@ namespace ZeroG.Data.Object
                     if (!_objectNaming.ObjectNameExists(nameSpace, obj.Name))
                     {
                         throw new ArgumentException("Object name does not exist: " + ObjectNaming.CreateFullObjectName(nameSpace, obj.Name));
+                    }
+
+                    if (obj.SecondaryKey != null && obj.SecondaryKey.Length == 0)
+                    {
+                        throw new ArgumentException("Zero length Secondary Key is not supported.");
                     }
                 }
             }
@@ -889,6 +898,20 @@ namespace ZeroG.Data.Object
             }
 
             return removed;
+        }
+
+        public IDictionary<string, string> Report()
+        {
+            Dictionary<string, string> report = _objectStore.Report();
+
+            if (_indexerCache != null)
+            {
+                CacheTotals cacheTotals = _indexerCache.Totals;
+                report.Add("IndexCache_Queries", cacheTotals.TotalQueries.ToString());
+                report.Add("IndexCache_Values", cacheTotals.TotalValues.ToString());
+            }
+
+            return report;
         }
 
         #endregion

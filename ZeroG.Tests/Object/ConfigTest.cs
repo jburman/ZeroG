@@ -26,15 +26,17 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void NonAppConfigFileConfig()
         {
-            var config = new Config("TestPath", true, "SchemaConn", "DataConn", 100, true, 10000, 20);
+            var config = new Config("TestPath", true, 20, 1100, "SchemaConn", "DataConn", 100, true, 10000, 20);
             Assert.AreEqual("TestPath", config.BaseDataPath);
             Assert.IsTrue(config.IndexCacheEnabled);
+            Assert.AreEqual(20, config.IndexCacheMaxQueries);
+            Assert.AreEqual(1100, config.IndexCacheMaxValues);
             Assert.AreEqual("SchemaConn", config.ObjectIndexSchemaConnection);
             Assert.AreEqual("DataConn", config.ObjectIndexDataConnection);
-            Assert.AreEqual(100u, config.MaxObjectDependencies);
+            Assert.AreEqual(100, config.MaxObjectDependencies);
             Assert.AreEqual(true, config.ObjectStoreAutoClose);
-            Assert.AreEqual(10000u, config.ObjectStoreAutoCloseTimeout);
-            Assert.AreEqual(20u, config.ObjectStoreCacheSize);
+            Assert.AreEqual(10000, config.ObjectStoreAutoCloseTimeout);
+            Assert.AreEqual(20, config.ObjectStoreCacheSize);
         }
 
         [TestMethod]
@@ -46,7 +48,7 @@ namespace ZeroG.Tests.Object
             var config = new Config(customBasePath);
             Assert.AreEqual(expectedBasePath, config.BaseDataPath);
 
-            config = new Config(customBasePath, true, string.Empty, string.Empty, 10, false, 0, 10);
+            config = new Config(customBasePath, true, 1000, 10000, string.Empty, string.Empty, 10, false, 0, 10);
             Assert.AreEqual(expectedBasePath, config.BaseDataPath);
         }
     }

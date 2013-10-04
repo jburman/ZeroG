@@ -27,6 +27,8 @@ namespace ZeroG.Tests.Object
             var defaultConfig = GetConfig();
             return new Config(defaultConfig.BaseDataPath,
                 true,
+                defaultConfig.IndexCacheMaxQueries,
+                defaultConfig.IndexCacheMaxValues,
                 defaultConfig.ObjectIndexSchemaConnection,
                 defaultConfig.ObjectIndexDataConnection,
                 defaultConfig.MaxObjectDependencies,

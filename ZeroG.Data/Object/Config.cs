@@ -77,15 +77,19 @@ namespace ZeroG.Data.Object
         /// <param name="maxObjectDependences"></param>
         public Config(string baseDataPath,
             bool indexCacheEnabled,
+            int indexCacheMaxQueries,
+            int indexCacheMaxValues,
             string objectIndexSchemaConn,
             string objectIndexDataConn,
-            uint maxObjectDependences,
+            int maxObjectDependences,
             bool objectStoreAutoClose,
-            uint objectStoreAutoCloseTimeout,
-            uint objectStoreCacheSize)
+            int objectStoreAutoCloseTimeout,
+            int objectStoreCacheSize)
         {
             _baseDataPath = baseDataPath;
             _indexCacheEnabled = indexCacheEnabled;
+            _indexCacheMaxQueries = indexCacheMaxQueries;
+            _indexCacheMaxValues = indexCacheMaxValues;
             _objectIndexSchemaConn = objectIndexSchemaConn;
             _objectIndexDataConn = objectIndexDataConn;
             _maxObjectDependencies = maxObjectDependences;
@@ -106,8 +110,27 @@ namespace ZeroG.Data.Object
             NameValueCollection appSettings = ConfigurationManager.AppSettings;
 
             bool boolParse = false;
+            int intParse = 0;
+
+
             bool.TryParse(appSettings["ObjectIndexCacheEnabled"], out boolParse);
             _indexCacheEnabled = boolParse;
+
+            intParse = -1;
+            int.TryParse(appSettings["ObjectIndexCacheMaxQueries"], out intParse);
+            if (intParse < 0)
+            {
+                intParse = 100000;
+            }
+            _indexCacheMaxQueries = intParse;
+
+            intParse = -1;
+            int.TryParse(appSettings["ObjectIndexCacheMaxValues"], out intParse);
+            if (intParse < 0)
+            {
+                intParse = 10000000;
+            }
+            _indexCacheMaxValues = intParse;
 
             _objectIndexSchemaConn = appSettings["ObjectIndexSchemaConnection"];
             _objectIndexSchemaConn = _objectIndexSchemaConn ?? ObjectIndexProvider.DefaultSchemaConnection;
@@ -115,9 +138,9 @@ namespace ZeroG.Data.Object
             _objectIndexDataConn = appSettings["ObjectIndexDataConnection"];
             _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
 
-            uint intParse = 0;
-            uint.TryParse(appSettings["MaxObjectDependencies"], out intParse);
-            if (0 == intParse)
+            intParse = -1;
+            int.TryParse(appSettings["MaxObjectDependencies"], out intParse);
+            if (intParse < 0)
             {
                 intParse = 5;
             }
@@ -127,18 +150,18 @@ namespace ZeroG.Data.Object
             bool.TryParse(appSettings["ObjectStoreAutoClose"], out boolParse);
             _objectStoreAutoClose = boolParse;
 
-            intParse = 300;
-            uint.TryParse(appSettings["ObjectStoreAutoCloseTimeout"], out intParse);
+            intParse = -1;
+            int.TryParse(appSettings["ObjectStoreAutoCloseTimeout"], out intParse);
             _objectStoreAutoCloseTimeout = intParse;
-            if (0 == intParse)
+            if (intParse < 0)
             {
                 _objectStoreAutoCloseTimeout = 300; // reset to the default value
             }
 
-            intParse = 100;
-            uint.TryParse(appSettings["ObjectStoreCacheSize"], out intParse);
+            intParse = -1;
+            int.TryParse(appSettings["ObjectStoreCacheSize"], out intParse);
             _objectStoreCacheSize = intParse;
-            if (0 == intParse)
+            if (intParse < 0)
             {
                 _objectStoreCacheSize = 100; // reset to the default value
             }
@@ -211,6 +234,32 @@ namespace ZeroG.Data.Object
             }
         }
 
+        private int _indexCacheMaxQueries;
+        /// <summary>
+        /// Specify the maximum number of queries to store in the cache before pruning.
+        /// </summary>
+        /// <remarks>Defaults to 100,000</remarks>
+        public int IndexCacheMaxQueries
+        {
+            get
+            {
+                return _indexCacheMaxQueries;
+            }
+        }
+
+        private int _indexCacheMaxValues;
+        /// <summary>
+        /// Specify the maximum number of object IDs to store in the cache before pruning
+        /// </summary>
+        /// <remarks>Defaults to 10,000,000</remarks>
+        public int IndexCacheMaxValues
+        {
+            get
+            {
+                return _indexCacheMaxValues;
+            }
+        }
+
         private string _objectIndexSchemaConn;
         /// <summary>
         /// The database connection string that the Object Service will use when 
@@ -252,13 +301,13 @@ namespace ZeroG.Data.Object
             }
         }
 
-        private uint _objectStoreAutoCloseTimeout;
+        private int _objectStoreAutoCloseTimeout;
         /// <summary>
         /// Specifies the number of seconds that an Object Store instance is left open before it is closed.
         /// </summary>
         /// <seealso cref="ZeroG.Data.Config.ObjectStoreAutoClose"/>
         /// <remarks>Defaults to 300 seconds</remarks>
-        public uint ObjectStoreAutoCloseTimeout
+        public int ObjectStoreAutoCloseTimeout
         {
             get
             {
@@ -266,11 +315,11 @@ namespace ZeroG.Data.Object
             }
         }
 
-        private uint _objectStoreCacheSize;
+        private int _objectStoreCacheSize;
         /// <summary>
         /// Specifies size of ObjectStore data cache in MB.
         /// </summary>
-        public uint ObjectStoreCacheSize 
+        public int ObjectStoreCacheSize 
         {
             get
             {
@@ -278,12 +327,12 @@ namespace ZeroG.Data.Object
             }
         }
 
-        private uint _maxObjectDependencies;
+        private int _maxObjectDependencies;
         /// <summary>
         /// The maximum number of Objects that that another Object can be dependent on.
         /// </summary>
         /// <remarks>Defaults to 5</remarks>
-        public uint MaxObjectDependencies
+        public int MaxObjectDependencies
         {
             get
             {

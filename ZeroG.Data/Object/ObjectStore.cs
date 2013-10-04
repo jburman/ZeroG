@@ -64,12 +64,10 @@ namespace ZeroG.Data.Object
 
             _config = config;
             _objectMetadata = objectMetadata;
-
             // Create a single cache instance that is shared across all Object Stores
             // Index cache is set to a fifth the size of the data cache size.
             int cacheSizeBytes = (int)config.ObjectStoreCacheSize * 1024 * 1024;
             _cache = new RazorCache((int)Math.Ceiling((double)cacheSizeBytes / 5), cacheSizeBytes);
-            
             _stores = new Dictionary<string, ExpiringObjectStore>(StringComparer.OrdinalIgnoreCase);
             _secondaryStores = new Dictionary<string, ExpiringObjectStore>(StringComparer.OrdinalIgnoreCase);
             _secondaryStoreExists = new Dictionary<string, bool>();
@@ -144,7 +142,13 @@ namespace ZeroG.Data.Object
 
         private byte[] _CreateValueForStorage(byte[] value, byte[] secondaryKey)
         {
-            if (null == secondaryKey)
+            // null values are always converted to zero length byte arrays
+            if (value == null)
+            {
+                value = new byte[0];
+            }
+
+            if (secondaryKey == null)
             {
                 return value;
             }
@@ -177,7 +181,7 @@ namespace ZeroG.Data.Object
         {
             byte[] returnValue = value;
 
-            if (null != value && 5 < value.Length)
+            if (null != value && value.Length > 5)
             {
                 // check for leading double pipes indicating that next 4 characters can be treated as the secondary key length
                 if (value[0] == 124 && value[1] == 124)
@@ -190,6 +194,10 @@ namespace ZeroG.Data.Object
                         Array.Copy(value, offset, newVal, 0, newVal.Length);
                         returnValue = newVal;
                     }
+                    else
+                    {
+                        returnValue = new byte[0];
+                    }
                 }
             }
 
@@ -200,7 +208,7 @@ namespace ZeroG.Data.Object
         {
             byte[] returnValue = null;
 
-            if (null != value && 5 < value.Length)
+            if (null != value && value.Length > 5)
             {
                 // check for leading double pipes indicating that next 4 characters can be treated as the secondary key length
                 if (value[0] == 124 && value[1] == 124)
@@ -380,6 +388,39 @@ namespace ZeroG.Data.Object
                 store = _EnsureSecondaryStore(objectFullName);
                 store.Truncate();
             }
+        }
+
+        public Dictionary<string, string> Report()
+        {
+            var returnValue = new Dictionary<string, string>();
+
+            if (null != _cache)
+            {
+                returnValue.Add("ObjectStoreDataSize_SharedCache", _cache.DataCacheSize.ToString());
+                returnValue.Add("ObjectStoreIndexSize_SharedCache", _cache.IndexCacheSize.ToString());
+            }
+            else
+            {
+                lock (_stores)
+                {
+                    foreach (var store in _stores)
+                    {
+                        returnValue.Add("ObjectStoreDataSize_" + store.Key, store.Value.Store.DataCacheSize.ToString());
+                        returnValue.Add("ObjectStoreIndexSize_" + store.Key, store.Value.Store.IndexCacheSize.ToString());
+                    }
+                }
+
+                lock (_secondaryStores)
+                {
+                    foreach (var store in _secondaryStores)
+                    {
+                        returnValue.Add("ObjectSecondaryStoreDataSize_" + store.Key, store.Value.Store.DataCacheSize.ToString());
+                        returnValue.Add("ObjectSecondaryStoreIndexSize_" + store.Key, store.Value.Store.IndexCacheSize.ToString());
+                    }
+                }
+            }
+
+            return returnValue;
         }
 
         #region Dispose implementation
