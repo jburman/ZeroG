@@ -117,16 +117,14 @@ namespace ZeroG.Data.Object
             _indexCacheEnabled = boolParse;
 
             intParse = -1;
-            int.TryParse(appSettings["ObjectIndexCacheMaxQueries"], out intParse);
-            if (intParse < 0)
+            if (!int.TryParse(appSettings["ObjectIndexCacheMaxQueries"], out intParse) || intParse < 0)
             {
                 intParse = 100000;
             }
             _indexCacheMaxQueries = intParse;
 
             intParse = -1;
-            int.TryParse(appSettings["ObjectIndexCacheMaxValues"], out intParse);
-            if (intParse < 0)
+            if (!int.TryParse(appSettings["ObjectIndexCacheMaxValues"], out intParse) || intParse < 0)
             {
                 intParse = 10000000;
             }
@@ -139,8 +137,7 @@ namespace ZeroG.Data.Object
             _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
 
             intParse = -1;
-            int.TryParse(appSettings["MaxObjectDependencies"], out intParse);
-            if (intParse < 0)
+            if (!int.TryParse(appSettings["MaxObjectDependencies"], out intParse) || intParse < 0)
             {
                 intParse = 5;
             }
@@ -151,20 +148,18 @@ namespace ZeroG.Data.Object
             _objectStoreAutoClose = boolParse;
 
             intParse = -1;
-            int.TryParse(appSettings["ObjectStoreAutoCloseTimeout"], out intParse);
-            _objectStoreAutoCloseTimeout = intParse;
-            if (intParse < 0)
+            if (!int.TryParse(appSettings["ObjectStoreAutoCloseTimeout"], out intParse) || intParse < 0)
             {
-                _objectStoreAutoCloseTimeout = 300; // reset to the default value
+                intParse = 300; // reset to the default value
             }
+            _objectStoreAutoCloseTimeout = intParse;
 
             intParse = -1;
-            int.TryParse(appSettings["ObjectStoreCacheSize"], out intParse);
-            _objectStoreCacheSize = intParse;
-            if (intParse < 0)
+            if (!int.TryParse(appSettings["ObjectStoreCacheSize"], out intParse) || intParse < 0)
             {
                 _objectStoreCacheSize = 100; // reset to the default value
             }
+            _objectStoreCacheSize = intParse;
         }
 
         /// <summary>
