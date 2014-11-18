@@ -187,6 +187,13 @@ namespace ZeroG.Data.Object
                 if (value[0] == 124 && value[1] == 124)
                 {
                     var offset = BitConverter.ToInt32(value, 2) + 6;
+#if DEBUG
+                    if (offset < 0)
+                    {
+                        Debugger.Break();
+                    }
+                    
+#endif
                     var valLen = value.Length;
                     if (offset < valLen)
                     {

@@ -36,7 +36,7 @@ namespace ZeroG.Tests.Lang.JSON
             Assert.AreEqual("Age", tokenList[1].StrValue);
             Assert.AreEqual(JSONTokenType.COLON, tokenList[2].Type);
             Assert.AreEqual(JSONTokenType.NUMBER, tokenList[3].Type);
-            Assert.AreEqual(5d, tokenList[3].NumValue);
+            Assert.AreEqual(5m, tokenList[3].NumValue);
             Assert.AreEqual(JSONTokenType.OBJECT_END, tokenList[4].Type);
             Assert.AreEqual(JSONTokenType.EOF, tokenList[5].Type);
         }
@@ -61,15 +61,15 @@ namespace ZeroG.Tests.Lang.JSON
             Assert.AreEqual(JSONTokenType.COLON, tokenList[2].Type);
             Assert.AreEqual(JSONTokenType.ARRAY_START, tokenList[3].Type);
             Assert.AreEqual(JSONTokenType.NUMBER, tokenList[4].Type);
-            Assert.AreEqual(5d, tokenList[4].NumValue);
+            Assert.AreEqual(5m, tokenList[4].NumValue);
             Assert.AreEqual(JSONTokenType.COMMA, tokenList[5].Type);
 
             Assert.AreEqual(JSONTokenType.NUMBER, tokenList[6].Type);
-            Assert.AreEqual(7d, tokenList[6].NumValue);
+            Assert.AreEqual(7m, tokenList[6].NumValue);
             Assert.AreEqual(JSONTokenType.COMMA, tokenList[7].Type);
 
             Assert.AreEqual(JSONTokenType.NUMBER, tokenList[8].Type);
-            Assert.AreEqual(8d, tokenList[8].NumValue);
+            Assert.AreEqual(8m, tokenList[8].NumValue);
 
             Assert.AreEqual(JSONTokenType.ARRAY_END, tokenList[9].Type);
 
@@ -97,7 +97,7 @@ namespace ZeroG.Tests.Lang.JSON
             Assert.AreEqual(JSONTokenType.COLON, tokenList[2].Type);
             Assert.AreEqual(JSONTokenType.ARRAY_START, tokenList[3].Type);
             Assert.AreEqual(JSONTokenType.NUMBER, tokenList[4].Type);
-            Assert.AreEqual(1.453d, tokenList[4].NumValue);
+            Assert.AreEqual(1.453m, tokenList[4].NumValue);
             Assert.AreEqual(JSONTokenType.COMMA, tokenList[5].Type);
 
             Assert.AreEqual(JSONTokenType.KEYWORD_NULL, tokenList[6].Type);

@@ -61,7 +61,7 @@ namespace ZeroG.Lang.JSON
         public event JSONEventHandler<string> ObjectKey;
 
         public event JSONEventHandler<string> String;
-        public event JSONEventHandler<double> Number;
+        public event JSONEventHandler<decimal> Number;
         public event JSONEventHandler<bool> Boolean;
         public event JSONEventHandler Null;
 
@@ -129,7 +129,7 @@ namespace ZeroG.Lang.JSON
             }
         }
 
-        internal void RaiseNumber(double value)
+        internal void RaiseNumber(decimal value)
         {
             if (null != Number)
             {

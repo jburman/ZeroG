@@ -162,7 +162,7 @@ namespace ZeroG.Lang.JSON
             _events.ArrayNext       += new JSONEventHandler(_events_ArrayNext);
 
             _events.String          += new JSONEventHandler<string>(_events_String);
-            _events.Number          += new JSONEventHandler<double>(_events_Number);
+            _events.Number          += new JSONEventHandler<decimal>(_events_Number);
             _events.Null            += new JSONEventHandler(_events_Null);
             _events.Boolean         += new JSONEventHandler<bool>(_events_Boolean);
         }
@@ -241,7 +241,7 @@ namespace ZeroG.Lang.JSON
             _consumeValue(value);
         }
 
-        private void _events_Number(double value)
+        private void _events_Number(decimal value)
         {
             _consumeValue(value);
         }

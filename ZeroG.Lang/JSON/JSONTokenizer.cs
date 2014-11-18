@@ -60,7 +60,7 @@ namespace ZeroG.Lang.JSON
     {
         public JSONTokenType Type;
         public string StrValue;
-        public double NumValue;
+        public decimal NumValue;
     }
 
     /// <summary>
@@ -130,7 +130,7 @@ namespace ZeroG.Lang.JSON
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        private double _ScanNumber(TextReader reader)
+        private decimal _ScanNumber(TextReader reader)
         {
             // we'll read the number in and let .NET parse its value into a doulbe
             _string.Length = 0;
@@ -186,10 +186,15 @@ namespace ZeroG.Lang.JSON
                     _string.Append((char)reader.Read());
                 }
             }
-            return double.Parse(_string.ToString(),
+            return decimal.Parse(_string.ToString(),
                 NumberStyles.AllowDecimalPoint |
                 NumberStyles.AllowExponent |
                 NumberStyles.AllowLeadingSign);
+            /*
+            return double.Parse(_string.ToString(),
+                NumberStyles.AllowDecimalPoint |
+                NumberStyles.AllowExponent |
+                NumberStyles.AllowLeadingSign);*/
         }
 
         /// <summary>

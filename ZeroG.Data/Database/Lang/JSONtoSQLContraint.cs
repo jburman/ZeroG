@@ -102,13 +102,17 @@ namespace ZeroG.Data.Database.Lang
         private static Type _ConstraintKeywordsType = typeof(ConstraintKeywords);
         private static Dictionary<string, ConstraintOperator> _operators;
         private static Dictionary<ConstraintOperator, string> _operatorsReverse;
+        /// <summary>
+        /// Contains the case-insensitive set of constraint keywords for quick lookup while parsing
+        /// </summary>
+        private static HashSet<string> _constraintKeywords;
+        private static HashSet<string> _constraintLogic;
 
         private IDatabaseService _db;
         private JSONWalkingEvents _events;
         private Dictionary<string, Type> _typeMappings;
         private Stack<Constraint> _constraints;
         private Constraint _constraint;
-        private HashSet<string> _constraintLogic;
 
         static JSONToSQLConstraint()
         {
@@ -130,6 +134,12 @@ namespace ZeroG.Data.Database.Lang
             {
                 _operatorsReverse[op.Value] = op.Key;
             }
+
+            _constraintLogic = new HashSet<string>(Enum.GetNames(typeof(ConstraintLogic)),
+                StringComparer.InvariantCultureIgnoreCase);
+
+            _constraintKeywords = new HashSet<string>(Enum.GetNames(typeof(ConstraintKeywords)),
+                StringComparer.InvariantCultureIgnoreCase);
         }
 
         public JSONToSQLConstraint(IDatabaseService db, JSONWalkingEvents events, Dictionary<string, Type> typeMappings)
@@ -162,18 +172,11 @@ namespace ZeroG.Data.Database.Lang
             _events.ArrayNext += new JSONEventHandler(_events_ArrayNext);
 
             _events.String += new JSONEventHandler<string>(_events_String);
-            _events.Number += new JSONEventHandler<double>(_events_Number);
+            _events.Number += new JSONEventHandler<decimal>(_events_Number);
             _events.Null += new JSONEventHandler(_events_Null);
             _events.Boolean += new JSONEventHandler<bool>(_events_Boolean);
 
             _constraints = new Stack<Constraint>();
-            _constraintLogic = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-
-            var names = Enum.GetNames(typeof(ConstraintLogic));
-            foreach (var name in names)
-            {
-                _constraintLogic.Add(name);
-            }
         }
 
         #region Static helpers
@@ -408,7 +411,7 @@ namespace ZeroG.Data.Database.Lang
             _consumeValue(value);
         }
 
-        private void _events_Number(double value)
+        private void _events_Number(decimal value)
         {
             _consumeValue(value);
         }
@@ -434,12 +437,13 @@ namespace ZeroG.Data.Database.Lang
         private void _events_ObjectKey(string value)
         {
             _constraint.LastKey = value;
-            try
+
+            if (_constraintKeywords.Contains(value))
             {
                 _constraint.LastKeyword = (ConstraintKeywords)Enum.Parse(typeof(ConstraintKeywords), value, true);
                 _constraint.InKeyword = true;
             }
-            catch
+            else
             {
                 _constraint.Name = value;
                 _constraint.LastKeyword = ConstraintKeywords.Unknown;
