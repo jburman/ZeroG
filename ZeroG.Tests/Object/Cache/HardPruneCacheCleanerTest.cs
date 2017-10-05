@@ -28,24 +28,15 @@ namespace ZeroG.Tests.Object.Cache
         [TestCategory("Core")]
         public void CreateDefault()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
-            using (var cleaner = new HardPruneCacheCleaner(cache))
+            using (var scope = TestContext.ScopedInstance)
             {
-                try
+                ObjectIndexerCache cache = scope.Resolve<ObjectIndexerCache>();
+                using (var cleaner = new HardPruneCacheCleaner(cache))
                 {
                     Assert.AreEqual(HardPruneCacheCleaner.DefaultMaxQueries, cleaner.MaxQueries);
                     Assert.AreEqual(HardPruneCacheCleaner.DefaultMaxValues, cleaner.MaxValues);
                     Assert.AreEqual(HardPruneCacheCleaner.DefaultReductionFactor, cleaner.ReductionFactor);
                     Assert.AreEqual(HardPruneCacheCleaner.DefaultCleanFrequency, cleaner.CleanFrequency);
-                }
-                finally
-                {
-                    cache.Dispose();
-                    versions.Dispose();
-                    metadata.Dispose();
                 }
             }
         }
@@ -54,16 +45,13 @@ namespace ZeroG.Tests.Object.Cache
         [TestCategory("Core")]
         public void BasicCreateAndClean()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-            
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
-
-            string objectName = "TestObj";
-
-            try
+            using (var scope = TestContext.ScopedInstance)
             {
+
+                ObjectIndexerCache cache = scope.Resolve<ObjectIndexerCache>();
+
+                string objectName = "TestObj";
+
                 // Load up the cache - first we will test that it is not cleaned when it shouldn't be
                 for (int i = 0; i < 20; i++) // generate 20 queries and 80 object Ids
                 {
@@ -204,12 +192,6 @@ namespace ZeroG.Tests.Object.Cache
                 Assert.AreEqual(133, totals.TotalQueries);
                 Assert.AreEqual(532, totals.TotalValues);
                 Assert.IsNotNull(cache.Get(new object[] { objectName, "Idx1=2" }));
-            }
-            finally
-            {
-                cache.Dispose();
-                versions.Dispose();
-                metadata.Dispose();
             }
         }
     }

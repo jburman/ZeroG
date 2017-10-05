@@ -25,7 +25,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object
@@ -41,11 +40,7 @@ namespace ZeroG.Data.Object
 
         internal ObjectNaming(ObjectMetadataStore objectMetadata)
         {
-            if (null == objectMetadata)
-            {
-                throw new ArgumentNullException("objectMetadata");
-            }
-            _objectMetadata = objectMetadata;
+            _objectMetadata = objectMetadata ?? throw new ArgumentNullException(nameof(objectMetadata));
             _validNameSpaces = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             _validNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -111,20 +106,8 @@ namespace ZeroG.Data.Object
             }
         }
 
-        public static string CreateFullObjectName(string nameSpace, string objectName)
-        {
-            return ObjectNameFormatter.CreateFullObjectName(nameSpace, objectName);
-        }
-
-        public static byte[] CreateFullObjectKey(string nameSpace, string objectName)
-        {
-            return ObjectNameFormatter.CreateFullObjectKey(nameSpace, objectName);
-        }
-
-        public static byte[] CreateFullObjectKey(string objectFullName)
-        {
-            return ObjectNameFormatter.CreateFullObjectKey(objectFullName);
-        }
+        public static string CreateFullObjectName(string nameSpace, string objectName) =>
+            ObjectNameFormatter.CreateFullObjectName(nameSpace, objectName);
 
         public static string GetNameSpaceFromFullObjectName(string fullObjectName)
         {

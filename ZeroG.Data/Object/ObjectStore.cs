@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -23,7 +23,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using RazorDB;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,46 +33,39 @@ using System.Diagnostics;
 
 namespace ZeroG.Data.Object
 {
-    internal class ObjectStore : IDisposable
+    internal class ObjectStore : IObjectStore
     {
         private class ExpiringObjectStore
         {
-            public KeyValueStore Store;
+            public IKeyValueStore Store;
             public DateTime WhenExpired;
         }
 
-        private Config _config;
+        private ISerializer _serializer;
         private ObjectMetadataStore _objectMetadata;
-        private RazorCache _cache;
+        private IKeyValueStoreProvider _kvProvider;
+        
         private Dictionary<string, ExpiringObjectStore> _stores;
         private Dictionary<string, ExpiringObjectStore> _secondaryStores;
         private Dictionary<string, bool> _secondaryStoreExists;
-        private Timer _cleanupTimer; 
+        private Timer _cleanupTimer;
+        private bool _autoClose;
+        private int _autoCloseTimeoutSeconds;
 
-        public ObjectStore(Config config, ObjectMetadataStore objectMetadata)
+        public ObjectStore(ISerializer serializer, ObjectMetadataStore objectMetadata, IKeyValueStoreProvider kvProvider, bool autoClose, int autoCloseTimeoutSeconds)
         {
-            if (null == config)
-            {
-                throw new ArgumentNullException("config");
-            }
-
-            if (null == objectMetadata)
-            {
-                throw new ArgumentNullException("objectMetadata");
-            }
-
-            _config = config;
-            _objectMetadata = objectMetadata;
-            // Create a single cache instance that is shared across all Object Stores
-            // Index cache is set to a fifth the size of the data cache size.
-            int cacheSizeBytes = (int)config.ObjectStoreCacheSize * 1024 * 1024;
-            _cache = new RazorCache((int)Math.Ceiling((double)cacheSizeBytes / 5), cacheSizeBytes);
+            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            _objectMetadata = objectMetadata ?? throw new ArgumentNullException(nameof(objectMetadata));
+            _kvProvider = kvProvider ?? throw new ArgumentNullException(nameof(kvProvider));
+            
             _stores = new Dictionary<string, ExpiringObjectStore>(StringComparer.OrdinalIgnoreCase);
             _secondaryStores = new Dictionary<string, ExpiringObjectStore>(StringComparer.OrdinalIgnoreCase);
             _secondaryStoreExists = new Dictionary<string, bool>();
 
             // Start the Object Store cleanup timer if cleanup is enabled
-            if (_config.ObjectStoreAutoClose && _config.ObjectStoreAutoCloseTimeout > 0)
+            _autoClose = autoClose;
+            _autoCloseTimeoutSeconds = autoCloseTimeoutSeconds;
+            if (_autoClose && _autoCloseTimeoutSeconds > 0)
             {
                 _StartObjectStoreCleanup();
             }
@@ -81,12 +73,9 @@ namespace ZeroG.Data.Object
 
         #region Private helpers
 
-        private string _CreateStorePath(string storeName, string objectFullName)
-        {
-            return Path.Combine(Path.Combine(_config.BaseDataPath, storeName), objectFullName);
-        }
+        private string _CreateStorePath(string storeName, string objectFullName) => Path.Combine(storeName, objectFullName);
 
-        private KeyValueStore _EnsureStore(Dictionary<string, ExpiringObjectStore> storeCollection, string path, string objectFullName)
+        private IKeyValueStore _EnsureStore(Dictionary<string, ExpiringObjectStore> storeCollection, string path, string objectFullName)
         {
             lock (storeCollection)
             {
@@ -94,37 +83,34 @@ namespace ZeroG.Data.Object
                 {
                     ExpiringObjectStore store = storeCollection[objectFullName];
                     // reset expiration time
-                    store.WhenExpired = DateTime.Now.AddSeconds(_config.ObjectStoreAutoCloseTimeout);
+                    store.WhenExpired = DateTime.Now.AddSeconds(_autoCloseTimeoutSeconds);
                     return store.Store;
                 }
                 else
                 {
                     var metadata = _objectMetadata.GetMetadata(objectFullName);
 
-                    if (null == metadata)
+                    if (metadata == null)
                     {
                         throw new ArgumentException("Object Store not found: " + objectFullName);
                     }
                     // construct name from stored metadata for consistency
                     objectFullName = ObjectNaming.CreateFullObjectName(metadata.NameSpace, metadata.ObjectName);
 
-                    var store = new KeyValueStore(_CreateStorePath(path, objectFullName), _cache);
+                    var store = _kvProvider.Get(_CreateStorePath(path, objectFullName));
                     storeCollection[objectFullName] = new ExpiringObjectStore()
                     {
                         Store = store,
-                        WhenExpired = DateTime.Now.AddSeconds(_config.ObjectStoreAutoCloseTimeout)
+                        WhenExpired = DateTime.Now.AddSeconds(_autoCloseTimeoutSeconds)
                     };
                     return store;
                 }
             }
         }
 
-        private KeyValueStore _EnsureStore(string objectFullName)
-        {
-            return _EnsureStore(_stores, "Store", objectFullName);
-        }
+        private IKeyValueStore _EnsureStore(string objectFullName) => _EnsureStore(_stores, "Store", objectFullName);
 
-        private KeyValueStore _EnsureSecondaryStore(string objectFullName)
+        private IKeyValueStore _EnsureSecondaryStore(string objectFullName)
         {
             _secondaryStoreExists[objectFullName] = true;
             return _EnsureStore(_secondaryStores, "SecondaryStore", objectFullName);
@@ -133,9 +119,7 @@ namespace ZeroG.Data.Object
         private bool _SecondaryStoreExists(string objectFullName)
         {
             if (!_secondaryStoreExists.ContainsKey(objectFullName))
-            {
-                _secondaryStoreExists[objectFullName] = Directory.Exists(_CreateStorePath("SecondaryStore", objectFullName));
-            }
+                _secondaryStoreExists[objectFullName] = _kvProvider.Exists(_CreateStorePath("SecondaryStore", objectFullName)); // Directory.Exists(_CreateStorePath("SecondaryStore", objectFullName));
 
             return _secondaryStoreExists[objectFullName];
         }
@@ -229,11 +213,16 @@ namespace ZeroG.Data.Object
             return returnValue;
         }
 
+        //TODO provide background work handler
         private void _StartObjectStoreCleanup()
         {
             _cleanupTimer = new Timer(new TimerCallback((o) => 
             {
                 var now = DateTime.Now;
+
+#if DEBUG
+                Debug.WriteLine("#### Running Object Store Cleanup");
+#endif
 
                 lock (_stores)
                 {
@@ -276,7 +265,7 @@ namespace ZeroG.Data.Object
                         }
                     }
                 }
-            }), null, _config.ObjectStoreAutoCloseTimeout, _config.ObjectStoreAutoCloseTimeout);
+            }), null, _autoCloseTimeoutSeconds * 1000, _autoCloseTimeoutSeconds * 1000);
         }
 
         #endregion
@@ -287,16 +276,16 @@ namespace ZeroG.Data.Object
             var store = _EnsureStore(objectFullName);
             var storeValue = _CreateValueForStorage(obj.Value, obj.SecondaryKey);
 
-            store.Set(SerializerHelper.Serialize(obj.ID), storeValue);
+            store.Set(_serializer.Serialize(obj.ID), storeValue);
 
             if (obj.HasSecondaryKey())
             {
                 var secondaryStore = _EnsureSecondaryStore(objectFullName);
-                secondaryStore.Set(obj.SecondaryKey, SerializerHelper.Serialize(obj.ID));
+                secondaryStore.Set(obj.SecondaryKey, _serializer.Serialize(obj.ID));
             }
         }
 
-        private byte[] _Get(KeyValueStore store, byte[] key)
+        private byte[] _Get(IKeyValueStore store, byte[] key)
         {
             var val = store.Get(key);
 
@@ -306,7 +295,7 @@ namespace ZeroG.Data.Object
         public byte[] Get(string objectFullName, int id)
         {
             var store = _EnsureStore(objectFullName);
-            var key = SerializerHelper.Serialize(id);
+            var key = _serializer.Serialize(id);
             return _Get(store, key);
         }
 
@@ -341,7 +330,7 @@ namespace ZeroG.Data.Object
             var store = _EnsureStore(objectFullName);
             foreach (var entry in store.Enumerate())
             {
-                var id = SerializerHelper.DeserializeInt32(entry.Key);
+                var id = _serializer.DeserializeInt32(entry.Key);
                 var value = _GetValueFromStoredValue(entry.Value);
                 var secondaryKey = _GetSecondaryKeyFromStoredValue(entry.Value);
                 yield return new ObjectStoreRecord(id, secondaryKey, value);
@@ -354,11 +343,11 @@ namespace ZeroG.Data.Object
 
             if (_SecondaryStoreExists(objectFullName))
             {
-                KeyValueStore secondaryStore = _EnsureSecondaryStore(objectFullName);
+                IKeyValueStore secondaryStore = _EnsureSecondaryStore(objectFullName);
                 byte[] lookup = secondaryStore.Get(secondaryKey);
                 if (null != lookup)
                 {
-                    returnValue = SerializerHelper.DeserializeInt32(lookup);
+                    returnValue = _serializer.DeserializeInt32(lookup);
                 }
             }
 
@@ -368,7 +357,7 @@ namespace ZeroG.Data.Object
         public void Remove(string objectFullName, int id)
         {
             var store = _EnsureStore(objectFullName);
-            var primaryKey = SerializerHelper.Serialize(id);
+            var primaryKey = _serializer.Serialize(id);
             if (_SecondaryStoreExists(objectFullName))
             {
                 var val = store.Get(primaryKey);
@@ -399,35 +388,52 @@ namespace ZeroG.Data.Object
 
         public Dictionary<string, string> Report()
         {
-            var returnValue = new Dictionary<string, string>();
-
-            if (null != _cache)
+            var report = new Dictionary<string, string>();
+            //TODO fix Report()
+            /*
+            TODO
+            if(_kvProvider.CacheConfig == KeyValueCacheConfiguration.Shared)
             {
-                returnValue.Add("ObjectStoreDataSize_SharedCache", _cache.DataCacheSize.ToString());
-                returnValue.Add("ObjectStoreIndexSize_SharedCache", _cache.IndexCacheSize.ToString());
+                lock (_stores)
+                    _stores.Values.FirstOrDefault().Store.WriteCacheStats(report, "Shared_");
             }
-            else
+            else if(_kvProvider.CacheConfig == KeyValueCacheConfiguration.Instance)
             {
                 lock (_stores)
                 {
-                    foreach (var store in _stores)
-                    {
-                        returnValue.Add("ObjectStoreDataSize_" + store.Key, store.Value.Store.DataCacheSize.ToString());
-                        returnValue.Add("ObjectStoreIndexSize_" + store.Key, store.Value.Store.IndexCacheSize.ToString());
-                    }
-                }
-
-                lock (_secondaryStores)
-                {
-                    foreach (var store in _secondaryStores)
-                    {
-                        returnValue.Add("ObjectSecondaryStoreDataSize_" + store.Key, store.Value.Store.DataCacheSize.ToString());
-                        returnValue.Add("ObjectSecondaryStoreIndexSize_" + store.Key, store.Value.Store.IndexCacheSize.ToString());
-                    }
+                    foreach (var store in _stores.Values)
+                        store.Store.WriteCacheStats(report, string.Empty);
                 }
             }
+            */
 
-            return returnValue;
+            //if (null != _cache)
+            //{
+            //    report.Add("ObjectStoreDataSize_SharedCache", _cache.DataCacheSize.ToString());
+            //    report.Add("ObjectStoreIndexSize_SharedCache", _cache.IndexCacheSize.ToString());
+            //}
+            //else
+            //{
+            //    lock (_stores)
+            //    {
+            //        foreach (var store in _stores)
+            //        {
+            //            report.Add("ObjectStoreDataSize_" + store.Key, store.Value.Store.DataCacheSize.ToString());
+            //            report.Add("ObjectStoreIndexSize_" + store.Key, store.Value.Store.IndexCacheSize.ToString());
+            //        }
+            //    }
+
+            //    lock (_secondaryStores)
+            //    {
+            //        foreach (var store in _secondaryStores)
+            //        {
+            //            report.Add("ObjectSecondaryStoreDataSize_" + store.Key, store.Value.Store.DataCacheSize.ToString());
+            //            report.Add("ObjectSecondaryStoreIndexSize_" + store.Key, store.Value.Store.IndexCacheSize.ToString());
+            //        }
+            //    }
+            //}
+
+            return report;
         }
 
         #region Dispose implementation
@@ -445,6 +451,11 @@ namespace ZeroG.Data.Object
             {
                 if (disposing)
                 {
+                    if (_cleanupTimer != null)
+                    {
+                        _cleanupTimer.Dispose();
+                    }
+
                     lock (_stores)
                     {
                         foreach (var s in _stores)
@@ -459,11 +470,6 @@ namespace ZeroG.Data.Object
                         {
                             s.Value.Store.Dispose();
                         }
-                    }
-
-                    if (_cleanupTimer != null)
-                    {
-                        _cleanupTimer.Dispose();
                     }
                 }
                 _disposed = true;

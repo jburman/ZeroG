@@ -31,24 +31,20 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void CreateAndModify()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-            
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+            using (var scope = TestContext.ScopedInstance)
+            { 
+                ObjectIndexerCache cache = scope.Resolve<ObjectIndexerCache>();
 
-            string objectName = "TestObj";
-            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
-            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
-            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
+                string objectName = "TestObj";
+                string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+                string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+                string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
 
-            object[] cacheParams = new object[] { objectName, intVal1, strVal1 };
-            object[] cacheParams2 = new object[] { objectName, intVal1, strVal2 };
-            int[] objectIds = new int[] { 1000, 2000 };
-            int[] objectIds2 = new int[] { 3000, 4000 };
+                object[] cacheParams = new object[] { objectName, intVal1, strVal1 };
+                object[] cacheParams2 = new object[] { objectName, intVal1, strVal2 };
+                int[] objectIds = new int[] { 1000, 2000 };
+                int[] objectIds2 = new int[] { 3000, 4000 };
 
-            try
-            {
                 Assert.AreEqual(0, cache.EnumerateCache().Count());
                 CacheTotals totals = cache.Totals;
                 Assert.AreEqual(0, totals.TotalQueries);
@@ -148,36 +144,27 @@ namespace ZeroG.Tests.Object
 
                 Assert.IsNull(cache.Get(cacheParams2));
             }
-            finally
-            {
-                cache.Dispose();
-                versions.Dispose();
-                metadata.Dispose();
-            }
         }
 
         [TestMethod]
         [TestCategory("Core")]
         public void CacheWithVersionChangeEvent()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
-
-            string objectName = "TestObj";
-            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
-            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
-            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
-
-            object[] cacheParams = new object[] { objectName, intVal1, strVal1 };
-            object[] cacheParams2 = new object[] { objectName, intVal1, strVal2 };
-            int[] objectIds = new int[] { 1000, 2000 };
-            int[] objectIds2 = new int[] { 3000, 4000 };
-
-            try
+            using (var scope = TestContext.ScopedInstance)
             {
+                ObjectVersionStore versions = scope.Resolve<ObjectVersionStore>();
+                ObjectIndexerCache cache = scope.Resolve<ObjectIndexerCache>();
+
+                string objectName = "TestObj";
+                string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+                string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+                string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
+
+                object[] cacheParams = new object[] { objectName, intVal1, strVal1 };
+                object[] cacheParams2 = new object[] { objectName, intVal1, strVal2 };
+                int[] objectIds = new int[] { 1000, 2000 };
+                int[] objectIds2 = new int[] { 3000, 4000 };
+
                 // add a couple items to cache - they should not be returned
                 // once the object's version changes (they become "dirty")
                 cache.Set(objectIds, cacheParams);
@@ -218,53 +205,46 @@ namespace ZeroG.Tests.Object
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
             }
-            finally
-            {
-                cache.Dispose();
-                versions.Dispose();
-                metadata.Dispose();
-            }
         }
 
         [TestMethod]
         [TestCategory("Core")]
         public void CacheWithObjectRemovedEvent()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-            string ns = ObjectTestHelper.NameSpace1;
-            string obj = ObjectTestHelper.ObjectName1;
-            string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
-            ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
-                new ObjectIndexMetadata[] 
+            using (var scope = TestContext.ScopedInstance)
+            {
+
+                string ns = ObjectTestHelper.NameSpace1;
+                string obj = ObjectTestHelper.ObjectName1;
+                string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
+                ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
+                    new ObjectIndexMetadata[]
+                    {
+                        new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                        new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                    });
+
+                // Temporarily use the ObjectService to provision the Object's Metadata.
+                using (var svc = scope.GetObjectServiceWithoutIndexCache())
                 {
-                    new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
-                    new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
-                });
+                    svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                        "ZeroG Test", "Unit Test", DateTime.Now));
 
-            // Temporarily use the ObjectService to provision the Object's Metadata.
-            using (var svc = new ObjectService(config))
-            {
-                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
-                    "ZeroG Test", "Unit Test", DateTime.Now));
+                    svc.ProvisionObjectStore(objectMetadata);
+                }
 
-                svc.ProvisionObjectStore(objectMetadata);
-            }
+                ObjectMetadataStore metadata = scope.Resolve<ObjectMetadataStore>();
+                ObjectIndexerCache cache = scope.Resolve<ObjectIndexerCache>();
 
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+                string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+                string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+                string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
 
-            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
-            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
-            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
+                object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
+                object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
+                int[] objectIds = new int[] { 1000, 2000 };
+                int[] objectIds2 = new int[] { 3000, 4000 };
 
-            object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
-            object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
-            int[] objectIds = new int[] { 1000, 2000 };
-            int[] objectIds2 = new int[] { 3000, 4000 };
-
-            try
-            {
                 // add a couple items to cache - they should not be cleared
                 // when the object's metadata is removed
                 cache.Set(objectIds, cacheParams);
@@ -295,63 +275,57 @@ namespace ZeroG.Tests.Object
                 // The metadata needs to be added back so TestCleanup completes
                 metadata.StoreMetadata(objectMetadata);
             }
-            finally
-            {
-                cache.Dispose();
-                versions.Dispose();
-                metadata.Dispose();
-            }
         }
 
         [TestMethod]
         [TestCategory("Core")]
         public void CacheWithDependencyVersionChangeEvent()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-            string ns = ObjectTestHelper.NameSpace1;
-            string obj = ObjectTestHelper.ObjectName1;
-            string obj2 = ObjectTestHelper.ObjectName2;
-            string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
-            string objectFullName2 = ObjectNaming.CreateFullObjectName(ns, obj2);
+            using (var scope = TestContext.ScopedInstance)
+            {
 
-            ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
-                new ObjectIndexMetadata[] 
+                string ns = ObjectTestHelper.NameSpace1;
+                string obj = ObjectTestHelper.ObjectName1;
+                string obj2 = ObjectTestHelper.ObjectName2;
+                string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
+                string objectFullName2 = ObjectNaming.CreateFullObjectName(ns, obj2);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
+                    new ObjectIndexMetadata[]
+                    {
+                        new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                        new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                    });
+
+                ObjectMetadata objectMetadata2 = new ObjectMetadata(ns, obj2, null,
+                    new string[] { obj }); // Make Object1 a dependency of Object2.
+                // Now whenever Object2's version changes, Object1's change event will fire as well.
+                // NOTE: Do not supply Full Object Name as objects can only depend on other objects
+                // within their namespace.
+
+                // Temporarily use the ObjectService to provision the Object's Metadata.
+                using (var svc = scope.GetObjectServiceWithoutIndexCache())
                 {
-                    new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
-                    new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
-                }); 
+                    svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                        "ZeroG Test", "Unit Test", DateTime.Now));
 
-            ObjectMetadata objectMetadata2 = new ObjectMetadata(ns, obj2, null,
-                new string[] { obj }); // Make Object1 a dependency of Object2.
-            // Now whenever Object2's version changes, Object1's change event will fire as well.
-            // NOTE: Do not supply Full Object Name as objects can only depend on other objects
-            // within their namespace.
+                    svc.ProvisionObjectStore(objectMetadata);
+                    svc.ProvisionObjectStore(objectMetadata2);
+                }
 
-            // Temporarily use the ObjectService to provision the Object's Metadata.
-            using (var svc = new ObjectService(config))
-            {
-                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
-                    "ZeroG Test", "Unit Test", DateTime.Now));
+                ObjectMetadataStore metadata = scope.Resolve<ObjectMetadataStore>();
+                ObjectVersionStore versions = scope.Resolve<ObjectVersionStore>();
+                ObjectIndexerCache cache = scope.Resolve<ObjectIndexerCache>();
 
-                svc.ProvisionObjectStore(objectMetadata);
-                svc.ProvisionObjectStore(objectMetadata2);
-            }
+                string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+                string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+                string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
 
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+                object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
+                object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
+                int[] objectIds = new int[] { 1000, 2000 };
+                int[] objectIds2 = new int[] { 3000, 4000 };
 
-            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
-            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
-            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
-
-            object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
-            object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
-            int[] objectIds = new int[] { 1000, 2000 };
-            int[] objectIds2 = new int[] { 3000, 4000 };
-
-            try
-            {
                 // add a couple items to cache - they should not be returned
                 // once the objects dependency object version changes
                 cache.Set(objectIds, cacheParams);
@@ -384,63 +358,58 @@ namespace ZeroG.Tests.Object
                 Assert.IsNotNull(cache.Get(cacheParams));
                 Assert.IsNotNull(cache.Get(cacheParams2));
             }
-            finally
-            {
-                cache.Dispose();
-                versions.Dispose();
-                metadata.Dispose();
-            }
         }
 
         [TestMethod]
         [TestCategory("Core")]
         public void CacheWithDependencyRemoveEvent()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-            string ns = ObjectTestHelper.NameSpace1;
-            string obj = ObjectTestHelper.ObjectName1;
-            string obj2 = ObjectTestHelper.ObjectName2;
-            string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
-            string objectFullName2 = ObjectNaming.CreateFullObjectName(ns, obj2);
+            using (var scope = TestContext.ScopedInstance)
+            {
 
-            ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
-                new ObjectIndexMetadata[] 
+                string ns = ObjectTestHelper.NameSpace1;
+                string obj = ObjectTestHelper.ObjectName1;
+                string obj2 = ObjectTestHelper.ObjectName2;
+                string objectFullName = ObjectNaming.CreateFullObjectName(ns, obj);
+                string objectFullName2 = ObjectNaming.CreateFullObjectName(ns, obj2);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata(ns, obj,
+                    new ObjectIndexMetadata[]
+                    {
+                        new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
+                        new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
+                    });
+
+                ObjectMetadata objectMetadata2 = new ObjectMetadata(ns, obj2, null,
+                    new string[] { obj }); // Make Object1 a dependency of Object2.
+                // Now whenever Object2's version changes, Object1's change event will fire as well.
+                // NOTE: Do not supply Full Object Name as objects can only depend on other objects
+                // within their namespace.
+
+                // Temporarily use the ObjectService to provision the Object's Metadata.
+                using (var svc = scope.GetObjectServiceWithIndexCache())
                 {
-                    new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
-                    new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
-                });
+                    svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                        "ZeroG Test", "Unit Test", DateTime.Now));
 
-            ObjectMetadata objectMetadata2 = new ObjectMetadata(ns, obj2, null,
-                new string[] { obj }); // Make Object1 a dependency of Object2.
-            // Now whenever Object2's version changes, Object1's change event will fire as well.
-            // NOTE: Do not supply Full Object Name as objects can only depend on other objects
-            // within their namespace.
+                    svc.ProvisionObjectStore(objectMetadata);
+                    svc.ProvisionObjectStore(objectMetadata2);
+                }
 
-            // Temporarily use the ObjectService to provision the Object's Metadata.
-            using (var svc = new ObjectService(config))
-            {
-                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
-                    "ZeroG Test", "Unit Test", DateTime.Now));
+                ObjectMetadataStore metadata = scope.Resolve<ObjectMetadataStore>();
+                ObjectVersionStore versions = scope.Resolve<ObjectVersionStore>();
+                ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
 
-                svc.ProvisionObjectStore(objectMetadata);
-                svc.ProvisionObjectStore(objectMetadata2);
-            }
+                string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
+                string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
+                string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
 
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
+                object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
+                object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
+                int[] objectIds = new int[] { 1000, 2000 };
+                int[] objectIds2 = new int[] { 3000, 4000 };
 
-            string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
-            string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
-            string strVal2 = ObjectIndex.Create("StrIdx", "Val3").ToString();
-
-            object[] cacheParams = new object[] { objectFullName, intVal1, strVal1 };
-            object[] cacheParams2 = new object[] { objectFullName, intVal1, strVal2 };
-            int[] objectIds = new int[] { 1000, 2000 };
-            int[] objectIds2 = new int[] { 3000, 4000 };
-
-            try
-            {
+            
                 // Add a couple items to cache - they should not be returned
                 // once the objects dependency object is removed
                 cache.Set(objectIds, cacheParams);
@@ -477,20 +446,17 @@ namespace ZeroG.Tests.Object
                 // The metadata needs to be added back so TestCleanup completes
                 metadata.StoreMetadata(objectMetadata2);
             }
-            finally
-            {
-                cache.Dispose();
-                versions.Dispose();
-                metadata.Dispose();
-            }
         }
 
         [TestMethod]
         [TestCategory("Core")]
         public void FindWithCachingTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var scope = TestContext.ScopedInstance)
             {
+
+                var svc = scope.GetObjectServiceWithIndexCache();
+
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -499,7 +465,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
@@ -519,8 +485,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val1.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1)
                     }
@@ -530,8 +496,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val2.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2)
                     }
@@ -541,8 +507,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val3.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3)
                     }
@@ -618,8 +584,11 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void FindAndCountWithCachingTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithIndexCache();
+
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -628,7 +597,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
@@ -648,8 +617,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val1.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1)
                     }
@@ -659,8 +628,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val2.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2)
                     }
@@ -670,8 +639,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val3.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3)
                     }
@@ -732,7 +701,7 @@ namespace ZeroG.Tests.Object
                 count = svc.Count(ns, obj, "{\"IntIndex1\" : 12500, \"Or\" : { \"StrIndex1\" : \"asdf\" } }");
                 Assert.AreEqual(2, count);
 
-                /*
+                
                 // test two index lookups using And
                 options = new ObjectFindOptions()
                 {
@@ -776,11 +745,11 @@ namespace ZeroG.Tests.Object
                 }).ToArray();
 
                 Assert.AreEqual(2, findVals.Length);
-                var findVal1 = new Guid(findVals[0]);
-                var findVal2 = new Guid(findVals[1]);
+                findVal1 = new Guid(findVals[0]);
+                findVal2 = new Guid(findVals[1]);
                 Assert.IsFalse(findVal1 == findVal2);
                 Assert.IsTrue(findVal1 == val1 || findVal1 == val2);
-                Assert.IsTrue(findVal2 == val1 || findVal2 == val2);*/
+                Assert.IsTrue(findVal2 == val1 || findVal2 == val2);
             }
         }
 
@@ -788,8 +757,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void FindByConstraintWithCachingTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -798,7 +768,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
@@ -818,8 +788,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val1.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1)
                     }
@@ -829,8 +799,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val2.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2)
                     }
@@ -840,8 +810,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val3.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3)
                     }
@@ -877,14 +847,16 @@ namespace ZeroG.Tests.Object
             var strIndex2 = "index test val";
             var strIndex3 = "zzyyxx";
 
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
+
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
                     "ZeroG Test", "Unit Test", DateTime.Now));
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
@@ -894,8 +866,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val1.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1)
                     }
@@ -905,8 +877,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val2.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2)
                     }
@@ -916,8 +888,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val3.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3)
                     }
@@ -941,8 +913,10 @@ namespace ZeroG.Tests.Object
                 stopWatchCountUncached.Stop();
             }
 
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithIndexCache();
+
                 stopWatchCached.Start();
                 for (int i = 0; i < 10; i++)
                 {
@@ -977,8 +951,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void RemoveAndFindWithCachingTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -987,7 +962,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
@@ -1007,8 +982,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val1.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1)
                     }
@@ -1018,8 +993,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val2.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2)
                     }
@@ -1029,8 +1004,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val3.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3)
                     }
@@ -1067,23 +1042,21 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void CreateAndModifyMultithreaded()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
-
-            try
+            using (var scope = TestContext.ScopedInstance)
             {
+
+                ObjectIndexerCache cache = scope.Resolve<ObjectIndexerCache>();
+
                 // Create 4 actions to simulate 4 threads
                 // This test simulates 4 concurrent processes adding and reading items to the cache
                 // while they are also removed.
                 Action[] actions = new Action[4];
-                
+
                 for (int i = 0; i < 4; i++)
                 {
                     string nextObjName = "Obj" + i;
-                    actions[i] = new Action(() => {
+                    actions[i] = new Action(() =>
+                    {
 
                         for (int loops = 0; loops < 100; loops++)
                         {
@@ -1114,7 +1087,7 @@ namespace ZeroG.Tests.Object
                             // Remove 20 entries - this can remove objects added by other threads
                             // Linq query is executed once write lock is aquired which is why this works
                             cache.Remove(cache.EnumerateCache().Take(20));
-                            
+
                         }
                         // that 100 times - total at end will equal 8000 entries and 32000 object ids
                     });
@@ -1126,19 +1099,14 @@ namespace ZeroG.Tests.Object
                 CacheTotals totals = cache.Totals;
                 Assert.AreEqual(8000 * actions.Length, totals.TotalQueries);
                 Assert.AreEqual(32000 * actions.Length, totals.TotalValues);
-                
+
                 cache.Reset();
 
                 Assert.AreEqual(0, cache.EnumerateCache().Count());
                 totals = cache.Totals;
                 Assert.AreEqual(0, totals.TotalQueries);
                 Assert.AreEqual(0, totals.TotalValues);
-            }
-            finally
-            {
-                cache.Dispose();
-                versions.Dispose();
-                metadata.Dispose();
+
             }
         }
 
@@ -1146,12 +1114,6 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void CreateAndModifySameObjectMultithreaded()
         {
-            Config config = ObjectTestHelper.GetConfigWithCaching();
-
-            ObjectMetadataStore metadata = new ObjectMetadataStore(config);
-            ObjectVersionStore versions = new ObjectVersionStore(config, metadata);
-            ObjectIndexerCache cache = new ObjectIndexerCache(metadata, versions);
-
             string objectName = "TestObj";
             string intVal1 = ObjectIndex.Create("IntIdx", 5).ToString();
             string strVal1 = ObjectIndex.Create("StrIdx", "Val1").ToString();
@@ -1160,14 +1122,17 @@ namespace ZeroG.Tests.Object
             int[] objectIds = new int[] { 1000, 2000 };
             int nullGetCount = 0;
 
-            try
+            using (var scope = TestContext.ScopedInstance)
             {
+                var versions = scope.Resolve<ObjectVersionStore>();
+                var cache = scope.Resolve<ObjectIndexerCache>();
+
                 // Create a couple of threads that Get and Set a cache item.
                 // A third thread periodically expires the Object by changing its version.
                 List<Action> actions = new List<Action>();
                 for (int i = 0; i < 2; i++)
                 {
-                    actions.Add(new Action(() => 
+                    actions.Add(new Action(() =>
                     {
                         int localNullGetCount = 0;
 
@@ -1210,12 +1175,6 @@ namespace ZeroG.Tests.Object
                 Parallel.Invoke(actions.ToArray());
 
                 Assert.IsTrue(nullGetCount > 2);
-            }
-            finally
-            {
-                cache.Dispose();
-                versions.Dispose();
-                metadata.Dispose();
             }
         }
     }

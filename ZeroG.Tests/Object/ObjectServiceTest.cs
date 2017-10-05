@@ -1,16 +1,14 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using ZeroG.Data.Object;
-using ZeroG.Data.Object.Metadata;
-using ZeroG.Data.Object.Index;
-using System.IO;
-using ZeroG.Lang;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using ZeroG.Data;
+using ZeroG.Data.Object;
+using ZeroG.Data.Object.Configure;
 
 namespace ZeroG.Tests.Object
 {
@@ -33,8 +31,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieve()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -129,8 +128,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveZeroLengthValue()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -172,8 +172,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveNullValue()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -214,8 +215,9 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(ArgumentException))]
         public void StoreAndRetrieveZeroLengthSecondaryKey()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -242,8 +244,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRemoveNoIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -324,8 +327,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRemoveWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -418,8 +422,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRemoveBySecondaryKey()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -501,8 +506,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNonExistingObject()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -538,8 +544,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNextID()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -565,8 +572,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetCurrentID()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -597,8 +605,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNextIDAndTruncate()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -639,8 +648,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNextIDMany()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -664,8 +674,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNextIDParallel()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -733,80 +744,92 @@ namespace ZeroG.Tests.Object
             List<string> objectNames = new List<string>();
             List<uint> objectVersions = new List<uint>();
 
-            Action<string, uint> versionChanged = (objectFullName, newVersion) =>
+            ObjectVersionChangedHandler versionChanged = (objectFullName, newVersion) =>
             {
                 objectNames.Add(objectFullName);
                 objectVersions.Add(newVersion);
             };
 
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig(), versionChanged))
+            using (var scope = TestContext.ScopedInstance)
             {
-                var ns = ObjectTestHelper.NameSpace1;
-                var obj = ObjectTestHelper.ObjectName1;
-                var objFullName = ObjectNaming.CreateFullObjectName(ns, obj);
+                var objSvcOptions = scope.Resolve<ObjectServiceOptions>();
+                objSvcOptions.WithObjectVersionChangeHandler(versionChanged);
 
-                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
-                    "ZeroG Test", "Unit Test", DateTime.Now));
-
-                svc.ProvisionObjectStore(
-                    new ObjectMetadata(ns, obj));
-
-                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
-                var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
-                var val3 = new Guid("{82B2056A-7F32-4CDE-AC57-DB375086B40F}");
-
-                var secKey1 = Encoding.UTF8.GetBytes("001");
-                var secKey2 = Encoding.UTF8.GetBytes("002");
-
-                var objID1 = svc.Store(ns, new PersistentObject()
+                var objSvcBuilder = new ObjectServiceBuilder(objSvcOptions);
+                using (var svc = objSvcBuilder.GetObjectService())
                 {
-                    Name = obj,
-                    Value = val1.ToByteArray(),
-                    SecondaryKey = secKey1
-                });
 
-                var objID2 = svc.Store(ns, new PersistentObject()
-                {
-                    Name = obj,
-                    Value = val2.ToByteArray(),
-                    SecondaryKey = secKey2
-                });
+                    //var svc = scope.GetObjectServiceWithoutIndexCache();
 
-                var objID3 = svc.Store(ns, new PersistentObject()
-                {
-                    Name = obj,
-                    Value = val3.ToByteArray()
-                });
+                    //    using (var svc = new ObjectService(ObjectTestHelper.GetConfig(), versionChanged))
+                    //{
+                    var ns = ObjectTestHelper.NameSpace1;
+                    var obj = ObjectTestHelper.ObjectName1;
+                    var objFullName = ObjectNaming.CreateFullObjectName(ns, obj);
 
-                Assert.AreEqual(3, objectNames.Count);
-                Assert.AreEqual(3, objectVersions.Count);
-                Assert.AreEqual(objFullName, objectNames[0]);
-                Assert.AreEqual(objFullName, objectNames[1]);
-                Assert.AreEqual(objFullName, objectNames[2]);
-                Assert.AreEqual(1u, objectVersions[0]);
-                Assert.AreEqual(2u, objectVersions[1]);
-                Assert.AreEqual(3u, objectVersions[2]);
+                    svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                        "ZeroG Test", "Unit Test", DateTime.Now));
 
-                svc.Remove(ns, obj, objID2.ID);
-                svc.RemoveBySecondaryKey(ns, obj, secKey1);
+                    svc.ProvisionObjectStore(
+                        new ObjectMetadata(ns, obj));
 
-                Assert.AreEqual(5, objectNames.Count);
-                Assert.AreEqual(5, objectVersions.Count);
-                Assert.AreEqual(objFullName, objectNames[3]);
-                Assert.AreEqual(objFullName, objectNames[4]);
-                Assert.AreEqual(4u, objectVersions[3]);
-                Assert.AreEqual(5u, objectVersions[4]);
+                    var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                    var val2 = new Guid("{72FC1391-EC51-4826-890B-D02071A9A2DE}");
+                    var val3 = new Guid("{82B2056A-7F32-4CDE-AC57-DB375086B40F}");
 
-                svc.Store(ns, new PersistentObject()
-                {
-                    Name = obj,
-                    Value = val3.ToByteArray()
-                });
+                    var secKey1 = Encoding.UTF8.GetBytes("001");
+                    var secKey2 = Encoding.UTF8.GetBytes("002");
 
-                Assert.AreEqual(6, objectNames.Count);
-                Assert.AreEqual(6, objectVersions.Count);
-                Assert.AreEqual(objFullName, objectNames[5]);
-                Assert.AreEqual(6u, objectVersions[5]);
+                    var objID1 = svc.Store(ns, new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = val1.ToByteArray(),
+                        SecondaryKey = secKey1
+                    });
+
+                    var objID2 = svc.Store(ns, new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = val2.ToByteArray(),
+                        SecondaryKey = secKey2
+                    });
+
+                    var objID3 = svc.Store(ns, new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = val3.ToByteArray()
+                    });
+
+                    Assert.AreEqual(3, objectNames.Count);
+                    Assert.AreEqual(3, objectVersions.Count);
+                    Assert.AreEqual(objFullName, objectNames[0]);
+                    Assert.AreEqual(objFullName, objectNames[1]);
+                    Assert.AreEqual(objFullName, objectNames[2]);
+                    Assert.AreEqual(1u, objectVersions[0]);
+                    Assert.AreEqual(2u, objectVersions[1]);
+                    Assert.AreEqual(3u, objectVersions[2]);
+
+                    svc.Remove(ns, obj, objID2.ID);
+                    svc.RemoveBySecondaryKey(ns, obj, secKey1);
+
+                    Assert.AreEqual(5, objectNames.Count);
+                    Assert.AreEqual(5, objectVersions.Count);
+                    Assert.AreEqual(objFullName, objectNames[3]);
+                    Assert.AreEqual(objFullName, objectNames[4]);
+                    Assert.AreEqual(4u, objectVersions[3]);
+                    Assert.AreEqual(5u, objectVersions[4]);
+
+                    svc.Store(ns, new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = val3.ToByteArray()
+                    });
+
+                    Assert.AreEqual(6, objectNames.Count);
+                    Assert.AreEqual(6, objectVersions.Count);
+                    Assert.AreEqual(objFullName, objectNames[5]);
+                    Assert.AreEqual(6u, objectVersions[5]);
+                }
             }
         }
 
@@ -814,8 +837,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveByIndex()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -824,7 +848,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15),
@@ -847,8 +871,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val1.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1),
                         ObjectIndex.Create("StrNullIndex1", null)
@@ -859,8 +883,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val2.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2),
                         ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
@@ -871,8 +895,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val3.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3),
                         ObjectIndex.Create("StrNullIndex1", null)
@@ -1000,7 +1024,7 @@ namespace ZeroG.Tests.Object
                 };
 
                 findVals = svc.Find(ns, obj, options,
-                    new ObjectIndex[] 
+                    new ObjectIndex[]
                     {
                         ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
                     }
@@ -1016,7 +1040,7 @@ namespace ZeroG.Tests.Object
                 };
 
                 findVals = svc.Find(ns, obj, options,
-                    new ObjectIndex[] 
+                    new ObjectIndex[]
                     {
                         ObjectIndex.Create("StrNullIndex1", null)
                     }
@@ -1041,8 +1065,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndCountByIndex()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1051,7 +1076,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15),
@@ -1074,8 +1099,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val1.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1),
                         ObjectIndex.Create("StrNullIndex1", null)
@@ -1086,8 +1111,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val2.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2),
                         ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
@@ -1098,8 +1123,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val3.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3),
                         ObjectIndex.Create("StrNullIndex1", null)
@@ -1216,7 +1241,7 @@ namespace ZeroG.Tests.Object
                 };
 
                 count = svc.Count(ns, obj, options,
-                    new ObjectIndex[] 
+                    new ObjectIndex[]
                     {
                         ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
                     }
@@ -1231,7 +1256,7 @@ namespace ZeroG.Tests.Object
                 };
 
                 count = svc.Count(ns, obj, options,
-                    new ObjectIndex[] 
+                    new ObjectIndex[]
                     {
                         ObjectIndex.Create("StrNullIndex1", null)
                     }
@@ -1251,8 +1276,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveManyByIndex()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1261,7 +1287,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 32),
@@ -1281,8 +1307,8 @@ namespace ZeroG.Tests.Object
                     {
                         Name = obj,
                         Value = val.ToByteArray(),
-                        Indexes = new ObjectIndex[] 
-                        { 
+                        Indexes = new ObjectIndex[]
+                        {
                             ObjectIndex.Create("IntIndex1", i + 1000),
                             ObjectIndex.Create("StrIndex1", strIndex),
                             ObjectIndex.Create("StrNullIndex1", (0 == i || 0 == (i % 4)) ? null : "strIndex")
@@ -1314,8 +1340,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveManyObjects()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1363,8 +1390,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveManyObjectsBySecondaryKey()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1412,8 +1440,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveManyLargeObjects()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1462,8 +1491,9 @@ namespace ZeroG.Tests.Object
             var utf8 = Encoding.UTF8;
             var count = 10000;
 
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1511,63 +1541,60 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveWithObjectStoreCleanup()
         {
-            var defaultConfig = ObjectTestHelper.GetConfig();
-            var config = new Config(defaultConfig.BaseDataPath,
-                defaultConfig.IndexCacheEnabled,
-                defaultConfig.IndexCacheMaxQueries,
-                defaultConfig.IndexCacheMaxValues,
-                defaultConfig.ObjectIndexSchemaConnection,
-                defaultConfig.ObjectIndexDataConnection,
-                defaultConfig.MaxObjectDependencies,
-                true,       // auto-close turned on
-                1,          // set to 1 second
-                defaultConfig.ObjectStoreCacheSize);
+            var storeOptions = new ObjectStoreOptions(autoClose: true, autoCloseTimeout: 1);
 
-            using (var svc = new ObjectService(config))
+            using (var scope = TestContext.ScopedInstance)
             {
-                var ns = ObjectTestHelper.NameSpace1;
-                var obj = ObjectTestHelper.ObjectName1;
+                var objSvcOptions = scope.Resolve<ObjectServiceOptions>();
+                objSvcOptions.WithObjectStoreOptions(storeOptions);
 
-                svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
-                    "ZeroG Test", "Unit Test", DateTime.Now));
-
-                svc.ProvisionObjectStore(
-                    new ObjectMetadata(ns, obj));
-
-                var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
-                var secKey1 = Encoding.UTF8.GetBytes("001");
-
-                var objID1 = svc.Store(ns, new PersistentObject()
+                var objSvcBuilder = new ObjectServiceBuilder(objSvcOptions);
+                using (var svc = objSvcBuilder.GetObjectService())
                 {
-                    Name = obj,
-                    Value = val1.ToByteArray(),
-                    SecondaryKey = secKey1
-                });
+                    var ns = ObjectTestHelper.NameSpace1;
+                    var obj = ObjectTestHelper.ObjectName1;
+
+                    svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
+                        "ZeroG Test", "Unit Test", DateTime.Now));
+
+                    svc.ProvisionObjectStore(
+                        new ObjectMetadata(ns, obj));
+
+                    var val1 = new Guid("{D22640F0-7D87-4F1C-8817-119FC036FAC1}");
+                    var secKey1 = Encoding.UTF8.GetBytes("001");
+
+                    var objID1 = svc.Store(ns, new PersistentObject()
+                    {
+                        Name = obj,
+                        Value = val1.ToByteArray(),
+                        SecondaryKey = secKey1
+                    });
 
 
-                var retval1 = svc.Get(ns, obj, objID1.ID);
-                Assert.AreEqual(val1, new Guid(retval1));
+                    var retval1 = svc.Get(ns, obj, objID1.ID);
+                    Assert.AreEqual(val1, new Guid(retval1));
 
-                retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
-                Assert.AreEqual(val1, new Guid(retval1));
+                    retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
+                    Assert.AreEqual(val1, new Guid(retval1));
 
-                // sleep enough time so that the store is cleaned up and then access it again
-                Thread.Sleep(1100);
+                    // sleep enough time so that the store is cleaned up and then access it again
+                    Thread.Sleep(1100);
 
-                retval1 = svc.Get(ns, obj, objID1.ID);
-                Assert.AreEqual(val1, new Guid(retval1));
+                    retval1 = svc.Get(ns, obj, objID1.ID);
+                    Assert.AreEqual(val1, new Guid(retval1));
 
-                retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
-                Assert.AreEqual(val1, new Guid(retval1));
+                    retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
+                    Assert.AreEqual(val1, new Guid(retval1));
 
-                // do it over again
-                Thread.Sleep(1100);
+                    // do it over again
+                    Thread.Sleep(1100);
 
-                retval1 = svc.Get(ns, obj, objID1.ID);
-                Assert.AreEqual(val1, new Guid(retval1));
+                    retval1 = svc.Get(ns, obj, objID1.ID);
+                    Assert.AreEqual(val1, new Guid(retval1));
 
-                retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
-                Assert.AreEqual(val1, new Guid(retval1));
+                    retval1 = svc.GetBySecondaryKey(ns, obj, secKey1);
+                    Assert.AreEqual(val1, new Guid(retval1));
+                }
             }
         }
 
@@ -1575,8 +1602,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void Count()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1626,8 +1654,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void Iterate()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1677,8 +1706,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void BulkStore()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1687,7 +1717,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15),
@@ -1715,8 +1745,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val1.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex1),
                         ObjectIndex.Create("StrIndex1", strIndex1),
                         ObjectIndex.Create("StrNullIndex1", null),
@@ -1727,8 +1757,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val2.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex2),
                         ObjectIndex.Create("StrIndex1", strIndex2),
                         ObjectIndex.Create("StrNullIndex1", strNullIndexVal),
@@ -1739,8 +1769,8 @@ namespace ZeroG.Tests.Object
                 {
                     Name = obj,
                     Value = val3.ToByteArray(),
-                    Indexes = new ObjectIndex[] 
-                    { 
+                    Indexes = new ObjectIndex[]
+                    {
                         ObjectIndex.Create("IntIndex1", intIndex3),
                         ObjectIndex.Create("StrIndex1", strIndex3),
                         ObjectIndex.Create("StrNullIndex1", null),
@@ -1890,7 +1920,7 @@ namespace ZeroG.Tests.Object
                 };
 
                 findVals = svc.Find(ns, obj, options,
-                    new ObjectIndex[] 
+                    new ObjectIndex[]
                     {
                         ObjectIndex.Create("StrNullIndex1", strNullIndexVal)
                     }
@@ -1906,7 +1936,7 @@ namespace ZeroG.Tests.Object
                 };
 
                 findVals = svc.Find(ns, obj, options,
-                    new ObjectIndex[] 
+                    new ObjectIndex[]
                     {
                         ObjectIndex.Create("StrNullIndex1", null)
                     }
@@ -1931,8 +1961,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void BulkStoreMany()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -1942,7 +1973,7 @@ namespace ZeroG.Tests.Object
                 // stores the object's metadata and builds the database tables
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(ns, obj,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("IntIndex1", ObjectIndexType.Integer),
                             new ObjectIndexMetadata("StrIndex1", ObjectIndexType.String, 15)
@@ -1963,8 +1994,8 @@ namespace ZeroG.Tests.Object
                     {
                         Name = obj,
                         Value = buf,
-                        Indexes = new ObjectIndex[] 
-                        { 
+                        Indexes = new ObjectIndex[]
+                        {
                             ObjectIndex.Create("IntIndex1", i + 100),
                             ObjectIndex.Create("StrIndex1", "idx_" + i)
                         }
@@ -1984,8 +2015,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void UpdateIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -2069,8 +2101,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void Report()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 

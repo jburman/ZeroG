@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2013 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -54,17 +54,14 @@ namespace ZeroG.Data.Object.Cache
         {
         }
 
+        //TODO pass background work handler for better integration into different runtimes and process models (e.g. web stacks)
         public HardPruneCacheCleaner(ICleanableCache cache, 
             int maximumQueries, 
             int maximumValues,
             int reductionFactor,
             int cleanFrequency)
         {
-            if (null == cache)
-            {
-                throw new ArgumentNullException("cache");
-            }
-            _cache = cache;
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _maxQueries = maximumQueries;
             _maxValues = maximumValues;
             _reductionFactor = Math.Max(2, reductionFactor);

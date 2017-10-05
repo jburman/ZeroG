@@ -28,8 +28,10 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void BulkStoreWithClient()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
+                
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -76,8 +78,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void BulkStoreManyWithClient()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -131,8 +134,10 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void SetAndGetTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
+
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -164,8 +169,10 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void SecondaryKeyTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
+
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -199,8 +206,10 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void RemoveTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
+
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 
@@ -273,8 +282,10 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void SetAndFindTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
+
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 

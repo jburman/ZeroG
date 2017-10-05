@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -23,20 +23,20 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using RazorDB;
 using System;
-using System.IO;
 
 namespace ZeroG.Data.Object
 {
     internal class ObjectIDStore : IDisposable
     {
-        private KeyValueStore _store;
+        private ISerializer _serializer;
+        private IKeyValueStore _store;
         private object _idLock = new object();
 
-        public ObjectIDStore(Config config)
+        public ObjectIDStore(ISerializer serializer, IKeyValueStoreProvider kvProvider)
         {
-            _store = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectIDStore"));
+            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            _store = kvProvider.Get("ObjectIDStore");
         }
 
         public int GetNextID(byte[] key)
@@ -47,10 +47,10 @@ namespace ZeroG.Data.Object
                 var nextIdRaw = _store.Get(key);
                 if (null != nextIdRaw)
                 {
-                    nextId = SerializerHelper.DeserializeInt32(nextIdRaw);
+                    nextId = _serializer.DeserializeInt32(nextIdRaw);
                     nextId++;
                 }
-                _store.Set(key, SerializerHelper.Serialize(nextId));
+                _store.Set(key, _serializer.Serialize(nextId));
             }
             return nextId;
         }
@@ -66,7 +66,7 @@ namespace ZeroG.Data.Object
                 }
                 else
                 {
-                    return SerializerHelper.DeserializeInt32(val);
+                    return _serializer.DeserializeInt32(val);
                 }
             }
         }
@@ -75,7 +75,7 @@ namespace ZeroG.Data.Object
         {
             lock (_idLock)
             {
-                _store.Set(key, SerializerHelper.Serialize(value));
+                _store.Set(key, _serializer.Serialize(value));
             }
         }
 
@@ -83,7 +83,7 @@ namespace ZeroG.Data.Object
         {
             lock (_idLock)
             {
-                _store.Set(ObjectNaming.CreateFullObjectKey(objectFullName), SerializerHelper.Serialize(0));
+                _store.Set(_serializer.CreateFullObjectKey(objectFullName), _serializer.Serialize(0));
             }
         }
 

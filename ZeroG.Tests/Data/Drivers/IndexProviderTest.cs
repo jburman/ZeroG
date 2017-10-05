@@ -3,14 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Text;
-using ZeroG.Data.Database;
-using ZeroG.Data.Database.Drivers.Object.Provider;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Index;
-using ZeroG.Data.Object.Metadata;
-using ZeroG.Lang;
-using ZeroG.Tests.Object;
 
 namespace ZeroG.Tests.Data.Drivers
 {
@@ -54,7 +48,8 @@ namespace ZeroG.Tests.Data.Drivers
             {
                 if (null == _provider)
                 {
-                    _provider = ObjectTestHelper.CreateObjectIndexProvider();
+                    var indexer = new ObjectIndexer();
+                    _provider = indexer.Provider;
                 }
                 return _provider;
             }

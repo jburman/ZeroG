@@ -4,6 +4,7 @@ using ZeroG.Data.Object;
 using ZeroG.Data.Object.Metadata;
 using ZeroG.Data.Object.Index;
 using System.Collections.Generic;
+using ZeroG.Data.Object.Configure;
 
 namespace ZeroG.Tests.Object
 {
@@ -31,8 +32,9 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void CreateNameSpace()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.NameSpaceExists(NameSpace1));
 
                 var now = DateTime.Now;
@@ -56,8 +58,9 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void CreateAndRemoveNameSpace()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.NameSpaceExists(NameSpace1));
 
                 var now = DateTime.Now;
@@ -86,8 +89,9 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(System.ArgumentException))]
         public void CreateDuplicateNameSpace()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.NameSpaceExists(NameSpace1));
 
                 var now = DateTime.Now;
@@ -104,8 +108,9 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(System.ArgumentException))]
         public void CreateMalformedNameSpace()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 try
                 {
                     svc.RemoveNameSpace("NS \\' Test");
@@ -130,8 +135,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionObjectStoreNoIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
@@ -155,8 +161,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionAndUnprovisionObjectStoreNoIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
@@ -184,8 +191,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionObjectStoreWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
@@ -193,7 +201,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(NameSpace1, ObjectName1,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("Test1", ObjectIndexType.String, 15),
                             new ObjectIndexMetadata("Test2", ObjectIndexType.Integer),
@@ -230,8 +238,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionObjectStoreWithNullableIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
@@ -239,7 +248,7 @@ namespace ZeroG.Tests.Object
 
                 svc.ProvisionObjectStore(
                     new ObjectMetadata(NameSpace1, ObjectName1,
-                        new ObjectIndexMetadata[] 
+                        new ObjectIndexMetadata[]
                         {
                             new ObjectIndexMetadata("Test1", ObjectIndexType.String, 15, true),
                             new ObjectIndexMetadata("Test2", ObjectIndexType.Integer, 11, true),
@@ -278,8 +287,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionDuplicateObjectStore()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
@@ -297,8 +307,9 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionObjectStoreWithDependencies()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
@@ -338,8 +349,9 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(ArgumentException))]
         public void ProvisionObjectStoreWithNonExistingDependencies()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,
@@ -369,17 +381,16 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(ArgumentException))]
         public void ProvisionObjectStoreWithTooManyDependencies()
         {
-            var config = ObjectTestHelper.GetConfig();
-
             // generate one too many object dependencies
             var depList = new List<string>();
-            for (int i = 0; config.MaxObjectDependencies+1 > i; i++)
+            for (int i = 0; i < ObjectStoreOptions.Default_MaxObjectDependencies + 1; i++)
             {
                 depList.Add("ObjDep" + i);
             }
 
-            using (var svc = new ObjectService(config))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(NameSpace1,

@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -25,21 +25,8 @@
 
 namespace ZeroG.Data.Object
 {
-    public class ObjectNameFormatter
+    public class VersionInfo
     {
-        public static string CreateFullObjectName(string nameSpace, string objectName)
-        {
-            return nameSpace + "." + objectName;
-        }
-
-        public static byte[] CreateFullObjectKey(string nameSpace, string objectName)
-        {
-            return SerializerHelper.Serialize(nameSpace + "." + objectName);
-        }
-
-        public static byte[] CreateFullObjectKey(string objectFullName)
-        {
-            return SerializerHelper.Serialize(objectFullName);
-        }
+        public static readonly string StoreVersion = "1.0";
     }
 }

@@ -1,10 +1,10 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ZeroG.Data.Object;
-using ZeroG.Data.Object.Metadata;
-using System.Text;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
 using System.Linq;
+using System.Text;
+using ZeroG.Data;
+using ZeroG.Data.Object;
 using ZeroG.Data.Object.Backup;
 
 namespace ZeroG.Tests.Object
@@ -27,8 +27,9 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void BackupNameSpaceWithoutCompressionNoIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
                 var nsDt = DateTime.Now;
@@ -70,14 +71,14 @@ namespace ZeroG.Tests.Object
                     int objectCount = 0, indexCount = 0;
                     bool completeCalled = false;
 
-                    using (var reader = new ObjectBackupReader(tempFile, false))
+                    using (var reader = new ObjectBackupReader(scope.Resolve<ISerializer>(), tempFile, false))
                     {
                         // Store Version handler
                         reader.ReadBackup((string version) =>
                         {
-                            Assert.AreEqual(Config.StoreVersion, version);
+                            Assert.AreEqual(VersionInfo.StoreVersion, version);
                         },
-                            // Name Space handler
+                        // Name Space handler
                         (ObjectNameSpaceConfig nameSpace) =>
                         {
                             Assert.IsNotNull(nameSpace);
@@ -86,7 +87,7 @@ namespace ZeroG.Tests.Object
                             Assert.AreEqual("Unit Test", nameSpace.StoreLocation);
                             Assert.AreEqual(nsDt, nameSpace.Created);
                         },
-                            // Object Metadata handler
+                        // Object Metadata handler
                         (ObjectMetadata metadata) =>
                         {
                             Assert.AreEqual(ns, metadata.NameSpace);
@@ -94,12 +95,12 @@ namespace ZeroG.Tests.Object
                             Assert.IsNull(metadata.Indexes);
                             Assert.IsNull(metadata.Dependencies);
                         },
-                            // Object ID handler
+                        // Object ID handler
                         (int objectId) =>
                         {
                             Assert.AreEqual(2, objectId);
                         },
-                            // Object Value handler
+                        // Object Value handler
                         (ObjectStoreRecord objRec) =>
                         {
                             ++objectCount;
@@ -147,8 +148,9 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void BackupNameSpaceWithoutCompressionWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
                 var objFullName1 = ObjectNaming.CreateFullObjectName(ns, obj);
@@ -220,14 +222,14 @@ namespace ZeroG.Tests.Object
                     ObjectIndexRecord objIndexRecTest = null;
                     int objectCount = 0, indexCount = 0;
 
-                    using (var reader = new ObjectBackupReader(tempFile, false))
+                    using (var reader = new ObjectBackupReader(scope.Resolve<ISerializer>(), tempFile, false))
                     {
                         // Store Version handler
                         reader.ReadBackup((string version) =>
                         {
-                            Assert.AreEqual(Config.StoreVersion, version);
+                            Assert.AreEqual(VersionInfo.StoreVersion, version);
                         },
-                            // Name Space handler
+                        // Name Space handler
                         (ObjectNameSpaceConfig nameSpace) =>
                         {
                             Assert.IsNotNull(nameSpace);
@@ -236,7 +238,7 @@ namespace ZeroG.Tests.Object
                             Assert.AreEqual("Unit Test", nameSpace.StoreLocation);
                             Assert.AreEqual(nsDt, nameSpace.Created);
                         },
-                            // Object Metadata handler
+                        // Object Metadata handler
                         (ObjectMetadata metadata) =>
                         {
                             Assert.AreEqual(ns, metadata.NameSpace);
@@ -247,12 +249,12 @@ namespace ZeroG.Tests.Object
                             Assert.AreEqual(ObjectIndexType.Integer, metadata.Indexes[0].DataType);
                             Assert.IsNull(metadata.Dependencies);
                         },
-                            // Object ID handler
+                        // Object ID handler
                         (int objectId) =>
                         {
                             Assert.AreEqual(2, objectId);
                         },
-                            // Object Value handler
+                        // Object Value handler
                         (ObjectStoreRecord objRec) =>
                         {
                             ++objectCount;
@@ -273,7 +275,7 @@ namespace ZeroG.Tests.Object
                                 Assert.AreEqual("002", Encoding.UTF8.GetString(objRec.SecondaryKey));
                             }
                         },
-                            // Object Index handler
+                        // Object Index handler
                         (ObjectIndexRecord idxRec) =>
                         {
                             ++indexCount;
@@ -332,8 +334,9 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void BackupNameSpaceWithCompressionWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
                 var objFullName1 = ObjectNaming.CreateFullObjectName(ns, obj);
@@ -405,14 +408,14 @@ namespace ZeroG.Tests.Object
                     ObjectIndexRecord objIndexRecTest = null;
                     int objectCount = 0, indexCount = 0;
 
-                    using (var reader = new ObjectBackupReader(tempFile, true))
+                    using (var reader = new ObjectBackupReader(scope.Resolve<ISerializer>(), tempFile, true))
                     {
                         // Store Version handler
                         reader.ReadBackup((string version) =>
                         {
-                            Assert.AreEqual(Config.StoreVersion, version);
+                            Assert.AreEqual(VersionInfo.StoreVersion, version);
                         },
-                            // Name Space handler
+                        // Name Space handler
                         (ObjectNameSpaceConfig nameSpace) =>
                         {
                             Assert.IsNotNull(nameSpace);
@@ -421,7 +424,7 @@ namespace ZeroG.Tests.Object
                             Assert.AreEqual("Unit Test", nameSpace.StoreLocation);
                             Assert.AreEqual(nsDt, nameSpace.Created);
                         },
-                            // Object Metadata handler
+                        // Object Metadata handler
                         (ObjectMetadata metadata) =>
                         {
                             Assert.AreEqual(ns, metadata.NameSpace);
@@ -432,12 +435,12 @@ namespace ZeroG.Tests.Object
                             Assert.AreEqual(ObjectIndexType.Integer, metadata.Indexes[0].DataType);
                             Assert.IsNull(metadata.Dependencies);
                         },
-                            // Object ID handler
+                        // Object ID handler
                         (int objectId) =>
                         {
                             Assert.AreEqual(2, objectId);
                         },
-                            // Object Value handler
+                        // Object Value handler
                         (ObjectStoreRecord objRec) =>
                         {
                             ++objectCount;
@@ -458,7 +461,7 @@ namespace ZeroG.Tests.Object
                                 Assert.AreEqual("002", Encoding.UTF8.GetString(objRec.SecondaryKey));
                             }
                         },
-                            // Object Index handler
+                        // Object Index handler
                         (ObjectIndexRecord idxRec) =>
                         {
                             ++indexCount;
@@ -517,8 +520,9 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void BackupAndRestoreWithCompressionWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
                 var objFullName1 = ObjectNaming.CreateFullObjectName(ns, obj);

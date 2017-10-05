@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -25,12 +25,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Transactions;
 using ZeroG.Data.Object.Backup;
 using ZeroG.Data.Object.Cache;
+using ZeroG.Data.Object.Configure;
 using ZeroG.Data.Object.Index;
 using ZeroG.Data.Object.Metadata;
 
@@ -38,42 +37,26 @@ namespace ZeroG.Data.Object
 {
     public sealed class ObjectService : IDisposable
     {
-        #region ObjectService construction
+        private ISerializer _serializer;
         private ObjectMetadataStore _objectMetadata;
         private ObjectNaming _objectNaming;
         private ObjectIDStore _objectIDStore;
         private ObjectVersionStore _objectVersions;
-        private ObjectStore _objectStore;
+        private IKeyValueStoreProvider _keyValueProvider;
+        private IObjectStore _objectStore;
         private ObjectIndexer _objectIndexer;
-        private ObjectIndexerCache _indexerCache;
-        private ICacheCleaner _indexerCacheCleaner;
 
-        private List<IDisposable> _assignments;
+        private ObjectServiceLifetimeScope _lifetimeObjects;
 
         private static TransactionOptions _DefaultTransactionOptions;
 
         static ObjectService()
         {
-            _DefaultTransactionOptions = new TransactionOptions();
-            _DefaultTransactionOptions.IsolationLevel = IsolationLevel.RepeatableRead;
-            _DefaultTransactionOptions.Timeout = TransactionManager.DefaultTimeout;
-        }
-
-        /// <summary>
-        /// Constructs a new ObjectService that is configured via the application's config file.
-        /// </summary>
-        public ObjectService()
-            : this(Config.Default)
-        {
-        }
-
-        /// <summary>
-        /// Constructs a new ObjectService configured via the supplied Config instance.
-        /// </summary>
-        /// <param name="config"></param>
-        public ObjectService(Config config)
-            : this(config, null)
-        {
+            _DefaultTransactionOptions = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadCommitted,
+                Timeout = TransactionManager.DefaultTimeout
+            };
         }
 
         /// <summary>
@@ -83,48 +66,45 @@ namespace ZeroG.Data.Object
         /// the ObjectService itself.
         /// </summary>
         /// <param name="config"></param>
+        /// <param name="keyValueProvider"></param>
         /// <param name="onObjectVersionChanged"></param>
-        public ObjectService(Config config, Action<string, uint> onObjectVersionChanged)
+        internal ObjectService(ObjectServiceLifetimeScope lifetimeObjects,
+            ISerializer serializer,
+            IKeyValueStoreProvider keyValueProvider, 
+            ObjectMetadataStore objectMetadata,
+            ObjectNaming objectNaming,
+            ObjectIDStore objectIDStore,
+            ObjectVersionStore objectVersions,
+            ObjectVersionChangedHandler onObjectVersionChanged,
+            ObjectIndexer objectIndexer,
+            IObjectStore objectStore)
         {
-            _assignments = new List<IDisposable>();
+            _lifetimeObjects = lifetimeObjects;
+            _serializer = serializer;
 
-            _objectMetadata = new ObjectMetadataStore(config);
-            _objectNaming = new ObjectNaming(_objectMetadata);
-            _objectIDStore = new ObjectIDStore(config);
-            _objectVersions = new ObjectVersionStore(config, _objectMetadata);
+            //_config = config ?? throw new ArgumentNullException(nameof(config));
+            _keyValueProvider = keyValueProvider ?? throw new ArgumentNullException(nameof(keyValueProvider));
 
-            if (config.IndexCacheEnabled)
-            {
-                _indexerCache = new ObjectIndexerCache(_objectMetadata, _objectVersions);
-                _indexerCacheCleaner = new HardPruneCacheCleaner(_indexerCache,
-                    (int)config.IndexCacheMaxQueries,
-                    (int)config.IndexCacheMaxValues,
-                    HardPruneCacheCleaner.DefaultReductionFactor,
-                    HardPruneCacheCleaner.DefaultCleanFrequency);
-
-                _assignments.Add(_indexerCache);
-                _assignments.Add(_indexerCacheCleaner);
-            }
-
-            _objectStore = new ObjectStore(config, _objectMetadata);
-            _objectIndexer = new ObjectIndexer(_indexerCache);
-
-            _assignments.Add(_objectMetadata);
-            _assignments.Add(_objectIDStore);
-            _assignments.Add(_objectVersions);
-            _assignments.Add(_objectStore);
-            _assignments.Add(_objectIndexer);
-
+            _objectMetadata = objectMetadata ?? throw new ArgumentNullException(nameof(objectMetadata));
+            _objectNaming = objectNaming ?? throw new ArgumentNullException(nameof(objectNaming));
+            _objectIDStore = objectIDStore ?? throw new ArgumentNullException(nameof(objectIDStore));
+            _objectVersions = objectVersions ?? throw new ArgumentNullException(nameof(objectVersions));
+            _objectIndexer = objectIndexer ?? throw new ArgumentNullException(nameof(objectIndexer));
+            _objectStore = objectStore ?? throw new ArgumentNullException(nameof(objectStore));
+            
             if (onObjectVersionChanged != null)
             {
                 _objectVersions.VersionChanged += (objectFullName, newVersion) => 
-                {
-                    onObjectVersionChanged(objectFullName, newVersion);
-                };
+                    onObjectVersionChanged?.Invoke(objectFullName, newVersion);
             }
         }
 
-        #endregion
+        public ObjectServiceBuilder CreateBuilder(Action<ObjectServiceOptions> configure)
+        {
+            var options = new ObjectServiceOptions();
+            configure?.Invoke(options);
+            return new ObjectServiceBuilder(options);
+        }
 
         #region Private helpers
         private void _ValidateArguments(string nameSpace, PersistentObject obj)
@@ -232,9 +212,9 @@ namespace ZeroG.Data.Object
                 throw new ArgumentException("Name space not found: " + nameSpace);
             }
 
-            using (var writer = new ObjectBackupWriter(backupFileName, useCompression))
+            using (var writer = new ObjectBackupWriter(_serializer, backupFileName, useCompression))
             {
-                writer.WriteStoreVersion(Config.StoreVersion);
+                writer.WriteStoreVersion(VersionInfo.StoreVersion);
 
                 writer.WriteNameSpace(ns);
 
@@ -246,7 +226,7 @@ namespace ZeroG.Data.Object
                     writer.WriteObjectMetadata(md);
 
                     // save the current ObjectID
-                    writer.WriteObjectID(_objectIDStore.GetCurrentID(ObjectNaming.CreateFullObjectKey(objName)));
+                    writer.WriteObjectID(_objectIDStore.GetCurrentID(_serializer.CreateFullObjectKey(objName)));
 
                     // enumerate object values
                     foreach (var objRecord in _objectStore.Iterate(objName))
@@ -268,7 +248,7 @@ namespace ZeroG.Data.Object
 
         public void Restore(string backupFileName, bool useCompression)
         {
-            using (var reader = new ObjectBackupReader(backupFileName, useCompression))
+            using (var reader = new ObjectBackupReader(_serializer, backupFileName, useCompression))
             {
                 string nameSpace = null;
                 ObjectMetadata objectMetadata = null;
@@ -316,7 +296,7 @@ namespace ZeroG.Data.Object
                     {
                         // reset the Object Store Identity value
                         _objectIDStore.SetCurrentID(
-                            ObjectNaming.CreateFullObjectKey(objectMetadata.ObjectFullName), currentObjectId);
+                            _serializer.CreateFullObjectKey(objectMetadata.ObjectFullName), currentObjectId);
                     },
                     (ObjectStoreRecord obj) =>
                     {
@@ -413,7 +393,7 @@ namespace ZeroG.Data.Object
                     // do not allow existing object store to be re-provisioned
                     if (ObjectNameExists(metadata.NameSpace, metadata.ObjectName))
                     {
-                        throw new ArgumentException("Object store already exists: " + ObjectNaming.CreateFullObjectKey(metadata.NameSpace, metadata.ObjectName));
+                        throw new ArgumentException("Object store already exists: " + _serializer.CreateFullObjectKey(metadata.NameSpace, metadata.ObjectName));
                     }
 
                     using (var trans = new TransactionScope(TransactionScopeOption.Required, _DefaultTransactionOptions))
@@ -579,7 +559,7 @@ namespace ZeroG.Data.Object
                         foreach (var obj in group)
                         {
                             var startingObjId = obj.ID;
-                            var objNameKey = ObjectNaming.CreateFullObjectKey(objectFullName);
+                            var objNameKey = _serializer.CreateFullObjectKey(objectFullName);
 
                             var objId = obj.ID;
                             if (!obj.HasID())
@@ -657,7 +637,7 @@ namespace ZeroG.Data.Object
 
             var objectFullName = ObjectNaming.CreateFullObjectName(nameSpace, obj.Name);
             var startingObjId = obj.ID;
-            var objNameKey = ObjectNaming.CreateFullObjectKey(objectFullName);
+            var objNameKey = _serializer.CreateFullObjectKey(objectFullName);
             var objId = obj.ID;
 
             if (!obj.HasID())
@@ -735,7 +715,7 @@ namespace ZeroG.Data.Object
         {
             _ValidateArguments(nameSpace, objectName);
 
-            var objectFullKey = ObjectNaming.CreateFullObjectKey(nameSpace, objectName);
+            var objectFullKey = _serializer.CreateFullObjectKey(nameSpace, objectName);
             return _objectIDStore.GetNextID(objectFullKey);
         }
 
@@ -743,7 +723,7 @@ namespace ZeroG.Data.Object
         {
             _ValidateArguments(nameSpace, objectName);
 
-            var objectFullKey = ObjectNaming.CreateFullObjectKey(nameSpace, objectName);
+            var objectFullKey = _serializer.CreateFullObjectKey(nameSpace, objectName);
             return _objectIDStore.GetCurrentID(objectFullKey);
         }
 
@@ -904,9 +884,9 @@ namespace ZeroG.Data.Object
         {
             Dictionary<string, string> report = _objectStore.Report();
 
-            if (_indexerCache != null)
+            if (_objectIndexer.Cache != null)
             {
-                CacheTotals cacheTotals = _indexerCache.Totals;
+                CacheTotals cacheTotals = _objectIndexer.Cache.Totals;
                 report.Add("IndexCache_Queries", cacheTotals.TotalQueries.ToString());
                 report.Add("IndexCache_Values", cacheTotals.TotalValues.ToString());
             }
@@ -919,30 +899,15 @@ namespace ZeroG.Data.Object
         #region Dispose implementation
         private bool _disposed;
 
-        public void Dispose()
-        {
+        public void Dispose() =>
             _Dispose(true);
-            GC.SuppressFinalize(this);
-        }
 
         private void _Dispose(bool disposing)
         {
             if (!_disposed)
             {
                 if (disposing)
-                {
-                    foreach (var disposable in _assignments)
-                    {
-                        try
-                        {
-                            disposable.Dispose();
-                        }
-                        catch
-                        {
-                            // ignore here
-                        }
-                    }
-                }
+                    _lifetimeObjects?.Dispose();
 
                 _disposed = true;
             }

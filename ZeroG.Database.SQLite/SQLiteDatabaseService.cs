@@ -470,6 +470,7 @@ namespace ZeroG.Data.Database.Drivers
             _dbConn = _GetTransactionDB(_connString);
             if (null == _dbConn)
             {
+                //SQLiteConnection conn = new SQLiteConnection(_connString);
                 _dbConn = new SQLiteConnection(_connString);
                 _dbConn.Open();
                 _StoreTransactionDB(_dbConn, _connString);

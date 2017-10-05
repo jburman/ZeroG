@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -36,16 +36,18 @@ namespace ZeroG.Data.Object.Index
     internal sealed class ObjectIndexer : IDisposable
     {
         private IObjectIndexProvider _indexer;
-        private ObjectIndexerCache _cache;
         private object _bulkIndexLock;
 
         private static Type _indexerType = null;
 
+        public readonly ObjectIndexerCache Cache;
+
         public ObjectIndexer(ObjectIndexerCache cache) : this()
         {
-            _cache = cache;
+            Cache = cache;
         }
 
+        //TODO provider should be configurable in ObjectServiceBuilder and not loaded here
         public ObjectIndexer()
         {
             // used to single thread bulk index workloads.
@@ -138,6 +140,8 @@ namespace ZeroG.Data.Object.Index
             }
         }
 
+        public IObjectIndexProvider Provider { get => _indexer; }
+
         public bool ObjectExists(string objectFullName)
         {
             return _indexer.ObjectExists(objectFullName);
@@ -147,7 +151,7 @@ namespace ZeroG.Data.Object.Index
         {
             int returnValue = 0;
 
-            if (null != _cache)
+            if (null != Cache)
             {
                 var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
                 parameters[0] = objectFullName;
@@ -160,7 +164,7 @@ namespace ZeroG.Data.Object.Index
                         parameters[i + 3] = indexes[i];
                     }
                 }
-                int[] cacheValue = _cache.Get(parameters);
+                int[] cacheValue = Cache.Get(parameters);
                 if (cacheValue != null && cacheValue.Length == 1)
                 {
                     returnValue = cacheValue[0];
@@ -168,7 +172,7 @@ namespace ZeroG.Data.Object.Index
                 else
                 {
                     returnValue = _indexer.Count(objectFullName, options, indexes);
-                    _cache.Set(new int[] { returnValue }, parameters);
+                    Cache.Set(new int[] { returnValue }, parameters);
                 }
             }
             else
@@ -182,7 +186,7 @@ namespace ZeroG.Data.Object.Index
         {
             int returnValue = 0;
 
-            if (null != _cache)
+            if (null != Cache)
             {
                 var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
                 parameters[0] = objectFullName;
@@ -195,7 +199,7 @@ namespace ZeroG.Data.Object.Index
                         parameters[i + 3] = indexes[i];
                     }
                 }
-                int[] cacheValue = _cache.Get(parameters);
+                int[] cacheValue = Cache.Get(parameters);
                 if (cacheValue != null && cacheValue.Length == 1)
                 {
                     returnValue = cacheValue[0];
@@ -203,7 +207,7 @@ namespace ZeroG.Data.Object.Index
                 else
                 {
                     returnValue = _indexer.Count(objectFullName, constraint, indexes);
-                    _cache.Set(new int[] { returnValue }, parameters);
+                    Cache.Set(new int[] { returnValue }, parameters);
                 }
             }
             else
@@ -222,7 +226,7 @@ namespace ZeroG.Data.Object.Index
         {
             int[] returnValue = null;
 
-            if (null != _cache)
+            if (null != Cache)
             {
                 var parameters = new object[3 + ((null == indexes) ? 0 : indexes.Length)];
                 parameters[0] = objectFullName;
@@ -235,7 +239,7 @@ namespace ZeroG.Data.Object.Index
                         parameters[i + 3] = indexes[i];
                     }
                 }
-                returnValue = _cache.Get(parameters);
+                returnValue = Cache.Get(parameters);
                 if (null == returnValue)
                 {
                     var order = options.Order;
@@ -248,7 +252,7 @@ namespace ZeroG.Data.Object.Index
                     }
 
                     returnValue = _indexer.Find(objectFullName, options, indexes);
-                    _cache.Set(returnValue, parameters);
+                    Cache.Set(returnValue, parameters);
                 }
             }
             else
@@ -267,7 +271,7 @@ namespace ZeroG.Data.Object.Index
         {
             int[] returnValue = null;
 
-            if (null != _cache)
+            if (null != Cache)
             {
                 var parameters = new object[5 + ((null == indexes) ? 0 : indexes.Length)];
                 parameters[0] = objectFullName;
@@ -282,13 +286,13 @@ namespace ZeroG.Data.Object.Index
                         parameters[i + 5] = indexes[i];
                     }
                 }
-                returnValue = _cache.Get(parameters);
+                returnValue = Cache.Get(parameters);
                 if (null == returnValue)
                 {
                     _ValidateOrderOptions(indexes, order);
 
                     returnValue = _indexer.Find(objectFullName, constraint, limit, order, indexes);
-                    _cache.Set(returnValue, parameters);
+                    Cache.Set(returnValue, parameters);
                 }
             }
             else

@@ -23,7 +23,7 @@ namespace ZeroG.Tests.Data.Lang
         public static DateTime TestDateTimeVal4 = new DateTime(1789, 5, 5, 0, 5, 5);
 
         [ClassInitialize()]
-        public static void SetupConstraintTestTables(TestContext testContext)
+        public static void SetupConstraintTestTables(Microsoft.VisualStudio.TestTools.UnitTesting.TestContext testContext)
         {
             TearDownConstraintTestTables();
 

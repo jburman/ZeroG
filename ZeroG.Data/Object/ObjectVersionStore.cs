@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -23,14 +23,10 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using RazorDB;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using ZeroG.Data.Object.Metadata;
 using System.Threading;
+using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object
 {
@@ -52,15 +48,17 @@ namespace ZeroG.Data.Object
 
         private static readonly uint VersionRollover = 10000000;
 
+        private ISerializer _serializer;
         private ObjectMetadataStore _metadata;
-        private KeyValueStore _store;
+        private IKeyValueStore _store;
         private Dictionary<string, uint> _versions;
         private ReaderWriterLockSlim _lock;
 
-        public ObjectVersionStore(Config config, ObjectMetadataStore metadata)
+        public ObjectVersionStore(ISerializer serializer, ObjectMetadataStore metadata, IKeyValueStoreProvider kvProvider)
         {
+            _serializer = serializer;
             _metadata = metadata;
-            _store = new KeyValueStore(Path.Combine(config.BaseDataPath, "ObjectVersionStore"));
+            _store = kvProvider.Get("ObjectVersionStore");
             _versions = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
             _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         }
@@ -126,7 +124,7 @@ namespace ZeroG.Data.Object
                 returnValue = 1;
             }
 
-            _store.Set(SerializerHelper.Serialize(objectFullName), BitConverter.GetBytes(returnValue));
+            _store.Set(_serializer.Serialize(objectFullName), BitConverter.GetBytes(returnValue));
             _versions[objectFullName] = returnValue;
 
             return returnValue;
@@ -169,7 +167,7 @@ namespace ZeroG.Data.Object
                 {
                     try
                     {
-                        var val = _store.Get(SerializerHelper.Serialize(objectFullName));
+                        var val = _store.Get(_serializer.Serialize(objectFullName));
                         if (null != val)
                         {
                             returnValue = BitConverter.ToUInt32(val, 0);
@@ -220,7 +218,7 @@ namespace ZeroG.Data.Object
                         }
                     }
                     _versions.Remove(objectFullName);
-                    _store.Delete(SerializerHelper.Serialize(objectFullName));
+                    _store.Delete(_serializer.Serialize(objectFullName));
                 }
                 finally
                 {

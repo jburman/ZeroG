@@ -28,8 +28,10 @@ namespace ZeroG.Tests.Object
         {
             var taskCount = 50;
             var taskList = new List<Task>();
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var scope = TestContext.ScopedInstance)
             {
+                var svc = scope.GetObjectServiceWithoutIndexCache();
+
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
 

@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -30,11 +30,11 @@ using System.Text;
 
 namespace ZeroG.Data.Object
 {
-    public class SerializerHelper
+    public class ProtobufSerializer : ISerializer
     {
         private static Encoding _utf8 = Encoding.UTF8;
 
-        public static byte[] Serialize(string value)
+        public byte[] Serialize(string value)
         {
             if (null != value)
             {
@@ -46,71 +46,37 @@ namespace ZeroG.Data.Object
             }
         }
 
-        public static byte[] Serialize(uint id)
-        {
-            return BitConverter.GetBytes(id);
-        }
+        public byte[] Serialize(uint id) => BitConverter.GetBytes(id);
 
-        public static byte[] Serialize(int id)
-        {
-            return BitConverter.GetBytes(id);
-        }
+        public byte[] Serialize(int id) => BitConverter.GetBytes(id);
 
-        public static byte[] Serialize(Guid id)
-        {
-            if (null == id)
-            {
-                return null;
-            }
-            else
-            {
-                return id.ToByteArray();
-            }
-        }
+        public byte[] Serialize(Guid id) => id.ToByteArray();
 
-        public static byte[] Serialize<T>(T value)
+        public byte[] Serialize<T>(T value)
         {
             var buffer = new MemoryStream();
             Serializer.Serialize<T>(buffer, value);
             return buffer.ToArray();
         }
 
-        public static byte[] Deserialize(string value)
-        {
-            if (null != value)
-            {
-                return _utf8.GetBytes(value);
-            }
-            else
-            {
-                return null;
-            }
-        }
+        public byte[] Deserialize(string value) => _utf8.GetBytes(value);
 
-        public static string DeserializeString(byte[] val)
-        {
-            return _utf8.GetString(val);
-        }
+        public string DeserializeString(byte[] val) => _utf8.GetString(val);
 
-        public static int DeserializeInt32(byte[] val)
-        {
-            return BitConverter.ToInt32(val, 0);
-        }
+        public int DeserializeInt32(byte[] val) => BitConverter.ToInt32(val, 0);
 
-        public static uint DeserializeUInt32(byte[] val)
-        {
-            return BitConverter.ToUInt32(val, 0);
-        }
+        public uint DeserializeUInt32(byte[] val) => BitConverter.ToUInt32(val, 0);
 
-        public static Guid DeserializeGuid(byte[] val)
-        {
-            return new Guid(val);
-        }
+        public Guid DeserializeGuid(byte[] val) => new Guid(val);
 
-        public static T Deserialize<T>(byte[] value)
+        public T Deserialize<T>(byte[] value)
         {
             var buffer = new MemoryStream(value);
             return Serializer.Deserialize<T>(buffer);
         }
+
+        public byte[] CreateFullObjectKey(string nameSpace, string objectName) => Serialize(nameSpace + "." + objectName);
+
+        public byte[] CreateFullObjectKey(string objectFullName) => Serialize(objectFullName);
     }
 }

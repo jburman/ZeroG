@@ -32,7 +32,7 @@ using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object.Cache
 {
-    internal class ObjectIndexerCache : IDisposable, ICleanableCache
+    internal class ObjectIndexerCache : IDisposable, ICleanableCache, IObjectIndexerCache
     {
         internal const int MaxCacheKeyLen = 500;
 
@@ -43,7 +43,7 @@ namespace ZeroG.Data.Object.Cache
         private ReaderWriterLockSlim _cacheLock;
         private ObjectVersionStore _versions;
 
-        internal ObjectIndexerCache(ObjectMetadataStore metadata, ObjectVersionStore versions)
+        public ObjectIndexerCache(ObjectMetadataStore metadata, ObjectVersionStore versions)
         {
             _cache = new Dictionary<string, ObjectIndexerCacheRecord>(StringComparer.OrdinalIgnoreCase);
             _cacheLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);

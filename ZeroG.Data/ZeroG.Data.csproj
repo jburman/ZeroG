@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ZeroG.Data</RootNamespace>
     <AssemblyName>ZeroG.Data</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -30,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>false</SignAssembly>
@@ -39,11 +41,8 @@
     </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="protobuf-net">
-      <HintPath>..\References\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="RazorDB">
-      <HintPath>..\References\RazorDB.dll</HintPath>
+    <Reference Include="protobuf-net, Version=2.3.2.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>packages\protobuf-net.2.3.2\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -72,11 +71,16 @@
     <Compile Include="Object\Cache\ICacheCleaner.cs" />
     <Compile Include="Object\Cache\ICacheEntry.cs" />
     <Compile Include="Object\Cache\ICleanableCache.cs" />
+    <Compile Include="Object\Cache\IObjectIndexerCache.cs" />
     <Compile Include="Object\Cache\ObjectIndexerCacheRecord.cs" />
     <Compile Include="Object\Cache\ObjectIndexerCache.cs" />
     <Compile Include="Object\Config.cs" />
+    <Compile Include="Object\Configure\ObjectIndexCacheOptions.cs" />
+    <Compile Include="Object\Configure\ObjectServiceOptions.cs" />
+    <Compile Include="Object\Configure\ObjectStoreOptions.cs" />
     <Compile Include="Object\Index\IObjectIndexProvider.cs" />
     <Compile Include="Object\Index\ObjectIndexer.cs" />
+    <Compile Include="Object\IObjectStore.cs" />
     <Compile Include="Object\LocalObjectServiceAdminClient.cs" />
     <Compile Include="Object\LocalObjectServiceClient.cs" />
     <Compile Include="Object\ObjectIDStore.cs" />
@@ -85,13 +89,21 @@
     <Compile Include="Object\ObjectIndexRecord.cs" />
     <Compile Include="Object\ObjectNaming.cs" />
     <Compile Include="Object\ObjectService.cs" />
+    <Compile Include="Object\ObjectServiceBuilder.cs" />
+    <Compile Include="Object\ObjectServiceLifetimeScope.cs" />
     <Compile Include="Object\ObjectStore.cs" />
     <Compile Include="Object\ObjectStoreRecord.cs" />
     <Compile Include="Object\ObjectVersionChangedEvent.cs" />
     <Compile Include="Object\ObjectVersionStore.cs" />
+    <Compile Include="Object\ProtobufSerializer.cs" />
+    <Compile Include="Object\VersionInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ZeroG.Data.Shared\ZeroG.Data.Shared.csproj">
+      <Project>{de8e7036-d00d-4c57-b1d2-2fdb60996830}</Project>
+      <Name>ZeroG.Data.Shared</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ZeroG.DataClient\ZeroG.DataClient.csproj">
       <Project>{5258843a-203b-4b6f-9958-4cbb795d5496}</Project>
       <Name>ZeroG.DataClient</Name>
@@ -100,8 +112,14 @@
       <Project>{71ceb166-19be-45e2-9a38-8342db8c85be}</Project>
       <Name>ZeroG.Lang</Name>
     </ProjectReference>
+    <ProjectReference Include="ZeroG.Data.API\ZeroG.Data.API.csproj">
+      <Project>{9a23aaa5-7537-464d-b11a-3ef63def0709}</Project>
+      <Name>ZeroG.Data.API</Name>
+    </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

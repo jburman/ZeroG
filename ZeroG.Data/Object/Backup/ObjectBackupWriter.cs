@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -42,11 +42,13 @@ namespace ZeroG.Data.Object.Backup
         internal static readonly string ObjectPrefix = "O: ";
         internal static readonly string IndexPrefix = "I: ";
 
+        private ISerializer _serializer;
         private bool _compress;
         private StreamWriter _out;
 
-        public ObjectBackupWriter(string path, bool useCompression)
+        public ObjectBackupWriter(ISerializer serializer, string path, bool useCompression)
         {
+            _serializer = serializer;
             _compress = useCompression;
             var fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
             if (_compress)
@@ -67,12 +69,12 @@ namespace ZeroG.Data.Object.Backup
 
         public void WriteNameSpace(ObjectNameSpaceConfig nameSpace)
         {
-            _out.WriteLine(NameSpacePrefix + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectNameSpaceConfig>(nameSpace)));
+            _out.WriteLine(NameSpacePrefix + BinaryHelper.ByteToHexString(_serializer.Serialize(nameSpace)));
         }
 
         public void WriteObjectMetadata(ObjectMetadata metadata)
         {
-            _out.WriteLine(ObjectMetadataPrefix + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectMetadata>(metadata)));
+            _out.WriteLine(ObjectMetadataPrefix + BinaryHelper.ByteToHexString(_serializer.Serialize(metadata)));
         }
 
         public void WriteObjectID(int id)
@@ -82,12 +84,12 @@ namespace ZeroG.Data.Object.Backup
 
         public void WriteObject(ObjectStoreRecord obj)
         {
-            _out.WriteLine(ObjectPrefix + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectStoreRecord>(obj)));
+            _out.WriteLine(ObjectPrefix + BinaryHelper.ByteToHexString(_serializer.Serialize(obj)));
         }
 
         public void WriteIndex(ObjectIndexRecord idx)
         {
-            _out.WriteLine(IndexPrefix + BinaryHelper.ByteToHexString(SerializerHelper.Serialize<ObjectIndexRecord>(idx)));
+            _out.WriteLine(IndexPrefix + BinaryHelper.ByteToHexString(_serializer.Serialize(idx)));
         }
 
         #region Dispose implementation

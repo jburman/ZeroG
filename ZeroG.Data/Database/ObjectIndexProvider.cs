@@ -68,7 +68,7 @@ namespace ZeroG.Data.Database
         #endregion
 
         public ObjectIndexProvider() 
-            : this(Config.Default)
+            : this(new Config())
         {
         }
 

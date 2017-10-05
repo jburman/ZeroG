@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -26,18 +26,19 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using ZeroG.Data.Object.Metadata;
 using ZeroG.Lang;
 
 namespace ZeroG.Data.Object.Backup
 {
     public class ObjectBackupReader : IDisposable
     {
+        private ISerializer _serializer;
         private bool _compress;
         private StreamReader _in;
 
-        public ObjectBackupReader(string path, bool useCompression)
+        public ObjectBackupReader(ISerializer serializer, string path, bool useCompression)
         {
+            _serializer = serializer;
             _compress = useCompression;
             var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             if (_compress)
@@ -99,11 +100,8 @@ namespace ZeroG.Data.Object.Backup
             }
             else
             {
-                if (null != handler)
-                {
-                    handler(SerializerHelper.Deserialize<ObjectNameSpaceConfig>(
-                        BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.NameSpacePrefix.Length))));
-                }
+                handler?.Invoke(_serializer.Deserialize<ObjectNameSpaceConfig>(
+                    BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.NameSpacePrefix.Length))));
                 returnValue = true;
             }
 
@@ -116,11 +114,8 @@ namespace ZeroG.Data.Object.Backup
 
             if (line.StartsWith(ObjectBackupWriter.ObjectMetadataPrefix))
             {
-                if (null != handler)
-                {
-                    handler(SerializerHelper.Deserialize<ObjectMetadata>(
-                        BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.ObjectMetadataPrefix.Length))));
-                }
+                handler?.Invoke(_serializer.Deserialize<ObjectMetadata>(
+                    BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.ObjectMetadataPrefix.Length))));
                 returnValue = true;
             }
 
@@ -137,10 +132,7 @@ namespace ZeroG.Data.Object.Backup
             }
             else
             {
-                if (null != handler)
-                {
-                    handler(int.Parse(line.Substring(ObjectBackupWriter.ObjectIDPrefix.Length)));
-                }
+                handler?.Invoke(int.Parse(line.Substring(ObjectBackupWriter.ObjectIDPrefix.Length)));
                 returnValue = true;
             }
 
@@ -153,11 +145,8 @@ namespace ZeroG.Data.Object.Backup
 
             if (line.StartsWith(ObjectBackupWriter.ObjectPrefix))
             {
-                if (null != handler)
-                {
-                    handler(SerializerHelper.Deserialize<ObjectStoreRecord>(
-                        BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.ObjectPrefix.Length))));
-                }
+                handler?.Invoke(_serializer.Deserialize<ObjectStoreRecord>(
+                    BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.ObjectPrefix.Length))));
                 returnValue = true;
             }
 
@@ -170,11 +159,8 @@ namespace ZeroG.Data.Object.Backup
 
             if (line.StartsWith(ObjectBackupWriter.IndexPrefix))
             {
-                if (null != handler)
-                {
-                    handler(SerializerHelper.Deserialize<ObjectIndexRecord>(
-                        BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.IndexPrefix.Length))));
-                }
+                handler?.Invoke(_serializer.Deserialize<ObjectIndexRecord>(
+                    BinaryHelper.HexStringToByte(line.Substring(ObjectBackupWriter.IndexPrefix.Length))));
                 returnValue = true;
             }
 
@@ -224,10 +210,7 @@ namespace ZeroG.Data.Object.Backup
                     }
                 }
             }
-            if(null != completed) 
-            {
-                completed();
-            }
+            completed?.Invoke();
         }
 
         #region Dispose implementation
