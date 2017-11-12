@@ -43,7 +43,7 @@ namespace ZeroG.Tests.Data.Drivers
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 ) ON [PRIMARY]");
                 }
-                else if (db is SQLiteDatabaseService)
+                else if (db is SqliteDatabaseService)
                 {
                     db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS `ZG_BulkInsertTest` (
     [ID] INT NOT NULL PRIMARY KEY,
@@ -86,7 +86,7 @@ namespace ZeroG.Tests.Data.Drivers
                         db.ExecuteNonQuery("DROP TABLE [ZeroG].[ZG_BulkInsertTest]");
                     }
                 }
-                else if (db is SQLiteDatabaseService)
+                else if (db is SqliteDatabaseService)
                 {
                     db.ExecuteNonQuery("DROP TABLE IF EXISTS [ZG_BulkInsertTest]");
                 }

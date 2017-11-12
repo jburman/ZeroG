@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2010 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -37,13 +37,9 @@ namespace ZeroG.Data.Database
         bool IsOpen { get; }
         IDbTransaction BeginTransaction();
         IDbTransaction BeginTransaction(IsolationLevel isolation);
-        IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters);
-        IDbDataAdapter CreateDataAdapter(string commandText, IDbTransaction trans, params IDataParameter[] parameters);
         string EscapeCommandText(string commandText);
         string EscapeNameForLike(string name);
         string EscapeValueForLike(string value);
-        void ExecuteBulkCopy(DataTable copyData, string copyToTable, Dictionary<string, string> columnMap);
-        void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap);
         void ExecuteBulkInsert(IEnumerable<object[]> insertData, string insertToTable, string[] columns);
         int ExecuteNonQuery(string commandText, params IDataParameter[] parameters);
         int ExecuteNonQuery(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
@@ -51,9 +47,6 @@ namespace ZeroG.Data.Database
         T ExecuteScalar<T>(IDbTransaction trans, string commandText, T defaultValue, params IDataParameter[] parameters);
         IDataReader ExecuteReader(string commandText, params IDataParameter[] parameters);
         IDataReader ExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
-        void FillDataSet(DataSet ds, string tableName, string commandText, params IDataParameter[] parameters);
-        DataTable GetDataTable(string commandText, params IDataParameter[] parameters);
-        DataTable GetDataTable(string commandText, IDbTransaction trans, params IDataParameter[] parameters);
         string GetDriverName();
         KeyValuePair<TKey, TValue>[] GetKeyValuePairs<TKey, TValue>(string commandText, params IDataParameter[] parameters);
         Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(string commandText, params IDataParameter[] parameters);

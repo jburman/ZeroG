@@ -23,42 +23,31 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SQLite;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Transactions;
-using ZeroG.Data.Database;
-using ZeroG.Data.Database.Drivers;
 
 namespace ZeroG.Data.Database.Drivers
 {
-    public class SQLiteDatabaseService : DatabaseService
+    public class SqliteDatabaseService : DatabaseService
     {
-        #region Constants
         public static readonly string ParameterQualifier = "@";
-        #endregion
 
-        #region Constructors/Destructors
 
-        public SQLiteDatabaseService()
+        public SqliteDatabaseService()
             : base() 
         {
         }
 
-        internal SQLiteDatabaseService(string connStr)
+        internal SqliteDatabaseService(string connStr)
             : base(_SubConnStr(connStr))
         {
         }
 
-        #endregion
         
-        #region Public
-
-        #region Properties
         public string CurrentConnectionString
         {
             get
@@ -66,10 +55,7 @@ namespace ZeroG.Data.Database.Drivers
                 return _connString;
             }
         }
-        #endregion // end Properties
-
-        #region Methods
-
+        
         private static string _appDir;
 
         /// <summary>
@@ -114,17 +100,6 @@ namespace ZeroG.Data.Database.Drivers
             _connString = _SubConnStr(config.ConnectionString);
         }
 
-        public override IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters)
-        {
-            return CreateDataAdapter(commandText, null, parameters);
-        }
-
-        public override IDbDataAdapter CreateDataAdapter(string commandText, IDbTransaction trans, params IDataParameter[] parameters)
-        {
-            SQLiteCommand cmd = (SQLiteCommand)_PrepareCommand(trans, commandText, parameters);
-            return new SQLiteDataAdapter(cmd);
-        }
-
         public override string EscapeCommandText(string commandText)
         {
             if (null != commandText)
@@ -152,16 +127,6 @@ namespace ZeroG.Data.Database.Drivers
                 value = value.Replace("[", "\\[");
             }
             return value;
-        }
-
-        public override void ExecuteBulkCopy(DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
-        {
-            ExecuteBulkCopy(null, copyData, copyToTable, columnMap);
-        }
-
-        public override void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
-        {
-            throw new NotSupportedException("Bulk Copy is not supported by the SQLite Database Server.");
         }
 
         public override void ExecuteBulkInsert(IEnumerable<object[]> insertData, string insertToTable, string[] columns)
@@ -196,7 +161,7 @@ namespace ZeroG.Data.Database.Drivers
                         {
                             for (int i = 0; len > i; i++)
                             {
-                                parameters[i].Value = row[i];
+                                parameters[i].Value = row[i] ?? DBNull.Value;
                             }
 
                             cmd.ExecuteNonQuery();
@@ -268,28 +233,6 @@ namespace ZeroG.Data.Database.Drivers
             return cmd.ExecuteReader(CommandBehavior.SingleResult);
         }
 
-        public override void FillDataSet(DataSet ds, string tableName, string commandText, params IDataParameter[] parameters)
-        {
-            DataTable dt = GetDataTable(commandText, parameters);
-            dt.TableName = tableName;
-            ds.Tables.Add(dt);
-        }
-
-        public override DataTable GetDataTable(string commandText, params IDataParameter[] parameters)
-        {
-            return GetDataTable(commandText, null, parameters);
-        }
-
-        public override DataTable GetDataTable(string commandText, IDbTransaction trans, params IDataParameter[] parameters)
-        {
-            DataTable dt = new DataTable();
-            using (SQLiteDataAdapter sqlAdapter = (SQLiteDataAdapter)CreateDataAdapter(commandText, trans, parameters))
-            {
-                sqlAdapter.Fill(dt);
-            }
-            return dt;
-        }
-
         public override string GetDriverName()
         {
             return "SQLite";
@@ -328,14 +271,41 @@ namespace ZeroG.Data.Database.Drivers
             return GetValues<T>(null, commandText, parameters);
         }
 
+        private static readonly Type NumType = typeof(Int64);
+        private static readonly Type StringType = typeof(string);
+        private static readonly Type BlobType = typeof(byte[]);
+
         public override T[] GetValues<T>(IDbTransaction trans, string commandText, params IDataParameter[] parameters)
         {
             using (IDataReader rdr = ExecuteReader(trans, commandText, parameters))
             {
-                List<T> vals = new List<T>();
+                Type colType = null;
+                Type toType = typeof(T);
+                var vals = new List<T>();
                 while (rdr.Read())
                 {
-                    vals.Add((T)rdr[0]);
+                    object nextVal = null;
+
+                    if(colType == null)
+                        colType = rdr.GetFieldType(0);
+                    
+                    if(colType == NumType)
+                    {
+                        nextVal = rdr.GetInt64(0);
+                        //vals.Add((T)Convert.ChangeType(numVal, typeof(T));
+                    }
+                    else if(colType == StringType)
+                    {
+                        nextVal = rdr.GetString(0);
+                    }
+                    else if(colType == BlobType)
+                    {
+                        nextVal = Convert.ChangeType(rdr.GetValue(0), BlobType);
+                    }
+
+                    //object val = rdr[0];
+                    vals.Add((T)Convert.ChangeType(nextVal, toType));
+                    //vals.Add((T)rdr[0]);
                 }
 
                 return vals.ToArray();
@@ -344,12 +314,15 @@ namespace ZeroG.Data.Database.Drivers
 
         public override IDbDataParameter MakeParam(string name, object value)
         {
-            return new SQLiteParameter(name, value);
+            return new SqliteParameter(name, value ?? DBNull.Value);
         }
 
         public override string MakeParamReference(string paramName)
         {
-            return ParameterQualifier + EscapeCommandText(paramName);
+            if(!paramName?.StartsWith(ParameterQualifier) == true)
+                return ParameterQualifier + EscapeCommandText(paramName);
+            else
+                return EscapeCommandText(paramName);
         }
 
         public override IDbDataParameter MakeLikeParam(string name, object value)
@@ -362,7 +335,7 @@ namespace ZeroG.Data.Database.Drivers
                     value = EscapeValueForLike(val);
                 }
             }
-            return new SQLiteParameter(name, value);
+            return new SqliteParameter(name, value);
         }
 
         public override string MakeLikeParamReference(string paramName)
@@ -372,14 +345,14 @@ namespace ZeroG.Data.Database.Drivers
 
         public override IDbDataParameter MakeReturnValueParam()
         {
-            SQLiteParameter parameter = new SQLiteParameter(ParameterQualifier + "RETURN_VALUE", null);
+            SqliteParameter parameter = new SqliteParameter(ParameterQualifier + "RETURN_VALUE", null);
             parameter.Direction = ParameterDirection.ReturnValue;
             return parameter;
         }
 
         public override IDbDataParameter MakeOutputParam(string paramName, DbType type)
         {
-            SQLiteParameter parameter = new SQLiteParameter(ParameterQualifier + paramName, null);
+            SqliteParameter parameter = new SqliteParameter(ParameterQualifier + paramName, null);
             parameter.Direction = ParameterDirection.Output;
             parameter.DbType = type;
             return parameter;
@@ -471,8 +444,20 @@ namespace ZeroG.Data.Database.Drivers
             if (null == _dbConn)
             {
                 //SQLiteConnection conn = new SQLiteConnection(_connString);
-                _dbConn = new SQLiteConnection(_connString);
+                _dbConn = new SqliteConnection(_connString);
                 _dbConn.Open();
+
+                //TODO need configuration options for database connection
+                using(var cmd = _dbConn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+PRAGMA synchronous = 'off';
+PRAGMA journal_mode = 'WAL';
+PRAGMA journal_size_limit = 16777216;";
+
+                    cmd.ExecuteNonQuery();
+                }
+
                 _StoreTransactionDB(_dbConn, _connString);
             }
         }
@@ -485,7 +470,6 @@ namespace ZeroG.Data.Database.Drivers
             }
         }
 
-        #region Async methods
         public override DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters)
         {
             throw new NotImplementedException();
@@ -499,9 +483,5 @@ namespace ZeroG.Data.Database.Drivers
         {
             throw new NotImplementedException();
         }
-        #endregion
-        #endregion // end Methods
-
-        #endregion // end Public
     }
 }

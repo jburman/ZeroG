@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data", "ZeroG.Data.csproj", "{DB190F97-AB50-4659-BC56-377457EFDFCE}"
 EndProject
@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Tests", "..\ZeroG.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.DataClient", "..\ZeroG.DataClient\ZeroG.DataClient.csproj", "{5258843A-203B-4B6F-9958-4CBB795D5496}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Database.SQLite", "..\ZeroG.Database.SQLite\ZeroG.Database.SQLite.csproj", "{04136797-1DCC-48C0-AE7A-FB9F1C791332}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Database.Sqlite", "..\ZeroG.Database.SQLite\ZeroG.Database.Sqlite.csproj", "{04136797-1DCC-48C0-AE7A-FB9F1C791332}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data.Shared", "..\ZeroG.Data.Shared\ZeroG.Data.Shared.csproj", "{DE8E7036-D00D-4C57-B1D2-2FDB60996830}"
 EndProject
@@ -24,6 +24,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data.TestConsole", "..\ZeroG.Data.TestConsole\ZeroG.Data.TestConsole.csproj", "{7BDB324E-878B-48C0-A2DF-BDBD61C3955E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data.KeyValueStoreProvider.RazorDB", "..\ZeroG.Data.KeyValueStoreProvider.RazorDB\ZeroG.Data.KeyValueStoreProvider.RazorDB.csproj", "{C73ED332-9298-4DBE-9CEF-7C92A85DFED0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data.KeyValueStoreProvider.SQLite", "..\ZeroG.Data.KeyValueStoreProvider.SQLite\ZeroG.Data.KeyValueStoreProvider.SQLite.csproj", "{B4B5E677-3729-47BB-899B-D0AF5B9DAEDD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +77,10 @@ Global
 		{C73ED332-9298-4DBE-9CEF-7C92A85DFED0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C73ED332-9298-4DBE-9CEF-7C92A85DFED0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C73ED332-9298-4DBE-9CEF-7C92A85DFED0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4B5E677-3729-47BB-899B-D0AF5B9DAEDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4B5E677-3729-47BB-899B-D0AF5B9DAEDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4B5E677-3729-47BB-899B-D0AF5B9DAEDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4B5E677-3729-47BB-899B-D0AF5B9DAEDD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -77,19 +77,19 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
         public static readonly string TruncateTable = "DELETE FROM [{0}]";
     }
 
-    public class SQLiteObjectIndexProvider : ObjectIndexProvider
+    public class SqliteObjectIndexProvider : ObjectIndexProvider
     {
-        public SQLiteObjectIndexProvider()
+        public SqliteObjectIndexProvider()
             : base()
         {
         }
 
-        public SQLiteObjectIndexProvider(Config config)
+        public SqliteObjectIndexProvider(Config config)
             : base(config)
         {
         }
 
-        public SQLiteObjectIndexProvider(string databaseServiceSchema, string databaseServiceData)
+        public SqliteObjectIndexProvider(string databaseServiceSchema, string databaseServiceData)
             : base (databaseServiceSchema, databaseServiceData)
         {    
         }

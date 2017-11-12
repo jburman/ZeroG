@@ -27,7 +27,7 @@ using System.Collections.Generic;
 
 namespace ZeroG.Data.Object.Configure
 {
-    public class ObjectServiceOptions
+    public class ObjectServiceOptions : IObjectServiceKeyValueStoreOptions<ObjectServiceOptions>
     {
         private const string ConfigKey_Serializer = "serializer";
         private const string ConfigKey_KeyValueStoreProvider = "keyValueStoreProvider";

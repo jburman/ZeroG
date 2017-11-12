@@ -18,9 +18,9 @@ namespace ZeroG.Tests.Data.Drivers
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
 
-            var db = new SQLiteDatabaseService();
+            var db = new SqliteDatabaseService();
             db.Configure(new DatabaseServiceConfiguration("SQLite",
-                typeof(SQLiteDatabaseService).FullName,
+                typeof(SqliteDatabaseService).FullName,
                 "Data Source={AppDir}\\DataDir\\DB.db3;Version=3;Pooling=True;Max Pool Size=10;Synchronous=off;FailIfMissing=False;Journal Mode=On;", 
                 null));
 
@@ -29,7 +29,7 @@ namespace ZeroG.Tests.Data.Drivers
             Assert.AreEqual("Data Source=" + (Path.Combine(appDir, "DataDir\\DB.db3")) + ";Version=3;Pooling=True;Max Pool Size=10;Synchronous=off;FailIfMissing=False;Journal Mode=On;", connStr);
 
             db.Configure(new DatabaseServiceConfiguration("SQLite",
-                typeof(SQLiteDatabaseService).FullName,
+                typeof(SqliteDatabaseService).FullName,
                 "Data Source={AppDir}\\..\\App_Data\\DB.db3;Version=3;Pooling=True;Max Pool Size=10;Synchronous=off;FailIfMissing=False;Journal Mode=On;",
                 null));
             connStr = db.CurrentConnectionString;

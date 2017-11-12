@@ -70,7 +70,6 @@ namespace ZeroG.Data.Database
         protected IDbConnection _dbConn;
         private bool _disposed;
 
-        #region Constructors/Destructors
         static DatabaseService()
         {
             _typeCache = new Dictionary<string, Type>();
@@ -92,13 +91,7 @@ namespace ZeroG.Data.Database
         {
             _Dispose(false);
         }
-        #endregion
 
-        #region Private
-        #region Properties
-        #endregion // end Properties
-
-        #region Methods
         private void _Dispose(bool disposing)
         {
             if (!this._disposed)
@@ -196,13 +189,7 @@ namespace ZeroG.Data.Database
             cmd.CommandTimeout = _commandTimeout;
             return cmd;
         }
-        #endregion // end Methods
 
-        #endregion
-
-        #region Public
-
-        #region Properties
         public IDbConnection CurrentConnection
         {
             get
@@ -241,14 +228,10 @@ namespace ZeroG.Data.Database
                 return (null != _dbConn && ConnectionState.Closed != _dbConn.State);
             }
         }
-        #endregion // end Properties
 
-        #region Methods
         public abstract IDbTransaction BeginTransaction();
         public abstract IDbTransaction BeginTransaction(IsolationLevel isolation);
         public abstract void Configure(DatabaseServiceConfiguration config);
-        public abstract IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters);
-        public abstract IDbDataAdapter CreateDataAdapter(string commandText, IDbTransaction trans, params IDataParameter[] parameters);
 
         public virtual void Dispose()
         {
@@ -259,8 +242,6 @@ namespace ZeroG.Data.Database
         public abstract string EscapeCommandText(string commandText);
         public abstract string EscapeNameForLike(string name);
         public abstract string EscapeValueForLike(string value);
-        public abstract void ExecuteBulkCopy(DataTable copyData, string copyToTable, Dictionary<string, string> columnMap);
-        public abstract void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap);
         public abstract void ExecuteBulkInsert(IEnumerable<object[]> insertData, string insertToTable, string[] columns);
         public abstract int ExecuteNonQuery(string commandText, params IDataParameter[] parameters);
         public abstract int ExecuteNonQuery(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
@@ -268,9 +249,6 @@ namespace ZeroG.Data.Database
         public abstract T ExecuteScalar<T>(IDbTransaction trans, string commandText, T defaultValue, params IDataParameter[] parameters);
         public abstract IDataReader ExecuteReader(string commandText, params IDataParameter[] parameters);
         public abstract IDataReader ExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
-        public abstract void FillDataSet(DataSet ds, string tableName, string commandText, params IDataParameter[] parameters);
-        public abstract DataTable GetDataTable(string commandText, params IDataParameter[] parameters);
-        public abstract DataTable GetDataTable(string commandText, IDbTransaction trans, params IDataParameter[] parameters);
         public abstract string GetDriverName();
 
         public static DatabaseService GetService(string typeName, string connStr, Dictionary<string, string> additionalProperties)
@@ -296,13 +274,8 @@ namespace ZeroG.Data.Database
         public abstract string MakeQuotedName(string name);
         public abstract void Open();
 
-        #region Async methods
         public abstract DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters);
         public abstract DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
         public abstract IDataReader EndExecuteReader(DatabaseAsyncResult result);
-        #endregion
-        #endregion // end Methods
-
-        #endregion // end Public
     }
 }

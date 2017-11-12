@@ -23,27 +23,18 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Configuration;
-using System.Collections.Specialized;
 using System.Data;
-using System.Data.Common;
-using System.Text.RegularExpressions;
-using MySql.Data.MySqlClient;
 using System.IO;
+using System.Text;
 
 namespace ZeroG.Data.Database.Drivers
 {
     public sealed class MySQLDatabaseService : DatabaseService
     {
-        #region Constants
         public static readonly string ParameterQualifier = "@";
-        #endregion
-
-        #region Constructors/Destructors
 
         public MySQLDatabaseService()
             : base() 
@@ -54,10 +45,7 @@ namespace ZeroG.Data.Database.Drivers
             : base(connStr)
         {
         }
-
-        #endregion
         
-        #region Private
         private static readonly byte[] NullFieldValue = Encoding.UTF8.GetBytes("\\N");
         private static readonly byte[] FieldDelim = Encoding.UTF8.GetBytes("\t");
         private static readonly byte[] RowDelim = Encoding.UTF8.GetBytes("\r\n");
@@ -83,14 +71,7 @@ namespace ZeroG.Data.Database.Drivers
                 }
             }
         }
-        #endregion
 
-        #region Public
-
-        #region Properties
-        #endregion // end Properties
-
-        #region Methods
         public override IDbTransaction BeginTransaction()
         {
             _IsConnAvailable();
@@ -106,17 +87,6 @@ namespace ZeroG.Data.Database.Drivers
         public override void Configure(DatabaseServiceConfiguration config)
         {
             _connString = config.ConnectionString;
-        }
-
-        public override IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters)
-        {
-            return CreateDataAdapter(commandText, null, parameters);
-        }
-
-        public override IDbDataAdapter CreateDataAdapter(string commandText, IDbTransaction trans, params IDataParameter[] parameters)
-        {
-            MySqlCommand cmd = (MySqlCommand)_PrepareCommand(trans, commandText, parameters);
-            return new MySqlDataAdapter(cmd);
         }
 
         public override string EscapeCommandText(string commandText)
@@ -146,16 +116,6 @@ namespace ZeroG.Data.Database.Drivers
                 value = value.Replace("[", "\\[");
             }
             return value;
-        }
-
-        public override void ExecuteBulkCopy(DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
-        {
-            ExecuteBulkCopy(null, copyData, copyToTable, columnMap);
-        }
-
-        public override void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
-        {
-            throw new NotSupportedException("Bulk Copy is not supported by the MySQL Database Server.");
         }
 
         public override void ExecuteBulkInsert(IEnumerable<object[]> insertData, string insertToTable, string[] columns)
@@ -242,28 +202,6 @@ LINES TERMINATED BY '\r\n' STARTING BY ''",
         {
             IDbCommand cmd = _PrepareCommand(trans, commandText, parameters);
             return cmd.ExecuteReader(CommandBehavior.SingleResult);
-        }
-
-        public override void FillDataSet(DataSet ds, string tableName, string commandText, params IDataParameter[] parameters)
-        {
-            DataTable dt = GetDataTable(commandText, parameters);
-            dt.TableName = tableName;
-            ds.Tables.Add(dt);
-        }
-
-        public override DataTable GetDataTable(string commandText, params IDataParameter[] parameters)
-        {
-            return GetDataTable(commandText, null, parameters);
-        }
-
-        public override DataTable GetDataTable(string commandText, IDbTransaction trans, params IDataParameter[] parameters)
-        {
-            DataTable dt = new DataTable();
-            using (MySqlDataAdapter sqlAdapter = (MySqlDataAdapter)CreateDataAdapter(commandText, trans, parameters))
-            {
-                sqlAdapter.Fill(dt);
-            }
-            return dt;
         }
 
         public override string GetDriverName()
@@ -384,27 +322,25 @@ LINES TERMINATED BY '\r\n' STARTING BY ''",
             _dbConn = new MySqlConnection(_connString);
             _dbConn.Open();
         }
-        #region Async methods
+
         public override DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters)
         {
             MySqlCommand cmd = (MySqlCommand)_PrepareCommand(null, commandText, parameters);
             return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
         }
+
         public override DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters)
         {
             MySqlCommand cmd = (MySqlCommand)_PrepareCommand(null, commandText, parameters);
             return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
             
         }
+
         public override IDataReader EndExecuteReader(DatabaseAsyncResult result)
         {
             var cmd = (MySqlCommand)result.Command;
             return cmd.EndExecuteReader(result.Result);
         }
-        #endregion
-        #endregion // end Methods
-
-        #endregion // end Public
     }
 }
 

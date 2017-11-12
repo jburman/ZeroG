@@ -25,29 +25,22 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Configuration;
-using System.Collections.Specialized;
 using System.Data;
 using System.Data.SqlClient;
-using System.Data.Common;
-using System.Text.RegularExpressions;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace ZeroG.Data.Database.Drivers
 {
     public sealed class SQLServerDatabaseService : DatabaseService
     {
-        #region Constants
         public const string ParameterQualifier = "@";
         public const uint DefaultSQLBatchSize = 100;
         public const string AttributeClientBulkInsertPath = "ClientBulkInsertPath";
         public const string AttributeServerBulkInsertPath = "ServerBulkInsertPath";
         public const string AttributeSQLBatchSize = "SQLBatchSize";
-        #endregion
 
-        #region Constructors/Destructors
         public SQLServerDatabaseService()
             : this(null) 
         {
@@ -58,9 +51,7 @@ namespace ZeroG.Data.Database.Drivers
         {
             _sqlBatchSize = DefaultSQLBatchSize;
         }
-        #endregion
 
-        #region Private
         private string _clientBulkInsertPath, _serverBulkInsertPath;
         private uint _sqlBatchSize;
 
@@ -98,14 +89,7 @@ namespace ZeroG.Data.Database.Drivers
                 }
             }
         }
-        #endregion
 
-        #region Public
-
-        #region Properties
-        #endregion // end Properties
-
-        #region Methods
         public override IDbTransaction BeginTransaction()
         {
             _IsConnAvailable();
@@ -147,17 +131,6 @@ namespace ZeroG.Data.Database.Drivers
             }
         }
 
-        public override IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters)
-        {
-            return CreateDataAdapter(commandText, null, parameters);
-        }
-
-        public override IDbDataAdapter CreateDataAdapter(string commandText, IDbTransaction trans, params IDataParameter[] parameters)
-        {
-            SqlCommand cmd = (SqlCommand)_PrepareCommand(trans, commandText, parameters);
-            return new SqlDataAdapter(cmd);
-        }
-
         public override string EscapeCommandText(string commandText)
         {
             if (null != commandText)
@@ -187,12 +160,7 @@ namespace ZeroG.Data.Database.Drivers
             return value;
         }
 
-        public override void ExecuteBulkCopy(DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
-        {
-            ExecuteBulkCopy(null, copyData, copyToTable, columnMap);
-        }
-
-        public override void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
+        public void ExecuteBulkCopy(IDbTransaction transaction, DataTable copyData, string copyToTable, Dictionary<string, string> columnMap)
         {
             _IsConnAvailable();
 
@@ -401,28 +369,6 @@ DATAFILETYPE='widechar')",
             return cmd.ExecuteReader(CommandBehavior.SingleResult);
         }
 
-        public override void FillDataSet(DataSet ds, string tableName, string commandText, params IDataParameter[] parameters)
-        {
-            DataTable dt = GetDataTable(commandText, parameters);
-            dt.TableName = tableName;
-            ds.Tables.Add(dt);
-        }
-
-        public override DataTable GetDataTable(string commandText, params IDataParameter[] parameters)
-        {
-            return GetDataTable(commandText, null, parameters);
-        }
-
-        public override DataTable GetDataTable(string commandText, IDbTransaction trans, params IDataParameter[] parameters)
-        {
-            DataTable dt = new DataTable();
-            using (SqlDataAdapter sqlAdapter = (SqlDataAdapter)CreateDataAdapter(commandText, trans, parameters))
-            {
-                sqlAdapter.Fill(dt);
-            }
-            return dt;
-        }
-
         public override string GetDriverName()
         {
             return "SQLServer";
@@ -542,7 +488,7 @@ DATAFILETYPE='widechar')",
             _dbConn = new SqlConnection(_connString);
             _dbConn.Open();
         }
-        #region Async methods
+
         public override DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters)
         {
             SqlCommand cmd = (SqlCommand)_PrepareCommand(null, commandText, parameters);
@@ -558,10 +504,6 @@ DATAFILETYPE='widechar')",
             var cmd = (SqlCommand)result.Command;
             return cmd.EndExecuteReader(result.Result);
         }
-        #endregion
-        #endregion // end Methods
-
-        #endregion // end Public
     }
 }
 

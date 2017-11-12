@@ -8,9 +8,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>ZeroG.Data.TestConsole</RootNamespace>
     <AssemblyName>ZeroG.Data.TestConsole</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -57,9 +58,9 @@
       <Project>{de8e7036-d00d-4c57-b1d2-2fdb60996830}</Project>
       <Name>ZeroG.Data.Shared</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ZeroG.Database.SQLite\ZeroG.Database.SQLite.csproj">
+    <ProjectReference Include="..\ZeroG.Database.SQLite\ZeroG.Database.Sqlite.csproj">
       <Project>{04136797-1dcc-48c0-ae7a-fb9f1c791332}</Project>
-      <Name>ZeroG.Database.SQLite</Name>
+      <Name>ZeroG.Database.Sqlite</Name>
     </ProjectReference>
     <ProjectReference Include="..\ZeroG.DataClient\ZeroG.DataClient.csproj">
       <Project>{5258843a-203b-4b6f-9958-4cbb795d5496}</Project>

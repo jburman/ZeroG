@@ -60,6 +60,7 @@ namespace ZeroG.Tests
 
         private void _Init()
         {
+            (int i, int j) = (2, 3);
             Container = _ConfigureServices();
         }
 
@@ -82,8 +83,9 @@ namespace ZeroG.Tests
 
             // Object Service with Index Cache
             var objSvcOptionsWithIndexCache = new ObjectServiceOptions();
-            objSvcOptionsWithIndexCache.WithKeyValueStoreProvider<RazorDBKeyValueStoreProvider>(
-                new RazorDBKeyValueStoreProviderOptions(ConfigurationManager.AppSettings["ObjectServiceDataDir"],
+
+            objSvcOptionsWithIndexCache.WithRazorDBKeyValueStore(new RazorDBKeyValueStoreProviderOptions(
+                ConfigurationManager.AppSettings["ObjectServiceDataDir"],
                 KeyValueCacheConfiguration.Shared,
                 100 * 1024 * 1024))
                 .WithObjectIndexCache(new ObjectIndexCacheOptions())
@@ -91,12 +93,11 @@ namespace ZeroG.Tests
                 .WithSerializer(serializer);
 
             builder.Register(c => serializer).As<ISerializer>();
-            //builder.Register(c => objSvcOptions);
 
             builder.Register(c =>
             {
                 var objSvcOptions = new ObjectServiceOptions();
-                objSvcOptions.WithKeyValueStoreProvider<RazorDBKeyValueStoreProvider>(
+                objSvcOptions.WithRazorDBKeyValueStore(
                     new RazorDBKeyValueStoreProviderOptions(ConfigurationManager.AppSettings["ObjectServiceDataDir"],
                     KeyValueCacheConfiguration.Shared,
                     100 * 1024 * 1024))

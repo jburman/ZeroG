@@ -94,7 +94,7 @@ namespace ZeroG.Data.Object
                         returnValue = _utf8.GetBytes((string)value);
                         break;
                     case ObjectIndexType.Integer:
-                        returnValue = BitConverter.GetBytes((int)value);
+                        returnValue = BitConverter.GetBytes((int)Convert.ChangeType(value, typeof(int)));
                         break;
                     case ObjectIndexType.Decimal:
                         using (var buffer = new MemoryStream())
