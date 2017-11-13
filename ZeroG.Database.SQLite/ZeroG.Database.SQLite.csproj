@@ -63,6 +63,7 @@
     <Compile Include="Object\SqliteObjectIndexProvider.cs" />
     <Compile Include="SqliteDatabaseService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SqliteValues.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ZeroG.Data.Shared\ZeroG.Data.Shared.csproj">

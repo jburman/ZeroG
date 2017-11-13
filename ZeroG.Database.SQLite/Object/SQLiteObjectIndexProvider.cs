@@ -26,15 +26,9 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
-using System.Transactions;
-using ZeroG.Data.Database;
 using ZeroG.Data.Object;
-using ZeroG.Data.Object.Index;
-using ZeroG.Data.Object.Metadata;
-using ZeroG.Lang;
 
 namespace ZeroG.Data.Database.Drivers.Object.Provider
 {
@@ -283,6 +277,25 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
                 var tableName = _CreateTableName(db, objectFullName);
                 return db.ExecuteScalar<int>(string.Format(SQLStatements.RowsCountDistinctObjects, db.MakeQuotedName(IDColumn), tableName), 0);
             }
+        }
+
+        public override ObjectIndexRecord CreateRecord(IDataRecord record)
+        {
+            var len = record.FieldCount;
+
+            var values = new ObjectIndex[len];
+            for (int i = 0; len > i; i++)
+            {
+                
+                var val = record.GetValue(i);
+                if (val == DBNull.Value)
+                {
+                    val = null;
+                }
+                values[i] = ObjectIndex.Create(record.GetName(i), val);
+            }
+
+            return new ObjectIndexRecord(values);
         }
 
         public override int[] Find(string objectFullName, ObjectFindOptions options, params ObjectIndex[] indexes)

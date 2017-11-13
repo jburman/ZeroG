@@ -41,23 +41,23 @@ namespace ZeroG.Data.Object
             Values = values;
         }
 
-        public static ObjectIndexRecord CreateFromDataRecord(IDataRecord record)
-        {
-            var len = record.FieldCount;
+        //public static ObjectIndexRecord CreateFromDataRecord(IDataRecord record)
+        //{
+        //    var len = record.FieldCount;
             
-            var values = new ObjectIndex[len];
-            for (int i = 0; len > i; i++)
-            {
-                var val = record.GetValue(i);
-                if (val == DBNull.Value)
-                {
-                    val = null;
-                }
-                values[i] = ObjectIndex.Create(record.GetName(i), val);
-            }
+        //    var values = new ObjectIndex[len];
+        //    for (int i = 0; len > i; i++)
+        //    {
+        //        var val = record.GetValue(i);
+        //        if (val == DBNull.Value)
+        //        {
+        //            val = null;
+        //        }
+        //        values[i] = ObjectIndex.Create(record.GetName(i), val);
+        //    }
 
-            return new ObjectIndexRecord(values);
-        }
+        //    return new ObjectIndexRecord(values);
+        //}
 
         [DataMember(Order=1)]
         public ObjectIndex[] Values;

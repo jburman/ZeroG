@@ -47,6 +47,8 @@ namespace ZeroG.Data.Object.Index
 
         int Count(string objectFullName, string constraint, ObjectIndexMetadata[] indexes);
 
+        ObjectIndexRecord CreateRecord(IDataRecord record);
+
         int[] Find(string objectFullName, params ObjectIndex[] indexes);
 
         int[] Find(string objectFullName, ObjectFindOptions options, params ObjectIndex[] indexes);

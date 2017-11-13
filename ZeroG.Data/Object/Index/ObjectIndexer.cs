@@ -222,6 +222,9 @@ namespace ZeroG.Data.Object.Index
             return _indexer.CountObjects(objectFullName);
         }
 
+        public ObjectIndexRecord CreateFromDataRecord(IDataRecord record) =>
+            _indexer.CreateRecord(record);
+
         internal int[] Find(string objectFullName, ObjectFindOptions options, ObjectIndex[] indexes)
         {
             int[] returnValue = null;

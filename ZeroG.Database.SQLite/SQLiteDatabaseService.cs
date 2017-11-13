@@ -271,10 +271,6 @@ namespace ZeroG.Data.Database.Drivers
             return GetValues<T>(null, commandText, parameters);
         }
 
-        private static readonly Type NumType = typeof(Int64);
-        private static readonly Type StringType = typeof(string);
-        private static readonly Type BlobType = typeof(byte[]);
-
         public override T[] GetValues<T>(IDbTransaction trans, string commandText, params IDataParameter[] parameters)
         {
             using (IDataReader rdr = ExecuteReader(trans, commandText, parameters))
@@ -284,28 +280,27 @@ namespace ZeroG.Data.Database.Drivers
                 var vals = new List<T>();
                 while (rdr.Read())
                 {
-                    object nextVal = null;
-
                     if(colType == null)
                         colType = rdr.GetFieldType(0);
-                    
-                    if(colType == NumType)
-                    {
-                        nextVal = rdr.GetInt64(0);
-                        //vals.Add((T)Convert.ChangeType(numVal, typeof(T));
-                    }
-                    else if(colType == StringType)
-                    {
-                        nextVal = rdr.GetString(0);
-                    }
-                    else if(colType == BlobType)
-                    {
-                        nextVal = Convert.ChangeType(rdr.GetValue(0), BlobType);
-                    }
 
-                    //object val = rdr[0];
-                    vals.Add((T)Convert.ChangeType(nextVal, toType));
-                    //vals.Add((T)rdr[0]);
+                    vals.Add(SqliteValues.ReadValue<T>(rdr, 0, colType, toType));
+                //    if(colType == NumType)
+                //    {
+                //        nextVal = rdr.GetInt64(0);
+                //        //vals.Add((T)Convert.ChangeType(numVal, typeof(T));
+                //    }
+                //    else if(colType == StringType)
+                //    {
+                //        nextVal = rdr.GetString(0);
+                //    }
+                //    else if(colType == BlobType)
+                //    {
+                //        nextVal = Convert.ChangeType(rdr.GetValue(0), BlobType);
+                //    }
+
+                //    //object val = rdr[0];
+                //    vals.Add((T)Convert.ChangeType(nextVal, toType));
+                //    //vals.Add((T)rdr[0]);
                 }
 
                 return vals.ToArray();
