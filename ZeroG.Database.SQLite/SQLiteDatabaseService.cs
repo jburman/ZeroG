@@ -283,7 +283,7 @@ namespace ZeroG.Data.Database.Drivers
                     if(colType == null)
                         colType = rdr.GetFieldType(0);
 
-                    vals.Add(SqliteValues.ReadValue<T>(rdr, 0, colType, toType));
+                    vals.Add(SqliteIndexValues.ReadValue<T>(rdr, 0, colType, toType));
                 //    if(colType == NumType)
                 //    {
                 //        nextVal = rdr.GetInt64(0);

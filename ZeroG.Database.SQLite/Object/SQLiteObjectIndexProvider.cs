@@ -284,15 +284,18 @@ namespace ZeroG.Data.Database.Drivers.Object.Provider
             var len = record.FieldCount;
 
             var values = new ObjectIndex[len];
-            for (int i = 0; len > i; i++)
+            for (int i = 0; i < len; i++)
             {
-                
-                var val = record.GetValue(i);
-                if (val == DBNull.Value)
-                {
-                    val = null;
-                }
-                values[i] = ObjectIndex.Create(record.GetName(i), val);
+                //Type valType = ObjectIndex.DefaultDataType.GetDataType()
+
+                values[i] = ObjectIndex.Create(record.GetName(i), SqliteIndexValues.ReadValue)
+
+                //var val = record.GetValue(i);
+                //if (val == DBNull.Value)
+                //{
+                //    val = null;
+                //}
+                //values[i] = ObjectIndex.Create(record.GetName(i), val);
             }
 
             return new ObjectIndexRecord(values);

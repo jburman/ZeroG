@@ -31,7 +31,7 @@ namespace ZeroG.Data.Object
     [DataContract]
     public sealed class ObjectIndex
     {
-        private static ObjectIndexType DefaultDataType = default(ObjectIndexType);
+        public static ObjectIndexType DefaultDataType = default(ObjectIndexType);
 
         private object _deserializedValue;
 

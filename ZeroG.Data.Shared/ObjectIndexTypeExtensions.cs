@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2017 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -48,35 +48,21 @@ namespace ZeroG.Data.Object
         public static ObjectIndexType GetDataType(this ObjectIndexType objectIndexType, object value)
         {
             if (value is byte[])
-            {
                 return ObjectIndexType.Binary;
-            }
             else if (value is string)
-            {
                 return ObjectIndexType.String;
-            }
             else if (value is DateTime)
-            {
                 return ObjectIndexType.DateTime;
-            }
             else if (value is decimal || value is float)
-            {
                 return ObjectIndexType.Decimal;
-            }
             else if (value is int || value is uint || value is short || value is ushort || value is long || value is ulong)
-            {
                 return ObjectIndexType.Integer;
-            }
             else
-            {
                 return ObjectIndexType.Unknown;
-            }
         }
 
-        public static Type GetSystemType(this ObjectIndexType objectIndexType)
-        {
-            return _typeMappings[objectIndexType];
-        }
+        public static Type GetSystemType(this ObjectIndexType objectIndexType) =>
+            _typeMappings[objectIndexType];
 
         private static Encoding _utf8 = Encoding.UTF8;
         public static byte[] ConvertToBinary(this ObjectIndexType objectIndexType, object value)
