@@ -26,20 +26,18 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using ZeroG.Data.Database.Lang;
-using ZeroG.Data.Object;
+using ZeroG.Data.Object.Lang;
 using ZeroG.Data.Object.Index;
-using ZeroG.Data.Object.Metadata;
+using ZeroG.Data.Database;
 
-namespace ZeroG.Data.Database
+namespace ZeroG.Data.Object
 {
     public abstract class ObjectIndexProvider : IObjectIndexProvider
     {
-        public static readonly string DefaultSchemaConnection = "ObjectIndexSchema";
-        public static readonly string DefaultDataAccessConnection = "ObjectIndexData";
+        public const string DefaultSchemaConnection = "ObjectIndexSchema";
+        public const string DefaultDataAccessConnection = "ObjectIndexData";
 
         #region Config settings
-        // TODO: make config settings configurable from app.config
 
         /// <summary>
         /// Maximum number of IDs that will be passed to a single query.

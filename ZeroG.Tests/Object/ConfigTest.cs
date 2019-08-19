@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Configuration;
 using ZeroG.Data.Object;
 
 namespace ZeroG.Tests.Object
@@ -12,7 +11,7 @@ namespace ZeroG.Tests.Object
         public void DefaultConfig()
         {
             var config = Config.Default;
-            Assert.AreEqual(ConfigurationManager.AppSettings["ObjectServiceDataDir"], config.BaseDataPath);
+            Assert.AreEqual(".", config.BaseDataPath);
         }
 
         [TestMethod]

@@ -23,18 +23,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
-using System.Transactions;
-using ZeroG.Data.Database;
 using ZeroG.Data.Object;
-using ZeroG.Data.Object.Index;
-using ZeroG.Data.Object.Metadata;
-using ZeroG.Lang;
 
 namespace ZeroG.Data.Database.Drivers.Object.Provider
 {

@@ -34,6 +34,8 @@ using System.Data.SqlClient;
 using System.Data.Common;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace ZeroG.Data.Database.Drivers
 {
@@ -118,31 +120,25 @@ namespace ZeroG.Data.Database.Drivers
             return _dbConn.BeginTransaction(isolation);
         }
 
-        public override void Configure(DatabaseServiceConfiguration config)
+        public override void ConfigureDriver(DatabaseServiceConfig config)
         {
             _connString = config.ConnectionString;
-            if (null != config.Properties)
+            if (config.Properties != null)
             {
-                foreach (var prop in config.Properties)
+                if (config.Properties.ContainsKey(AttributeClientBulkInsertPath))
+                    _clientBulkInsertPath = config.Properties[AttributeClientBulkInsertPath];
+                if (config.Properties.ContainsKey(AttributeServerBulkInsertPath))
+                    _serverBulkInsertPath = config.Properties[AttributeServerBulkInsertPath];
+                if (config.Properties.ContainsKey(AttributeSQLBatchSize))
                 {
-                    if (prop.Name == AttributeClientBulkInsertPath)
+                    if(uint.TryParse(config.Properties[AttributeSQLBatchSize], out uint parsedVal))
                     {
-                        _clientBulkInsertPath = prop.Value;
+                        if (0 == parsedVal)
+                            _sqlBatchSize = DefaultSQLBatchSize;
+                        else
+                            _sqlBatchSize = parsedVal;
                     }
-                    else if (prop.Name == AttributeServerBulkInsertPath)
-                    {
-                        _serverBulkInsertPath = prop.Value;
-                    }
-                    else if (prop.Name == AttributeSQLBatchSize)
-                    {
-                        uint tryVal = 0;
-                        uint.TryParse(prop.Value, out tryVal);
-                        if (0 == tryVal)
-                        {
-                            tryVal = DefaultSQLBatchSize;
-                        }
-                        _sqlBatchSize = tryVal;
-                    }
+                    _clientBulkInsertPath = config.Properties[AttributeSQLBatchSize];
                 }
             }
         }
@@ -543,20 +539,15 @@ DATAFILETYPE='widechar')",
             _dbConn.Open();
         }
         #region Async methods
-        public override DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters)
+        public override async Task<IDataReader> ExecuteReaderAsync(string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters)
         {
             SqlCommand cmd = (SqlCommand)_PrepareCommand(null, commandText, parameters);
-            return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
+            return await cmd.ExecuteReaderAsync(CommandBehavior.SingleResult, cancellationToken);
         }
-        public override DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters)
+        public override async Task<IDataReader> ExecuteReaderAsync(IDbTransaction trans, string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters)
         {
             SqlCommand cmd = (SqlCommand)_PrepareCommand(null, commandText, parameters);
-            return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
-        }
-        public override IDataReader EndExecuteReader(DatabaseAsyncResult result)
-        {
-            var cmd = (SqlCommand)result.Command;
-            return cmd.EndExecuteReader(result.Result);
+            return await cmd.ExecuteReaderAsync(CommandBehavior.SingleResult);
         }
         #endregion
         #endregion // end Methods

@@ -33,7 +33,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieve()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -129,7 +129,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveZeroLengthValue()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -172,7 +172,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveNullValue()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -214,7 +214,7 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(ArgumentException))]
         public void StoreAndRetrieveZeroLengthSecondaryKey()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -242,7 +242,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRemoveNoIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -324,7 +324,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRemoveWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -418,7 +418,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRemoveBySecondaryKey()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -501,7 +501,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNonExistingObject()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -538,7 +538,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNextID()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -565,7 +565,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetCurrentID()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -597,7 +597,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNextIDAndTruncate()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -639,7 +639,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNextIDMany()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -664,7 +664,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void GetNextIDParallel()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -739,7 +739,8 @@ namespace ZeroG.Tests.Object
                 objectVersions.Add(newVersion);
             };
 
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig(), versionChanged))
+            var config = ObjectTestHelper.GetConfig();
+            using (var svc = new ObjectService(config, ObjectTestHelper.GetObjectIndexProvider(config), versionChanged))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -814,7 +815,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveByIndex()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1041,7 +1042,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndCountByIndex()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1251,7 +1252,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveManyByIndex()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1314,7 +1315,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveManyObjects()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1363,7 +1364,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveManyObjectsBySecondaryKey()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1412,7 +1413,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void StoreAndRetrieveManyLargeObjects()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1462,7 +1463,7 @@ namespace ZeroG.Tests.Object
             var utf8 = Encoding.UTF8;
             var count = 10000;
 
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1523,7 +1524,7 @@ namespace ZeroG.Tests.Object
                 1,          // set to 1 second
                 defaultConfig.ObjectStoreCacheSize);
 
-            using (var svc = new ObjectService(config))
+            using (var svc = ObjectTestHelper.GetService(config))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1575,7 +1576,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void Count()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1626,7 +1627,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void Iterate()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1677,7 +1678,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void BulkStore()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1931,7 +1932,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void BulkStoreMany()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -1984,7 +1985,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void UpdateIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -2069,7 +2070,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void Report()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfigWithCaching()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;

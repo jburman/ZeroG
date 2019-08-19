@@ -1,113 +1,19 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{DB190F97-AB50-4659-BC56-377457EFDFCE}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ZeroG.Data</RootNamespace>
-    <AssemblyName>ZeroG.Data</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="protobuf-net">
-      <HintPath>..\References\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="RazorDB">
-      <HintPath>..\References\RazorDB.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Transactions" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="protobuf-net" Version="2.4.0" />
+    <PackageReference Include="RazorDB" Version="1.2.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Database\DatabaseAsyncResult.cs" />
-    <Compile Include="Database\DatabaseServiceConfiguration.cs" />
-    <Compile Include="Database\DatabaseServiceConfigurationProperty.cs" />
-    <Compile Include="Database\DatabaseServiceSection.cs" />
-    <Compile Include="Database\DatabaseHelper.cs" />
-    <Compile Include="Database\DatabaseService.cs" />
-    <Compile Include="Database\IDatabaseService.cs" />
-    <Compile Include="Database\Lang\JSONtoSQLContraint.cs" />
-    <Compile Include="Database\ObjectIndexProvider.cs" />
-    <Compile Include="Object\Backup\ObjectBackupReader.cs" />
-    <Compile Include="Object\Backup\ObjectBackupWriter.cs" />
-    <Compile Include="Object\Cache\CacheCleanupStrategy.cs" />
-    <Compile Include="Object\Cache\CacheTotals.cs" />
-    <Compile Include="Object\Cache\CacheValue.cs" />
-    <Compile Include="Object\Cache\HardPruneCacheCleaner.cs" />
-    <Compile Include="Object\Cache\ICacheCleaner.cs" />
-    <Compile Include="Object\Cache\ICacheEntry.cs" />
-    <Compile Include="Object\Cache\ICleanableCache.cs" />
-    <Compile Include="Object\Cache\ObjectIndexerCacheRecord.cs" />
-    <Compile Include="Object\Cache\ObjectIndexerCache.cs" />
-    <Compile Include="Object\Config.cs" />
-    <Compile Include="Object\Index\IObjectIndexProvider.cs" />
-    <Compile Include="Object\Index\ObjectIndexer.cs" />
-    <Compile Include="Object\LocalObjectServiceAdminClient.cs" />
-    <Compile Include="Object\LocalObjectServiceClient.cs" />
-    <Compile Include="Object\ObjectIDStore.cs" />
-    <Compile Include="Object\Metadata\ObjectMetadataStore.cs" />
-    <Compile Include="Object\Metadata\ObjectMetadatastoreUpdatedEvent.cs" />
-    <Compile Include="Object\ObjectIndexRecord.cs" />
-    <Compile Include="Object\ObjectNaming.cs" />
-    <Compile Include="Object\ObjectService.cs" />
-    <Compile Include="Object\ObjectStore.cs" />
-    <Compile Include="Object\ObjectStoreRecord.cs" />
-    <Compile Include="Object\ObjectVersionChangedEvent.cs" />
-    <Compile Include="Object\ObjectVersionStore.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <ProjectReference Include="..\ZeroG.DataClient\ZeroG.DataClient.csproj" />
+    <ProjectReference Include="..\ZeroG.Lang\ZeroG.Lang.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ZeroG.DataClient\ZeroG.DataClient.csproj">
-      <Project>{5258843a-203b-4b6f-9958-4cbb795d5496}</Project>
-      <Name>ZeroG.DataClient</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ZeroG.Lang\ZeroG.Lang.csproj">
-      <Project>{71ceb166-19be-45e2-9a38-8342db8c85be}</Project>
-      <Name>ZeroG.Lang</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

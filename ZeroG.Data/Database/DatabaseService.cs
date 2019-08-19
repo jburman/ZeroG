@@ -24,10 +24,16 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("ZeroG.Tests")]
 
 namespace ZeroG.Data.Database
 {
@@ -60,8 +66,6 @@ namespace ZeroG.Data.Database
     /// </summary>
     public abstract class DatabaseService : IDatabaseService
     {
-        private static Dictionary<string, Type> _typeCache;
-
         /// <summary>
         /// Timeout for SQL commands defined in seconds.
         /// </summary>
@@ -73,7 +77,6 @@ namespace ZeroG.Data.Database
         #region Constructors/Destructors
         static DatabaseService()
         {
-            _typeCache = new Dictionary<string, Type>();
         }
 
         protected DatabaseService()
@@ -119,38 +122,21 @@ namespace ZeroG.Data.Database
             }
         }
 
-        private static DatabaseService _GetService(string name)
+        private static ConcurrentDictionary<string, DatabaseServiceConfig> _configs = new ConcurrentDictionary<string, DatabaseServiceConfig>();
+        public static void Configure(DatabaseServiceConfig config)
         {
-            DatabaseServiceSection dbSection = (DatabaseServiceSection)ConfigurationManager.GetSection("databaseServiceConfigs");
-            Dictionary<string, DatabaseServiceConfiguration> dbConfigs = dbSection.Configs;
-            if (dbConfigs.ContainsKey(name))
-            {
-                Type dbType = null;
-                if (!_typeCache.ContainsKey(name))
-                {
-                    dbType = Type.GetType(dbConfigs[name].TypeName);
-                    if (null != dbType)
-                    {
-                        _typeCache[name] = dbType;
-                    }
-                }
-                
-                DatabaseService db = (DatabaseService)Activator.CreateInstance(_typeCache[name]);
-                db.Configure(dbConfigs[name]);
-                return db;
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException("name", "DatabaseService configuration not found: " + name);
-            }
+            _configs.TryAdd(config.Name, config);
         }
 
-        private static DatabaseService _GetService(string typeName, string connStr, Dictionary<string, string> additionalProperties)
+        public static DatabaseService GetService(string name)
         {
-            Type type = Type.GetType(typeName);
-            DatabaseService db = (DatabaseService)Activator.CreateInstance(type);
-            db.Configure(new DatabaseServiceConfiguration(null, typeName, connStr, additionalProperties));
-            return db;
+            if (_configs.TryGetValue(name, out DatabaseServiceConfig config))
+            {
+                DatabaseService db = (DatabaseService)Activator.CreateInstance(config.DriverType);
+                db.ConfigureDriver(config);
+                return db;
+            }
+            return null;
         }
 
         protected bool _IsConnAvailable()
@@ -244,9 +230,9 @@ namespace ZeroG.Data.Database
         #endregion // end Properties
 
         #region Methods
+        public abstract void ConfigureDriver(DatabaseServiceConfig config);
         public abstract IDbTransaction BeginTransaction();
         public abstract IDbTransaction BeginTransaction(IsolationLevel isolation);
-        public abstract void Configure(DatabaseServiceConfiguration config);
         public abstract IDbDataAdapter CreateDataAdapter(string commandText, params IDataParameter[] parameters);
         public abstract IDbDataAdapter CreateDataAdapter(string commandText, IDbTransaction trans, params IDataParameter[] parameters);
 
@@ -272,17 +258,6 @@ namespace ZeroG.Data.Database
         public abstract DataTable GetDataTable(string commandText, params IDataParameter[] parameters);
         public abstract DataTable GetDataTable(string commandText, IDbTransaction trans, params IDataParameter[] parameters);
         public abstract string GetDriverName();
-
-        public static DatabaseService GetService(string typeName, string connStr, Dictionary<string, string> additionalProperties)
-        {
-            return _GetService(typeName, connStr, additionalProperties);
-        }
-
-        public static DatabaseService GetService(string name)
-        {
-            return _GetService(name);
-        }
-
         public abstract KeyValuePair<TKey, TValue>[] GetKeyValuePairs<TKey, TValue>(string commandText, params IDataParameter[] parameters);
         public abstract Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(string commandText, params IDataParameter[] parameters);
         public abstract T[] GetValues<T>(string commandText, params IDataParameter[] parameters);
@@ -297,9 +272,8 @@ namespace ZeroG.Data.Database
         public abstract void Open();
 
         #region Async methods
-        public abstract DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters);
-        public abstract DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
-        public abstract IDataReader EndExecuteReader(DatabaseAsyncResult result);
+        public abstract Task<IDataReader> ExecuteReaderAsync(string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters);
+        public abstract Task<IDataReader> ExecuteReaderAsync(IDbTransaction trans, string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters);
         #endregion
         #endregion // end Methods
 

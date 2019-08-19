@@ -25,11 +25,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
-using ZeroG.Data.Database;
 using ZeroG.Data.Object.Cache;
-using ZeroG.Data.Object.Metadata;
 
 namespace ZeroG.Data.Object.Index
 {
@@ -39,40 +36,14 @@ namespace ZeroG.Data.Object.Index
         private ObjectIndexerCache _cache;
         private object _bulkIndexLock;
 
-        private static Type _indexerType = null;
+        //private static Type _indexerType = null;
 
-        public ObjectIndexer(ObjectIndexerCache cache) : this()
-        {
-            _cache = cache;
-        }
-
-        public ObjectIndexer()
+        public ObjectIndexer(IObjectIndexProvider provider, ObjectIndexerCache cache)
         {
             // used to single thread bulk index workloads.
             _bulkIndexLock = new object();
-
-            if (null == _indexerType)
-            {
-                var setting = ConfigurationManager.AppSettings[Config.ObjectIndexProviderConfigKey];
-                if (!string.IsNullOrEmpty(setting))
-                {
-                    var objectIndexProviderType = Type.GetType(setting, true);
-
-                    if (typeof(IObjectIndexProvider).IsAssignableFrom(objectIndexProviderType))
-                    {
-                        _indexer = (IObjectIndexProvider)Activator.CreateInstance(objectIndexProviderType);
-                        _indexerType = objectIndexProviderType;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Unsupported IObjectIndexProvider type: " + objectIndexProviderType.FullName);
-                    }
-                }
-            }
-            else
-            {
-                _indexer = (IObjectIndexProvider)Activator.CreateInstance(_indexerType);
-            }
+            _indexer = provider;
+            _cache = cache;
         }
 
         private bool _ValidateIndexNames(ObjectIndexMetadata[] indexes, string[] checkNames)

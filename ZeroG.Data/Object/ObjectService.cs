@@ -25,9 +25,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Transactions;
 using ZeroG.Data.Object.Backup;
 using ZeroG.Data.Object.Cache;
@@ -55,15 +53,15 @@ namespace ZeroG.Data.Object
         static ObjectService()
         {
             _DefaultTransactionOptions = new TransactionOptions();
-            _DefaultTransactionOptions.IsolationLevel = IsolationLevel.RepeatableRead;
+            _DefaultTransactionOptions.IsolationLevel = IsolationLevel.ReadCommitted;
             _DefaultTransactionOptions.Timeout = TransactionManager.DefaultTimeout;
         }
 
         /// <summary>
         /// Constructs a new ObjectService that is configured via the application's config file.
         /// </summary>
-        public ObjectService()
-            : this(Config.Default)
+        public ObjectService(IObjectIndexProvider indexProvider)
+            : this(Config.Default, indexProvider)
         {
         }
 
@@ -71,8 +69,8 @@ namespace ZeroG.Data.Object
         /// Constructs a new ObjectService configured via the supplied Config instance.
         /// </summary>
         /// <param name="config"></param>
-        public ObjectService(Config config)
-            : this(config, null)
+        public ObjectService(Config config, IObjectIndexProvider indexProvider)
+            : this(config, indexProvider, null)
         {
         }
 
@@ -84,7 +82,7 @@ namespace ZeroG.Data.Object
         /// </summary>
         /// <param name="config"></param>
         /// <param name="onObjectVersionChanged"></param>
-        public ObjectService(Config config, Action<string, uint> onObjectVersionChanged)
+        public ObjectService(Config config, IObjectIndexProvider indexProvider, Action<string, uint> onObjectVersionChanged)
         {
             _assignments = new List<IDisposable>();
 
@@ -107,7 +105,7 @@ namespace ZeroG.Data.Object
             }
 
             _objectStore = new ObjectStore(config, _objectMetadata);
-            _objectIndexer = new ObjectIndexer(_indexerCache);
+            _objectIndexer = new ObjectIndexer(indexProvider, _indexerCache);
 
             _assignments.Add(_objectMetadata);
             _assignments.Add(_objectIDStore);

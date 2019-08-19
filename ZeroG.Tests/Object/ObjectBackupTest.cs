@@ -27,7 +27,7 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void BackupNameSpaceWithoutCompressionNoIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -147,7 +147,7 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void BackupNameSpaceWithoutCompressionWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -332,7 +332,7 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void BackupNameSpaceWithCompressionWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -517,7 +517,7 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void BackupAndRestoreWithCompressionWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;

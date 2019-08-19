@@ -26,6 +26,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ZeroG.Data.Database
 {
@@ -67,10 +69,8 @@ namespace ZeroG.Data.Database
         IDbDataParameter MakeOutputParam(string paramName, DbType type);
         string MakeQuotedName(string name);
         void Open();
-        #region Async versions
-        DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters);
-        DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters);
-        IDataReader EndExecuteReader(DatabaseAsyncResult result);
-        #endregion
+
+        Task<IDataReader> ExecuteReaderAsync(string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters);
+        Task<IDataReader> ExecuteReaderAsync(IDbTransaction trans, string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters);
     }
 }

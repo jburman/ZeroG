@@ -37,35 +37,7 @@ namespace ZeroG.Data.Object
     public class Config
     {
         public static readonly string StoreVersion = "1.0";
-        public static readonly string ObjectIndexProviderConfigKey = "ObjectIndexProvider";
-
         private static string _appDir;
-
-        /// <summary>
-        /// Constructs a new Config instance with all properties initialized from the App config file.
-        /// </summary>
-        public Config()
-        {
-            _baseDataPath = ConfigurationManager.AppSettings["ObjectServiceDataDir"];
-
-            _LoadPropertiesFromConfig();
-
-            _FinalizeProperties();
-        }
-
-
-        /// <summary>
-        /// Constructs a new Config instance with all properties initialized from the App config file,
-        /// except for the base data path property.
-        /// </summary>
-        public Config(string baseDataPath) : this()
-        {
-            _baseDataPath = baseDataPath;
-
-            _LoadPropertiesFromConfig();
-
-            _FinalizeProperties();
-        }
 
         /// <summary>
         /// Allows Config values to be specified without using the App config file.
@@ -75,16 +47,16 @@ namespace ZeroG.Data.Object
         /// <param name="objectIndexSchemaConn"></param>
         /// <param name="objectIndexDataConn"></param>
         /// <param name="maxObjectDependences"></param>
-        public Config(string baseDataPath,
-            bool indexCacheEnabled,
-            int indexCacheMaxQueries,
-            int indexCacheMaxValues,
-            string objectIndexSchemaConn,
-            string objectIndexDataConn,
-            int maxObjectDependences,
-            bool objectStoreAutoClose,
-            int objectStoreAutoCloseTimeout,
-            int objectStoreCacheSize)
+        public Config(string baseDataPath = ".",
+            bool indexCacheEnabled = true,
+            int indexCacheMaxQueries = 100_000,
+            int indexCacheMaxValues = 10_000_000,
+            string objectIndexSchemaConn = ObjectIndexProvider.DefaultSchemaConnection,
+            string objectIndexDataConn = ObjectIndexProvider.DefaultDataAccessConnection,
+            int maxObjectDependences = 5,
+            bool objectStoreAutoClose = true,
+            int objectStoreAutoCloseTimeout = 300,
+            int objectStoreCacheSize = 100)
         {
             _baseDataPath = baseDataPath;
             _indexCacheEnabled = indexCacheEnabled;
@@ -102,65 +74,6 @@ namespace ZeroG.Data.Object
 
         #region Private helpers
 
-        /// <summary>
-        /// Initializes all properties from the App config file except for ObjectServiceDataDir.
-        /// </summary>
-        private void _LoadPropertiesFromConfig()
-        {
-            NameValueCollection appSettings = ConfigurationManager.AppSettings;
-
-            bool boolParse = false;
-            int intParse = 0;
-
-
-            bool.TryParse(appSettings["ObjectIndexCacheEnabled"], out boolParse);
-            _indexCacheEnabled = boolParse;
-
-            intParse = -1;
-            if (!int.TryParse(appSettings["ObjectIndexCacheMaxQueries"], out intParse) || intParse < 0)
-            {
-                intParse = 100000;
-            }
-            _indexCacheMaxQueries = intParse;
-
-            intParse = -1;
-            if (!int.TryParse(appSettings["ObjectIndexCacheMaxValues"], out intParse) || intParse < 0)
-            {
-                intParse = 10000000;
-            }
-            _indexCacheMaxValues = intParse;
-
-            _objectIndexSchemaConn = appSettings["ObjectIndexSchemaConnection"];
-            _objectIndexSchemaConn = _objectIndexSchemaConn ?? ObjectIndexProvider.DefaultSchemaConnection;
-
-            _objectIndexDataConn = appSettings["ObjectIndexDataConnection"];
-            _objectIndexDataConn = _objectIndexDataConn ?? ObjectIndexProvider.DefaultDataAccessConnection;
-
-            intParse = -1;
-            if (!int.TryParse(appSettings["MaxObjectDependencies"], out intParse) || intParse < 0)
-            {
-                intParse = 5;
-            }
-            _maxObjectDependencies = intParse;
-
-            boolParse = true;
-            bool.TryParse(appSettings["ObjectStoreAutoClose"], out boolParse);
-            _objectStoreAutoClose = boolParse;
-
-            intParse = -1;
-            if (!int.TryParse(appSettings["ObjectStoreAutoCloseTimeout"], out intParse) || intParse < 0)
-            {
-                intParse = 300; // reset to the default value
-            }
-            _objectStoreAutoCloseTimeout = intParse;
-
-            intParse = -1;
-            if (!int.TryParse(appSettings["ObjectStoreCacheSize"], out intParse) || intParse < 0)
-            {
-                _objectStoreCacheSize = 100; // reset to the default value
-            }
-            _objectStoreCacheSize = intParse;
-        }
 
         /// <summary>
         /// Performs final processing on configuration property values before they are used.
@@ -194,10 +107,8 @@ namespace ZeroG.Data.Object
         {
             get
             {
-                if (null == _default)
-                {
+                if (_default is null)
                     _default = new Config();
-                }
                 return _default;
             }
         }

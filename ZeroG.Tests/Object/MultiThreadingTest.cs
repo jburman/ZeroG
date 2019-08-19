@@ -28,7 +28,7 @@ namespace ZeroG.Tests.Object
         {
             var taskCount = 50;
             var taskList = new List<Task>();
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;

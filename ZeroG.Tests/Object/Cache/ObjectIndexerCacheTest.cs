@@ -242,7 +242,7 @@ namespace ZeroG.Tests.Object
                 });
 
             // Temporarily use the ObjectService to provision the Object's Metadata.
-            using (var svc = new ObjectService(config))
+            using (var svc = ObjectTestHelper.GetService(config))
             {
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
                     "ZeroG Test", "Unit Test", DateTime.Now));
@@ -328,7 +328,7 @@ namespace ZeroG.Tests.Object
             // within their namespace.
 
             // Temporarily use the ObjectService to provision the Object's Metadata.
-            using (var svc = new ObjectService(config))
+            using (var svc = ObjectTestHelper.GetService(config))
             {
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
                     "ZeroG Test", "Unit Test", DateTime.Now));
@@ -417,7 +417,7 @@ namespace ZeroG.Tests.Object
             // within their namespace.
 
             // Temporarily use the ObjectService to provision the Object's Metadata.
-            using (var svc = new ObjectService(config))
+            using (var svc = ObjectTestHelper.GetService(config))
             {
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
                     "ZeroG Test", "Unit Test", DateTime.Now));
@@ -489,7 +489,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void FindWithCachingTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfigWithCaching()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -618,7 +618,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void FindAndCountWithCachingTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfigWithCaching()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -788,7 +788,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void FindByConstraintWithCachingTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfigWithCaching()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;
@@ -877,7 +877,7 @@ namespace ZeroG.Tests.Object
             var strIndex2 = "index test val";
             var strIndex3 = "zzyyxx";
 
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 svc.CreateNameSpace(new ObjectNameSpaceConfig(ns,
                     "ZeroG Test", "Unit Test", DateTime.Now));
@@ -924,7 +924,7 @@ namespace ZeroG.Tests.Object
                 });
 
                 stopWatchUncached.Start();
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     var findVals = svc.Find(ns, obj, @"{ ""IntIndex1"" : 12500 }").ToArray();
                     Assert.AreEqual(1, findVals.Length);
@@ -933,7 +933,7 @@ namespace ZeroG.Tests.Object
                 stopWatchUncached.Stop();
 
                 stopWatchCountUncached.Start();
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     var count = svc.Count(ns, obj, @"{ ""IntIndex1"" : 12500 }");
                     Assert.AreEqual(1, count);
@@ -941,10 +941,10 @@ namespace ZeroG.Tests.Object
                 stopWatchCountUncached.Stop();
             }
 
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfigWithCaching()))
             {
                 stopWatchCached.Start();
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     var findVals = svc.Find(ns, obj, @"{ ""IntIndex1"" : 12500 }").ToArray();
                     Assert.AreEqual(1, findVals.Length);
@@ -953,7 +953,7 @@ namespace ZeroG.Tests.Object
                 stopWatchCached.Stop();
 
                 stopWatchCountCached.Start();
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     var count = svc.Count(ns, obj, @"{ ""IntIndex1"" : 12500 }");
                     Assert.AreEqual(1, count);
@@ -961,7 +961,7 @@ namespace ZeroG.Tests.Object
                 stopWatchCountCached.Stop();
             }
 
-            Assert.IsTrue(stopWatchUncached.Elapsed > stopWatchCached.Elapsed);
+            Assert.IsTrue(stopWatchUncached.Elapsed > stopWatchCached.Elapsed, $"Expected Cached to be less than Uncached (Cached {stopWatchCached.Elapsed} - Uncached {stopWatchUncached.Elapsed}) ");
             Assert.IsTrue(stopWatchCountUncached.Elapsed > stopWatchCountCached.Elapsed);
 
             Console.WriteLine("Uncached Find time: {0} -- Cached Find time: {1}",
@@ -977,7 +977,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void RemoveAndFindWithCachingTest()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfigWithCaching()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfigWithCaching()))
             {
                 var ns = ObjectTestHelper.NameSpace1;
                 var obj = ObjectTestHelper.ObjectName1;

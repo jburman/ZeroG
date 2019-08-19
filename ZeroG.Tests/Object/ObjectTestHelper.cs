@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using ZeroG.Data.Database;
 using ZeroG.Data.Object;
 using ZeroG.Data.Object.Index;
+using ZeroG.Tests.Data;
 
 namespace ZeroG.Tests.Object
 {
@@ -16,6 +17,11 @@ namespace ZeroG.Tests.Object
         public static readonly string ObjectName1 = "ZG_testObj1";
         public static readonly string ObjectName2 = "ZG_testObj2";
         public static readonly string ObjectName3 = "ZG_testObj3";
+
+        static ObjectTestHelper()
+        {
+            DataTestHelper.Configure();
+        }
 
         public static Config GetConfig()
         {
@@ -37,32 +43,21 @@ namespace ZeroG.Tests.Object
                 defaultConfig.ObjectStoreCacheSize);
         }
 
-        public static IObjectIndexProvider CreateObjectIndexProvider()
+        public static ObjectService GetService(Config config) =>
+            new ObjectService(config, GetObjectIndexProvider(config));
+
+        public static IObjectIndexProvider GetObjectIndexProvider(Config config)
         {
-            IObjectIndexProvider indexer = null;
-            Type indexerType = null;
-
-            var setting = ConfigurationManager.AppSettings[Config.ObjectIndexProviderConfigKey];
-            if (!string.IsNullOrEmpty(setting))
-            {
-                var objectIndexProviderType = Type.GetType(setting, true);
-
-                if (typeof(IObjectIndexProvider).IsAssignableFrom(objectIndexProviderType))
-                {
-                    indexer = (IObjectIndexProvider)Activator.CreateInstance(objectIndexProviderType);
-                    indexerType = objectIndexProviderType;
-                }
-                else
-                {
-                    throw new InvalidOperationException("Unsupported IObjectIndexProvider type: " + objectIndexProviderType.FullName);
-                }
-            }
-            return (IObjectIndexProvider)Activator.CreateInstance(indexerType);
+            var appConfig = TestConfig.Config;
+            var setting = appConfig["ObjectIndexProvider"];
+            Type type = Type.GetType(setting, true);
+            return (IObjectIndexProvider)Activator.CreateInstance(type, config);
         }
 
         public static void CleanTestObjects()
         {
-            using (var svc = new ObjectService(GetConfig()))
+            var config = GetConfig();
+            using (var svc = new ObjectService(config, GetObjectIndexProvider(config)))
             {
                 if (svc.NameSpaceExists(NameSpace1))
                 {

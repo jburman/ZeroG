@@ -31,7 +31,7 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void CreateNameSpace()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.NameSpaceExists(NameSpace1));
 
@@ -56,7 +56,7 @@ namespace ZeroG.Tests.Object
         [TestMethod]
         public void CreateAndRemoveNameSpace()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.NameSpaceExists(NameSpace1));
 
@@ -86,7 +86,7 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(System.ArgumentException))]
         public void CreateDuplicateNameSpace()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.NameSpaceExists(NameSpace1));
 
@@ -104,7 +104,7 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(System.ArgumentException))]
         public void CreateMalformedNameSpace()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 try
                 {
@@ -130,7 +130,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionObjectStoreNoIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
@@ -155,7 +155,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionAndUnprovisionObjectStoreNoIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
@@ -184,7 +184,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionObjectStoreWithIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
@@ -230,7 +230,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionObjectStoreWithNullableIndexes()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
@@ -278,7 +278,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionDuplicateObjectStore()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
@@ -297,7 +297,7 @@ namespace ZeroG.Tests.Object
         [TestCategory("Core")]
         public void ProvisionObjectStoreWithDependencies()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
@@ -338,7 +338,7 @@ namespace ZeroG.Tests.Object
         [ExpectedException(typeof(ArgumentException))]
         public void ProvisionObjectStoreWithNonExistingDependencies()
         {
-            using (var svc = new ObjectService(ObjectTestHelper.GetConfig()))
+            using (var svc = ObjectTestHelper.GetService(ObjectTestHelper.GetConfig()))
             {
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 
@@ -378,7 +378,7 @@ namespace ZeroG.Tests.Object
                 depList.Add("ObjDep" + i);
             }
 
-            using (var svc = new ObjectService(config))
+            using (var svc = ObjectTestHelper.GetService(config))
             {
                 Assert.IsFalse(svc.ObjectNameExists(NameSpace1, ObjectName1));
 

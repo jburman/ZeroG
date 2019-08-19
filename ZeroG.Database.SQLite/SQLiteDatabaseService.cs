@@ -30,6 +30,8 @@ using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Transactions;
 using ZeroG.Data.Database;
 using ZeroG.Data.Database.Drivers;
@@ -88,9 +90,7 @@ namespace ZeroG.Data.Database.Drivers
                     var sub = connStr.Substring(index, "{appdir}".Length);
 
                     if (null == _appDir)
-                    {
-                        _appDir = AppDomain.CurrentDomain.BaseDirectory;
-                    }
+                        _appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\').TrimEnd('/');
                     connStr = connStr.Replace(sub, _appDir);
                 }
             }
@@ -109,7 +109,7 @@ namespace ZeroG.Data.Database.Drivers
             return _dbConn.BeginTransaction(isolation);
         }
 
-        public override void Configure(DatabaseServiceConfiguration config)
+        public override void ConfigureDriver(DatabaseServiceConfig config)
         {
             _connString = _SubConnStr(config.ConnectionString);
         }
@@ -485,18 +485,15 @@ namespace ZeroG.Data.Database.Drivers
         }
 
         #region Async methods
-        public override DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters)
+        public override async Task<IDataReader> ExecuteReaderAsync(string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters)
         {
-            throw new NotImplementedException();
+            SQLiteCommand cmd = (SQLiteCommand)_PrepareCommand(null, commandText, parameters);
+            return await cmd.ExecuteReaderAsync(CommandBehavior.SingleResult, cancellationToken);
         }
-        public override DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters)
+        public override async Task<IDataReader> ExecuteReaderAsync(IDbTransaction trans, string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters)
         {
-            throw new NotImplementedException();
-            
-        }
-        public override IDataReader EndExecuteReader(DatabaseAsyncResult result)
-        {
-            throw new NotImplementedException();
+            SQLiteCommand cmd = (SQLiteCommand)_PrepareCommand(null, commandText, parameters);
+            return await cmd.ExecuteReaderAsync(CommandBehavior.SingleResult);
         }
         #endregion
         #endregion // end Methods

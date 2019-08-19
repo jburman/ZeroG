@@ -34,6 +34,8 @@ using System.Data.Common;
 using System.Text.RegularExpressions;
 using MySql.Data.MySqlClient;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ZeroG.Data.Database.Drivers
 {
@@ -103,7 +105,7 @@ namespace ZeroG.Data.Database.Drivers
             return _dbConn.BeginTransaction(isolation);
         }
 
-        public override void Configure(DatabaseServiceConfiguration config)
+        public override void ConfigureDriver(DatabaseServiceConfig config)
         {
             _connString = config.ConnectionString;
         }
@@ -385,21 +387,15 @@ LINES TERMINATED BY '\r\n' STARTING BY ''",
             _dbConn.Open();
         }
         #region Async methods
-        public override DatabaseAsyncResult BeginExecuteReader(string commandText, params IDataParameter[] parameters)
+        public override async Task<IDataReader> ExecuteReaderAsync(string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters)
         {
             MySqlCommand cmd = (MySqlCommand)_PrepareCommand(null, commandText, parameters);
-            return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
+            return await cmd.ExecuteReaderAsync(CommandBehavior.SingleResult, cancellationToken);
         }
-        public override DatabaseAsyncResult BeginExecuteReader(IDbTransaction trans, string commandText, params IDataParameter[] parameters)
+        public override async Task<IDataReader> ExecuteReaderAsync(IDbTransaction trans, string commandText, CancellationToken cancellationToken, params IDataParameter[] parameters)
         {
             MySqlCommand cmd = (MySqlCommand)_PrepareCommand(null, commandText, parameters);
-            return new DatabaseAsyncResult(cmd.BeginExecuteReader(CommandBehavior.SingleResult), cmd);
-            
-        }
-        public override IDataReader EndExecuteReader(DatabaseAsyncResult result)
-        {
-            var cmd = (MySqlCommand)result.Command;
-            return cmd.EndExecuteReader(result.Result);
+            return await cmd.ExecuteReaderAsync(CommandBehavior.SingleResult);
         }
         #endregion
         #endregion // end Methods

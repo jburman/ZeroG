@@ -25,14 +25,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ZeroG.Data.Database;
 using ZeroG.Lang.JSON;
 
-namespace ZeroG.Data.Database.Lang
+namespace ZeroG.Data.Object.Lang
 {
     public enum ConstraintKeywords
     {

@@ -1,19 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29209.62
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data", "ZeroG.Data.csproj", "{DB190F97-AB50-4659-BC56-377457EFDFCE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Database.MySQL", "..\ZeroG.Database.MySQL\ZeroG.Database.MySQL.csproj", "{FF8B8052-6109-4CE7-8DE1-92FB0F752349}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Database.SQLServer", "..\ZeroG.Database.SQLServer\ZeroG.Database.SQLServer.csproj", "{8F055E63-1417-4D8E-B7ED-B3B63D630784}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Lang", "..\ZeroG.Lang\ZeroG.Lang.csproj", "{71CEB166-19BE-45E2-9A38-8342DB8C85BE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Tests", "..\ZeroG.Tests\ZeroG.Tests.csproj", "{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Lang", "..\ZeroG.Lang\ZeroG.Lang.csproj", "{71CEB166-19BE-45E2-9A38-8342DB8C85BE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.DataClient", "..\ZeroG.DataClient\ZeroG.DataClient.csproj", "{5258843A-203B-4B6F-9958-4CBB795D5496}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Database.SQLite", "..\ZeroG.Database.SQLite\ZeroG.Database.SQLite.csproj", "{04136797-1DCC-48C0-AE7A-FB9F1C791332}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Tests", "..\ZeroG.Tests\ZeroG.Tests.csproj", "{BA945904-35D8-48FA-A97C-FAE790BBA5E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Database.SQLServer", "..\ZeroG.Database.SQLServer\ZeroG.Database.SQLServer.csproj", "{DE02EC88-5FD1-4192-8E7A-0600BAF5C8C2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Database.MySQL", "..\ZeroG.Database.MySQL\ZeroG.Database.MySQL.csproj", "{0971A9D3-9328-483E-BC70-101B720912FB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Database.SQLite", "..\ZeroG.Database.SQLite\ZeroG.Database.SQLite.csproj", "{99353F17-71C6-45C0-9323-0E21D3472DFC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,32 +27,35 @@ Global
 		{DB190F97-AB50-4659-BC56-377457EFDFCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB190F97-AB50-4659-BC56-377457EFDFCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB190F97-AB50-4659-BC56-377457EFDFCE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FF8B8052-6109-4CE7-8DE1-92FB0F752349}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FF8B8052-6109-4CE7-8DE1-92FB0F752349}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FF8B8052-6109-4CE7-8DE1-92FB0F752349}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FF8B8052-6109-4CE7-8DE1-92FB0F752349}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8F055E63-1417-4D8E-B7ED-B3B63D630784}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8F055E63-1417-4D8E-B7ED-B3B63D630784}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8F055E63-1417-4D8E-B7ED-B3B63D630784}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8F055E63-1417-4D8E-B7ED-B3B63D630784}.Release|Any CPU.Build.0 = Release|Any CPU
 		{71CEB166-19BE-45E2-9A38-8342DB8C85BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{71CEB166-19BE-45E2-9A38-8342DB8C85BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71CEB166-19BE-45E2-9A38-8342DB8C85BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71CEB166-19BE-45E2-9A38-8342DB8C85BE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{20942997-39D7-4DB6-A9E4-5CE64D8A5A55}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5258843A-203B-4B6F-9958-4CBB795D5496}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5258843A-203B-4B6F-9958-4CBB795D5496}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5258843A-203B-4B6F-9958-4CBB795D5496}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5258843A-203B-4B6F-9958-4CBB795D5496}.Release|Any CPU.Build.0 = Release|Any CPU
-		{04136797-1DCC-48C0-AE7A-FB9F1C791332}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{04136797-1DCC-48C0-AE7A-FB9F1C791332}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{04136797-1DCC-48C0-AE7A-FB9F1C791332}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{04136797-1DCC-48C0-AE7A-FB9F1C791332}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA945904-35D8-48FA-A97C-FAE790BBA5E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA945904-35D8-48FA-A97C-FAE790BBA5E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA945904-35D8-48FA-A97C-FAE790BBA5E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA945904-35D8-48FA-A97C-FAE790BBA5E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE02EC88-5FD1-4192-8E7A-0600BAF5C8C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE02EC88-5FD1-4192-8E7A-0600BAF5C8C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE02EC88-5FD1-4192-8E7A-0600BAF5C8C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE02EC88-5FD1-4192-8E7A-0600BAF5C8C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0971A9D3-9328-483E-BC70-101B720912FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0971A9D3-9328-483E-BC70-101B720912FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0971A9D3-9328-483E-BC70-101B720912FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0971A9D3-9328-483E-BC70-101B720912FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99353F17-71C6-45C0-9323-0E21D3472DFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99353F17-71C6-45C0-9323-0E21D3472DFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99353F17-71C6-45C0-9323-0E21D3472DFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99353F17-71C6-45C0-9323-0E21D3472DFC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {97636DEA-EDD6-4977-BEB2-3E13754A9E44}
 	EndGlobalSection
 EndGlobal

@@ -26,9 +26,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using ZeroG.Data.Object.Metadata;
 
-namespace ZeroG.Data.Object.Index
+namespace ZeroG.Data.Object
 {
     public interface IObjectIndexProvider : IDisposable
     {

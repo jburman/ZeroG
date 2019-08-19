@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ZeroG.Data.Database.Lang;
+using ZeroG.Data.Object.Lang;
 using System.Data;
 using System.Collections.Generic;
 using ZeroG.Data.Database.Drivers;

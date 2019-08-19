@@ -20,7 +20,7 @@ namespace ZeroG.Tests.Object
             {
                 if (null == _provider)
                 {
-                    _provider = ObjectTestHelper.CreateObjectIndexProvider();
+                    _provider = ObjectTestHelper.GetObjectIndexProvider(ObjectTestHelper.GetConfig());
                 }
                 return _provider;
             }

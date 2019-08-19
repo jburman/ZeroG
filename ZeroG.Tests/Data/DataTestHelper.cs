@@ -1,22 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Configuration;
+using System.IO;
 using ZeroG.Data.Database;
+using ZeroG.Data.Database.Drivers;
+using ZeroG.Data.Object;
 
 namespace ZeroG.Tests.Data
 {
     public class DataTestHelper
     {
-        public static IDatabaseService GetDefaultSchemaService()
+        private static bool _configured = false;
+
+        static DataTestHelper()
         {
-            return DatabaseService.GetService(ObjectIndexProvider.DefaultSchemaConnection);
+            Configure();
         }
 
-        public static IDatabaseService GetDefaultDataService()
+        public static void Configure()
         {
-            return DatabaseService.GetService(ObjectIndexProvider.DefaultDataAccessConnection);
+            if (!_configured)
+            {
+                _configured = true;
+
+                var config = TestConfig.Config;
+
+                DatabaseService.Configure(new DatabaseServiceConfig(
+                    ObjectIndexProvider.DefaultSchemaConnection, typeof(SQLiteDatabaseService),
+                    config.GetConnectionString(ObjectIndexProvider.DefaultSchemaConnection)));
+
+                DatabaseService.Configure(new DatabaseServiceConfig(
+                    ObjectIndexProvider.DefaultDataAccessConnection, typeof(SQLiteDatabaseService),
+                    config.GetConnectionString(ObjectIndexProvider.DefaultDataAccessConnection)));
+            }
         }
+
+        public static IDatabaseService GetDefaultSchemaService() =>
+            DatabaseService.GetService(ObjectIndexProvider.DefaultSchemaConnection);
+
+        public static IDatabaseService GetDefaultDataService() =>
+            DatabaseService.GetService(ObjectIndexProvider.DefaultDataAccessConnection);
     }
 }

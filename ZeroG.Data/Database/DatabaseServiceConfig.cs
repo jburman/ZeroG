@@ -1,5 +1,5 @@
 ﻿#region License, Terms and Conditions
-// Copyright (c) 2012 Jeremy Burman
+// Copyright (c) 2019 Jeremy Burman
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -23,17 +23,27 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
+using System;
+using System.Collections.Generic;
+
 namespace ZeroG.Data.Database
 {
-    public sealed class DatabaseServiceConfigurationProperty
+    public class DatabaseServiceConfig
     {
         public readonly string Name;
-        public readonly string Value;
+        public readonly Type DriverType;
+        public readonly string ConnectionString;
+        public readonly IReadOnlyDictionary<string, string> Properties;
 
-        public DatabaseServiceConfigurationProperty(string name, string value)
+        public DatabaseServiceConfig(string name,
+            Type driverType,
+            string connectionString,
+            IReadOnlyDictionary<string, string> properties = default)
         {
             Name = name;
-            Value = value;
+            DriverType = driverType;
+            ConnectionString = connectionString;
+            Properties = properties ?? new Dictionary<string, string>();
         }
     }
 }

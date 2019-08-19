@@ -1,75 +1,11 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{5258843A-203B-4B6F-9958-4CBB795D5496}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ZeroG.Data.Object</RootNamespace>
-    <AssemblyName>ZeroG.DataClient</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="IKVM.Reflection">
-      <HintPath>..\References\IKVM.Reflection.dll</HintPath>
-    </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\References\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="protobuf-net" Version="2.4.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="IObjectServiceAdminClient.cs" />
-    <Compile Include="IObjectServiceClient.cs" />
-    <Compile Include="Support\BulkStore.cs" />
-    <Compile Include="Support\ObjectFindLogic.cs" />
-    <Compile Include="Support\ObjectFindOperator.cs" />
-    <Compile Include="Support\ObjectFindOptions.cs" />
-    <Compile Include="Support\ObjectID.cs" />
-    <Compile Include="Support\ObjectIndex.cs" />
-    <Compile Include="Support\ObjectIndexMetadata.cs" />
-    <Compile Include="Support\ObjectIndexType.cs" />
-    <Compile Include="Support\ObjectIndexTypeExtensions.cs" />
-    <Compile Include="Support\ObjectMetadata.cs" />
-    <Compile Include="Support\ObjectNameFormatter.cs" />
-    <Compile Include="Support\ObjectNameSpaceConfig.cs" />
-    <Compile Include="Support\ObjectNameValidator.cs" />
-    <Compile Include="Support\OrderOptions.cs" />
-    <Compile Include="Support\PersistentObject.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Support\SerializerHelper.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>
