@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29209.62
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data", "ZeroG.Data.csproj", "{DB190F97-AB50-4659-BC56-377457EFDFCE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Data", "ZeroG.Data.csproj", "{DB190F97-AB50-4659-BC56-377457EFDFCE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Lang", "..\ZeroG.Lang\ZeroG.Lang.csproj", "{71CEB166-19BE-45E2-9A38-8342DB8C85BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.DataClient", "..\ZeroG.DataClient\ZeroG.DataClient.csproj", "{5258843A-203B-4B6F-9958-4CBB795D5496}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.DataClient", "..\ZeroG.DataClient\ZeroG.DataClient.csproj", "{5258843A-203B-4B6F-9958-4CBB795D5496}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Tests", "..\ZeroG.Tests\ZeroG.Tests.csproj", "{BA945904-35D8-48FA-A97C-FAE790BBA5E1}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Database.MySQL", "..\ZeroG.Database.MySQL\ZeroG.Database.MySQL.csproj", "{0971A9D3-9328-483E-BC70-101B720912FB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroG.Database.SQLite", "..\ZeroG.Database.SQLite\ZeroG.Database.SQLite.csproj", "{99353F17-71C6-45C0-9323-0E21D3472DFC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZeroG.Data.Benchmark", "..\ZeroG.Data.Benchmark\ZeroG.Data.Benchmark.csproj", "{0A1F08C9-8C87-45DB-ABC8-7308B36765CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{99353F17-71C6-45C0-9323-0E21D3472DFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99353F17-71C6-45C0-9323-0E21D3472DFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99353F17-71C6-45C0-9323-0E21D3472DFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A1F08C9-8C87-45DB-ABC8-7308B36765CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A1F08C9-8C87-45DB-ABC8-7308B36765CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A1F08C9-8C87-45DB-ABC8-7308B36765CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A1F08C9-8C87-45DB-ABC8-7308B36765CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
